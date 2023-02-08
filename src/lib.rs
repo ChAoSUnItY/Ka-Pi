@@ -1,4 +1,4 @@
-//! # Rasm
+//! # Ka-Pi
 //! ### A JVM Bytecode Manipulation Framework inspired by ASM.
 //! 
 pub mod byte_vec;
