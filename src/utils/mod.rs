@@ -1,4 +1,4 @@
-use std::ops::{IndexMut, Deref};
+use std::ops::IndexMut;
 
 pub mod jvm;
 
