@@ -1,6 +1,33 @@
 use std::rc::Rc;
 
-use crate::{constants, edge::Edge, error::RasmError, frame::Frame, opcodes, utils::{replace, Rev}};
+use crate::{
+    byte_vec::ByteVec,
+    constants,
+    edge::Edge,
+    error::RasmError,
+    frame::Frame,
+    opcodes,
+    utils::{replace, Rev},
+};
+
+pub(crate) const FLAG_DEBUG_ONLY: u8 = 0b00000001;
+pub(crate) const FLAG_JUMP_TARGET: u8 = 0b00000010;
+pub(crate) const FLAG_RESOLVED: u8 = 0b00000100;
+pub(crate) const FLAG_REACHABLE: u8 = 0b00001000;
+pub(crate) const FLAG_SUBROUTINE_CALLER: u8 = 0b00010000;
+pub(crate) const FLAG_SUBROUTINE_START: u8 = 0b00100000;
+pub(crate) const FLAG_SUBROUTINE_END: u8 = 0b01000000;
+pub(crate) const FLAG_LINE_NUMBER: u8 = 0b10000000;
+
+pub(crate) const LINE_NUMBERS_CAPACITY_INCREMENT: u32 = 4;
+pub(crate) const FORWARD_REFERENCES_CAPACITY_INCREMENT: u32 = 6;
+
+pub(crate) const FORWARD_REFERENCE_TYPE_MASK: i32 = 0xF0000000i64 as i32; // Force overflow
+pub(crate) const FORWARD_REFERENCE_TYPE_SHORT: i32 = 0x10000000;
+pub(crate) const FORWARD_REFERENCE_TYPE_WIDE: i32 = 0x20000000;
+pub(crate) const FORWARD_REFERENCE_HANDLE_MASK: i32 = 0x0FFFFFFF;
+
+pub(crate) const EMPTY_LIST: LabelImpl = LabelImpl::new();
 
 pub(crate) trait Label {
     fn flags(&self) -> u8;
@@ -17,28 +44,6 @@ pub(crate) trait Label {
     fn next_list_element(&self) -> Option<Rc<Self>>
     where
         Self: Sized;
-}
-
-#[allow(unused)]
-impl dyn Label {
-    pub(crate) const FLAG_DEBUG_ONLY: u8 = 0b00000001;
-    pub(crate) const FLAG_JUMP_TARGET: u8 = 0b00000010;
-    pub(crate) const FLAG_RESOLVED: u8 = 0b00000100;
-    pub(crate) const FLAG_REACHABLE: u8 = 0b00001000;
-    pub(crate) const FLAG_SUBROUTINE_CALLER: u8 = 0b00010000;
-    pub(crate) const FLAG_SUBROUTINE_START: u8 = 0b00100000;
-    pub(crate) const FLAG_SUBROUTINE_END: u8 = 0b01000000;
-    pub(crate) const FLAG_LINE_NUMBER: u8 = 0b10000000;
-
-    pub(crate) const LINE_NUMBERS_CAPACITY_INCREMENT: u32 = 4;
-    pub(crate) const FORWARD_REFERENCES_CAPACITY_INCREMENT: u32 = 6;
-
-    pub(crate) const FORWARD_REFERENCE_TYPE_MASK: i32 = 0xF0000000i64 as i32; // Force overflow
-    pub(crate) const FORWARD_REFERENCE_TYPE_SHORT: i32 = 0x10000000;
-    pub(crate) const FORWARD_REFERENCE_TYPE_WIDE: i32 = 0x20000000;
-    pub(crate) const FORWARD_REFERENCE_HANDLE_MASK: i32 = 0x0FFFFFFF;
-
-    pub(crate) const EMPTY_LIST: LabelImpl = LabelImpl::new();
 }
 
 pub(crate) struct LabelImpl {
@@ -79,7 +84,7 @@ impl LabelImpl {
 
 impl LabelImpl {
     pub fn getOffset(&self) -> Result<i32, RasmError> {
-        if self.flags() & <dyn Label>::FLAG_RESOLVED == 0 {
+        if self.flags() & FLAG_RESOLVED == 0 {
             Err(RasmError::StateError {
                 cause: "Label offset position has not been resolved yet",
             })
@@ -97,8 +102,8 @@ impl LabelImpl {
     }
 
     pub(crate) fn add_line_number(&mut self, line_number: u32) {
-        if self.flags() & <dyn Label>::FLAG_LINE_NUMBER == 0 {
-            self.flags |= <dyn Label>::FLAG_LINE_NUMBER;
+        if self.flags() & FLAG_LINE_NUMBER == 0 {
+            self.flags |= FLAG_LINE_NUMBER;
             self.line_number = line_number;
             return;
         }
@@ -114,7 +119,36 @@ impl LabelImpl {
 
     // TODO: accept
 
-    // TODO: put
+    pub(crate) fn put<T>(
+        &mut self,
+        code: &mut impl ByteVec<T>,
+        source_inst_bytecode_offset: i32,
+        wide_reference: bool,
+    ) {
+        if self.flags() & FLAG_RESOLVED == 0 {
+            if wide_reference {
+                self.add_foward_reference(
+                    source_inst_bytecode_offset,
+                    FORWARD_REFERENCE_TYPE_WIDE as u32,
+                    code.len() as u32,
+                );
+                code.put_int(-1);
+            } else {
+                self.add_foward_reference(
+                    source_inst_bytecode_offset,
+                    FORWARD_REFERENCE_TYPE_SHORT as u32,
+                    code.len() as u32,
+                );
+                code.put_int(-1);
+            }
+        } else {
+            if wide_reference {
+                code.put_int(self.bytecode_offset() - source_inst_bytecode_offset);
+            } else {
+                code.put_short((self.bytecode_offset() - source_inst_bytecode_offset) as i16);
+            }
+        }
+    }
 
     pub(crate) fn add_foward_reference(
         &mut self,
@@ -133,7 +167,7 @@ impl LabelImpl {
     }
 
     pub(crate) fn resolve(&mut self, code: &mut Vec<u8>, bytecode_offset: i32) -> bool {
-        self.flags |= <dyn Label>::FLAG_RESOLVED;
+        self.flags |= FLAG_RESOLVED;
         self.bytecode_offset = bytecode_offset;
 
         if self.forward_references.is_none() {
@@ -148,10 +182,10 @@ impl LabelImpl {
                 let reference = forward_references[i];
                 let relative_offset = bytecode_offset - source_inst_bytecode_offset;
                 let offset = relative_offset.as_rev();
-                let handle = (reference & <dyn Label>::FORWARD_REFERENCE_HANDLE_MASK) as usize;
+                let handle = (reference & FORWARD_REFERENCE_HANDLE_MASK) as usize;
 
-                if reference & <dyn Label>::FORWARD_REFERENCE_TYPE_MASK
-                    == <dyn Label>::FORWARD_REFERENCE_TYPE_SHORT
+                if reference & FORWARD_REFERENCE_TYPE_MASK
+                    == FORWARD_REFERENCE_TYPE_SHORT
                 {
                     if relative_offset < i16::MIN as i32 && relative_offset > i16::MAX as i32 {
                         let opcode = code[source_inst_bytecode_offset as usize] & 0xFF;
