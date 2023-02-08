@@ -42,7 +42,7 @@ pub(crate) const RECORD: &'static str = "Record";
 // access flags, and also to make sure that these flags are automatically filtered out when
 // written in class files (because access flags are stored using 16 bits only).
 
-pub(crate) const ACC_CONSTRUCTOR: u8 = 0x40000; // method access flag.
+pub(crate) const ACC_CONSTRUCTOR: u32 = 0x40000; // method access flag.
 
 // ASM specific stack map frame types, used in {@link ClassVisitor#visitFrame}.
 
@@ -54,7 +54,7 @@ pub(crate) const ACC_CONSTRUCTOR: u8 = 0x40000; // method access flag.
  * used when an unconditional jump is inserted in a method while expanding an ASM specific
  * instruction. Keep in sync with opcodes::java.
  */
-pub(crate) const F_INSERT: u8 = 256;
+pub(crate) const F_INSERT: u32 = 256;
 
 // The JVM opcode values which are not part of the ASM public API.
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html.
