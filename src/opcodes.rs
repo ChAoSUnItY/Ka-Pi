@@ -2,45 +2,45 @@ use crate::frame::Frame;
 
 // ASM API versions.
 
-pub const ASM4: u8 = 4 << 16 | 0 << 8;
-pub const ASM5: u8 = 5 << 16 | 0 << 8;
-pub const ASM6: u8 = 6 << 16 | 0 << 8;
-pub const ASM7: u8 = 7 << 16 | 0 << 8;
-pub const ASM8: u8 = 8 << 16 | 0 << 8;
-pub const ASM9: u8 = 9 << 16 | 0 << 8;
+pub const ASM4: u32 = 4 << 16 | 0 << 8;
+pub const ASM5: u32 = 5 << 16 | 0 << 8;
+pub const ASM6: u32 = 6 << 16 | 0 << 8;
+pub const ASM7: u32 = 7 << 16 | 0 << 8;
+pub const ASM8: u32 = 8 << 16 | 0 << 8;
+pub const ASM9: u32 = 9 << 16 | 0 << 8;
 
-pub const SOURCE_DEPRECATED: u8 = 0x100;
-pub const SOURCE_MASK: u8 = SOURCE_DEPRECATED;
+pub const SOURCE_DEPRECATED: u32 = 0x100;
+pub const SOURCE_MASK: u32 = SOURCE_DEPRECATED;
 
 // Java ClassFile versions (the minor version is stored in the 16 most significant bits, and the
 // major version in the 16 least significant bits).
 
-pub const V1_1: u8 = 3 << 16 | 45;
-pub const V1_2: u8 = 0 << 16 | 46;
-pub const V1_3: u8 = 0 << 16 | 47;
-pub const V1_4: u8 = 0 << 16 | 48;
-pub const V1_5: u8 = 0 << 16 | 49;
-pub const V1_6: u8 = 0 << 16 | 50;
-pub const V1_7: u8 = 0 << 16 | 51;
-pub const V1_8: u8 = 0 << 16 | 52;
-pub const V9: u8 = 0 << 16 | 53;
-pub const V10: u8 = 0 << 16 | 54;
-pub const V11: u8 = 0 << 16 | 55;
-pub const V12: u8 = 0 << 16 | 56;
-pub const V13: u8 = 0 << 16 | 57;
-pub const V14: u8 = 0 << 16 | 58;
-pub const V15: u8 = 0 << 16 | 59;
-pub const V16: u8 = 0 << 16 | 60;
-pub const V17: u8 = 0 << 16 | 61;
-pub const V18: u8 = 0 << 16 | 62;
-pub const V19: u8 = 0 << 16 | 63;
-pub const V20: u8 = 0 << 16 | 64;
-pub const V21: u8 = 0 << 16 | 65;
+pub const V1_1: u32 = 3 << 16 | 45;
+pub const V1_2: u32 = 0 << 16 | 46;
+pub const V1_3: u32 = 0 << 16 | 47;
+pub const V1_4: u32 = 0 << 16 | 48;
+pub const V1_5: u32 = 0 << 16 | 49;
+pub const V1_6: u32 = 0 << 16 | 50;
+pub const V1_7: u32 = 0 << 16 | 51;
+pub const V1_8: u32 = 0 << 16 | 52;
+pub const V9: u32 = 0 << 16 | 53;
+pub const V10: u32 = 0 << 16 | 54;
+pub const V11: u32 = 0 << 16 | 55;
+pub const V12: u32 = 0 << 16 | 56;
+pub const V13: u32 = 0 << 16 | 57;
+pub const V14: u32 = 0 << 16 | 58;
+pub const V15: u32 = 0 << 16 | 59;
+pub const V16: u32 = 0 << 16 | 60;
+pub const V17: u32 = 0 << 16 | 61;
+pub const V18: u32 = 0 << 16 | 62;
+pub const V19: u32 = 0 << 16 | 63;
+pub const V20: u32 = 0 << 16 | 64;
+pub const V21: u32 = 0 << 16 | 65;
 
 /**
 Version flag indicating that the class is using 'preview' features.
 */
-pub const V_PREVIEW: u8 = 0xFFFF0000;
+pub const V_PREVIEW: u32 = 0xFFFF0000;
 
 // Access flags values, defined in
 // - https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.1-200-E.1
@@ -48,37 +48,37 @@ pub const V_PREVIEW: u8 = 0xFFFF0000;
 // - https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.6-200-A.1
 // - https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.25
 
-pub const ACC_PUBLIC: u8 = 0x0001; // class, field, method
-pub const ACC_PRIVATE: u8 = 0x0002; // class, field, method
-pub const ACC_PROTECTED: u8 = 0x0004; // class, field, method
-pub const ACC_STATIC: u8 = 0x0008; // field, method
-pub const ACC_FINAL: u8 = 0x0010; // class, field, method, parameter
-pub const ACC_SUPER: u8 = 0x0020; // class
-pub const ACC_SYNCHRONIZED: u8 = 0x0020; // method
-pub const ACC_OPEN: u8 = 0x0020; // module
-pub const ACC_TRANSITIVE: u8 = 0x0020; // module requires
-pub const ACC_VOLATILE: u8 = 0x0040; // field
-pub const ACC_BRIDGE: u8 = 0x0040; // method
-pub const ACC_STATIC_PHASE: u8 = 0x0040; // module requires
-pub const ACC_VARARGS: u8 = 0x0080; // method
-pub const ACC_TRANSIENT: u8 = 0x0080; // field
-pub const ACC_NATIVE: u8 = 0x0100; // method
-pub const ACC_INTERFACE: u8 = 0x0200; // class
-pub const ACC_ABSTRACT: u8 = 0x0400; // class, method
-pub const ACC_STRICT: u8 = 0x0800; // method
-pub const ACC_SYNTHETIC: u8 = 0x1000; // class, field, method, parameter, module *
-pub const ACC_ANNOTATION: u8 = 0x2000; // class
-pub const ACC_ENUM: u8 = 0x4000; // class(?) field inner
-pub const ACC_MANDATED: u8 = 0x8000; // field, method, parameter, module, module *
-pub const ACC_MODULE: u8 = 0x8000; // class
+pub const ACC_PUBLIC: u32 = 0x0001; // class, field, method
+pub const ACC_PRIVATE: u32 = 0x0002; // class, field, method
+pub const ACC_PROTECTED: u32 = 0x0004; // class, field, method
+pub const ACC_STATIC: u32 = 0x0008; // field, method
+pub const ACC_FINAL: u32 = 0x0010; // class, field, method, parameter
+pub const ACC_SUPER: u32 = 0x0020; // class
+pub const ACC_SYNCHRONIZED: u32 = 0x0020; // method
+pub const ACC_OPEN: u32 = 0x0020; // module
+pub const ACC_TRANSITIVE: u32 = 0x0020; // module requires
+pub const ACC_VOLATILE: u32 = 0x0040; // field
+pub const ACC_BRIDGE: u32 = 0x0040; // method
+pub const ACC_STATIC_PHASE: u32 = 0x0040; // module requires
+pub const ACC_VARARGS: u32 = 0x0080; // method
+pub const ACC_TRANSIENT: u32 = 0x0080; // field
+pub const ACC_NATIVE: u32 = 0x0100; // method
+pub const ACC_INTERFACE: u32 = 0x0200; // class
+pub const ACC_ABSTRACT: u32 = 0x0400; // class, method
+pub const ACC_STRICT: u32 = 0x0800; // method
+pub const ACC_SYNTHETIC: u32 = 0x1000; // class, field, method, parameter, module *
+pub const ACC_ANNOTATION: u32 = 0x2000; // class
+pub const ACC_ENUM: u32 = 0x4000; // class(?) field inner
+pub const ACC_MANDATED: u32 = 0x8000; // field, method, parameter, module, module *
+pub const ACC_MODULE: u32 = 0x8000; // class
 
 // ASM specific access flags.
 // WARNING: the 16 least significant bits must NOT be used, to avoid conflicts with standard
 // access flags, and also to make sure that these flags are automatically filtered out when
 // written in class files (because access flags are stored using 16 bits only).
 
-pub const ACC_RECORD: u8 = 0x10000; // class
-pub const ACC_DEPRECATED: u8 = 0x20000; // class, field, method
+pub const ACC_RECORD: u32 = 0x10000; // class
+pub const ACC_DEPRECATED: u32 = 0x20000; // class, field, method
 
 // Possible values for the type operand of the NEWARRAY instruction.
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
