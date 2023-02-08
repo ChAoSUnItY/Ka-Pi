@@ -1,3 +1,6 @@
+//! # Rasm
+//! ### A JVM Bytecode Manipulation Framework inspired by ASM.
+//! 
 pub mod byte_vec;
 mod constants;
 mod edge;
