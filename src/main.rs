@@ -1,5 +1,5 @@
-use rasm::utils::jvm::{attach_current_thread, get_class_modifiers};
-use rasm::cp;
+use ka_pi::utils::jvm::{attach_current_thread, get_class_modifiers};
+use ka_pi::cp;
 
 fn main() {
     let _ = attach_current_thread();
