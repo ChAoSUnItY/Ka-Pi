@@ -1,15 +1,10 @@
-pub mod byte_vec;
-mod constants;
-mod edge;
-mod error;
-mod frame;
-mod label;
-pub mod opcodes;
-mod symbol;
-pub mod utils;
-
-extern crate jni;
+use rasm::utils::jvm::{attach_current_thread, get_class_modifiers};
+use rasm::cp;
 
 fn main() {
-    let mut env = utils::jvm::attach_current_thread();
+    let _ = attach_current_thread();
+
+    let modifiers = get_class_modifiers(cp!(java));
+
+    println!("{:?}", modifiers)
 }

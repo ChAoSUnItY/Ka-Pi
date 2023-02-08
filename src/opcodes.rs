@@ -135,13 +135,13 @@ pub const F_SAME1: i8 = 4;
 
 // Standard stack map frame element types, used in {@link ClassVisitor#visitFrame}.
 
-pub const TOP: u8 = <dyn Frame>::ITEM_TOP;
-pub const INTEGER: u8 = <dyn Frame>::ITEM_INTEGER;
-pub const FLOAT: u8 = <dyn Frame>::ITEM_FLOAT;
-pub const DOUBLE: u8 = <dyn Frame>::ITEM_DOUBLE;
-pub const LONG: u8 = <dyn Frame>::ITEM_LONG;
-pub const NULL: u8 = <dyn Frame>::ITEM_NULL;
-pub const UNINITIALIZED_THIS: u8 = <dyn Frame>::ITEM_UNINITIALIZED_THIS;
+pub const TOP: u8 = crate::frame::ITEM_TOP;
+pub const INTEGER: u8 = crate::frame::ITEM_INTEGER;
+pub const FLOAT: u8 = crate::frame::ITEM_FLOAT;
+pub const DOUBLE: u8 = crate::frame::ITEM_DOUBLE;
+pub const LONG: u8 = crate::frame::ITEM_LONG;
+pub const NULL: u8 = crate::frame::ITEM_NULL;
+pub const UNINITIALIZED_THIS: u8 = crate::frame::ITEM_UNINITIALIZED_THIS;
 
 // The JVM opcode values (with the MethodVisitor method name used to visit them in comment, and
 // where '-' means 'same method name as on the previous line').
