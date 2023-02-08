@@ -2,8 +2,8 @@ use std::{error::Error, fmt::Display};
 
 #[derive(Debug)]
 pub enum RasmError {
-    StateError{ cause: &'static str },
-    Utf8Error{ cause: &'static str }
+    StateError { cause: &'static str },
+    Utf8Error { cause: &'static str },
 }
 
 impl Display for RasmError {
@@ -15,5 +15,4 @@ impl Display for RasmError {
     }
 }
 
-impl Error for RasmError {
-}
+impl Error for RasmError {}

@@ -16,7 +16,9 @@ pub trait ByteVec<T> {
     fn put_int(&mut self, int: i32);
     fn put_ints(&mut self, ints: &[i32]);
 
-    fn put_utf8<S>(&mut self, string: S) -> Result<(), RasmError> where S: ToString;
+    fn put_utf8<S>(&mut self, string: S) -> Result<(), RasmError>
+    where
+        S: ToString;
 }
 
 pub(crate) struct ByteVecImpl(Vec<u8>);
@@ -43,7 +45,8 @@ impl ByteVec<Vec<u8>> for ByteVecImpl {
     }
 
     fn put_bytes(&mut self, bytes: &[i8]) {
-        self.0.append(&mut bytes.iter().flat_map(|&b| b.to_ne_bytes()).collect());
+        self.0
+            .append(&mut bytes.iter().flat_map(|&b| b.to_ne_bytes()).collect());
     }
 
     fn put_short(&mut self, short: i16) {
@@ -51,7 +54,8 @@ impl ByteVec<Vec<u8>> for ByteVecImpl {
     }
 
     fn put_shorts(&mut self, shorts: &[i16]) {
-        self.0.append(&mut shorts.iter().flat_map(|&s| s.to_ne_bytes()).collect());
+        self.0
+            .append(&mut shorts.iter().flat_map(|&s| s.to_ne_bytes()).collect());
     }
 
     fn put_int(&mut self, int: i32) {
@@ -59,15 +63,21 @@ impl ByteVec<Vec<u8>> for ByteVecImpl {
     }
 
     fn put_ints(&mut self, ints: &[i32]) {
-        self.0.append(&mut ints.iter().flat_map(|&i| i.to_ne_bytes()).collect());
+        self.0
+            .append(&mut ints.iter().flat_map(|&i| i.to_ne_bytes()).collect());
     }
 
-    fn put_utf8<S>(&mut self, string: S) -> Result<(), RasmError> where S: ToString {
+    fn put_utf8<S>(&mut self, string: S) -> Result<(), RasmError>
+    where
+        S: ToString,
+    {
         let s = string.to_string();
         let len = s.chars().map(|c| c.len_utf8()).sum::<usize>();
 
         if len > 65535 {
-            return Err(RasmError::Utf8Error { cause: "UTF8 string too large" })
+            return Err(RasmError::Utf8Error {
+                cause: "UTF8 string too large",
+            });
         }
 
         self.put_u8s(&(s.len() as u16).to_ne_bytes()); // put length of string (bytes len)

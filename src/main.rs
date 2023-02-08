@@ -5,6 +5,7 @@ mod error;
 mod frame;
 mod label;
 pub mod opcodes;
+mod symbol;
 pub mod utils;
 
 extern crate jni;

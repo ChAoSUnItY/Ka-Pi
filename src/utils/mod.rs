@@ -12,8 +12,10 @@ pub(crate) fn replace<T>(
     start_index: usize,
     dest: &mut impl Replacable<T>,
     items: impl IntoIterator<Item = T>,
-    size: usize
-) where T: Copy {
+    size: usize,
+) where
+    T: Copy,
+{
     let mut item_iter = items.into_iter();
 
     for i in 0..size {
@@ -45,7 +47,7 @@ mod test {
     pub fn test_replace() {
         let mut buffer = vec![1, 2, 3, 4, 5];
         let arr = [100, 200, 300];
-        
+
         replace(1, &mut buffer, arr.into_iter(), arr.len());
 
         assert_eq!(buffer, vec![1, 100, 200, 4, 5]);

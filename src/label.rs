@@ -184,9 +184,7 @@ impl LabelImpl {
                 let offset = relative_offset.as_rev();
                 let handle = (reference & FORWARD_REFERENCE_HANDLE_MASK) as usize;
 
-                if reference & FORWARD_REFERENCE_TYPE_MASK
-                    == FORWARD_REFERENCE_TYPE_SHORT
-                {
+                if reference & FORWARD_REFERENCE_TYPE_MASK == FORWARD_REFERENCE_TYPE_SHORT {
                     if relative_offset < i16::MIN as i32 && relative_offset > i16::MAX as i32 {
                         let opcode = code[source_inst_bytecode_offset as usize] & 0xFF;
 
