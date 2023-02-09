@@ -1,11 +1,54 @@
+use std::collections::HashMap;
 use std::{rc::Rc, str::FromStr};
 
+use lazy_static::lazy_static;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     byte_vec::{ByteVec, ByteVecImpl},
     error::KapiError,
 };
+
+lazy_static! {
+    static ref PRIMITIVE_TYPE_2_DESC: HashMap<&'static str, &'static str> = HashMap::from([
+        ("boolean", "Z"),
+        ("char", "C"),
+        ("byte", "B"),
+        ("short", "S"),
+        ("int", "I"),
+        ("long", "J"),
+        ("float", "F"),
+        ("double", "D")
+    ]);
+}
+
+pub(crate) fn canonical_to_internal<S>(canonical: S) -> String where S: Into<String> {
+    // array type preprocess
+    let canonical_name = canonical.into();
+    let dim = canonical_name.matches("[]").count();
+    let mut internal_name_builder = String::with_capacity(canonical_name.graphemes(true).count() - dim);
+
+    internal_name_builder.push_str(&String::from("[").repeat(dim));
+
+    for (type_name, internal_name) in PRIMITIVE_TYPE_2_DESC.iter() {
+        if canonical_name.starts_with(type_name) {
+            // primitive type
+            internal_name_builder.push_str(internal_name);
+
+            return internal_name_builder;
+        }
+    }
+
+    // object type
+    let class_name = format!(
+        "L{};",
+        canonical_name.trim_end_matches("[]").replace(".", "/")
+    );
+
+    internal_name_builder.push_str(&class_name);
+
+    internal_name_builder
+}
 
 pub const VOID: u8 = 0;
 
@@ -428,7 +471,7 @@ impl TypeRef {
 mod test {
     use std::str::FromStr;
 
-    use crate::types::{self, TypePath, THROWS};
+    use crate::types::{self, TypePath, THROWS, canonical_to_internal};
 
     use super::{
         TypeRef, CAST, CLASS_EXTENDS, CLASS_TYPE_PARAMETER, EXCEPTION_PARAMETER, FIELD,
@@ -529,5 +572,18 @@ mod test {
 
         assert_eq!(CAST, type_arg_ref.sort());
         assert_eq!(3, type_arg_ref.type_arg_index());
+    }
+
+    #[test]
+    fn test_canonical_name_to_internal_name() {
+        let primitive_internal_name = canonical_to_internal("int");
+        let primitive_array_internal_name = canonical_to_internal("int[]");
+        let internal_name = canonical_to_internal("java.lang.String");
+        let internal_name_with_array = canonical_to_internal("java.lang.String[]");
+
+        assert_eq!("I", primitive_internal_name);
+        assert_eq!("[I", primitive_array_internal_name);
+        assert_eq!("Ljava/lang/String;", internal_name);
+        assert_eq!("[Ljava/lang/String;", internal_name_with_array);
     }
 }
