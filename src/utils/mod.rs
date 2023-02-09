@@ -51,7 +51,7 @@ mod test {
         let mut buffer = vec![1, 2, 3, 4, 5];
         let arr = [100, 200, 300];
 
-        replace(1, &mut buffer, arr.into_iter(), arr.len());
+        replace(1, &mut buffer, arr.into_iter(), 2);
 
         assert_eq!(buffer, vec![1, 100, 200, 4, 5]);
     }
