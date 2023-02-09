@@ -22,6 +22,12 @@ lazy_static! {
     ]);
 }
 
+/// Transform canonical name into internal name
+/// 
+/// Example:<br/>
+/// `int` -> `I`<br/>
+/// `java.lang.String` -> `Ljava/lang/String;`<br/>
+/// `int[]` -> `[I`
 pub(crate) fn canonical_to_internal<S>(canonical: S) -> String where S: Into<String> {
     // array type preprocess
     let canonical_name = canonical.into();
@@ -44,6 +50,31 @@ pub(crate) fn canonical_to_internal<S>(canonical: S) -> String where S: Into<Str
         "L{};",
         canonical_name.trim_end_matches("[]").replace(".", "/")
     );
+
+    internal_name_builder.push_str(&class_name);
+
+    internal_name_builder
+}
+
+pub(crate) fn canonical_to_descriptor<S>(canonical: S) -> String where S: Into<String> {
+    // array type preprocess
+    let canonical_name = canonical.into();
+    let dim = canonical_name.matches("[]").count();
+    let mut internal_name_builder = String::with_capacity(canonical_name.graphemes(true).count() - dim);
+
+    internal_name_builder.push_str(&String::from("[").repeat(dim));
+
+    for (type_name, internal_name) in PRIMITIVE_TYPE_2_DESC.iter() {
+        if canonical_name.starts_with(type_name) {
+            // primitive type
+            internal_name_builder.push_str(internal_name);
+
+            return internal_name_builder;
+        }
+    }
+
+    // object type
+    let class_name =  canonical_name.trim_end_matches("[]").replace(".", "/");
 
     internal_name_builder.push_str(&class_name);
 
