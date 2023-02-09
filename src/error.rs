@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::{Display, Debug}};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum KapiError {
     StateError(String),
     Utf8Error(String),
