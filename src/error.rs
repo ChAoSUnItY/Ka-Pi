@@ -1,16 +1,16 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::{Display, Debug}};
 
 #[derive(Debug)]
 pub enum RasmError {
-    StateError(&'static str),
-    Utf8Error(&'static str),
-    TypeError(&'static str),
-    ArgError(&'static str),
+    StateError(String),
+    Utf8Error(String),
+    TypeError(String),
+    ArgError(String),
 }
 
 impl Display for RasmError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
+        match self {
             RasmError::StateError(cause) => write!(f, "{}", cause),
             RasmError::Utf8Error(cause) => write!(f, "{}", cause),
             RasmError::TypeError(cause) => write!(f, "{}", cause),
