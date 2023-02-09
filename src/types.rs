@@ -9,43 +9,43 @@ use crate::{
 
 pub const VOID: u8 = 0;
 
-/** The sort of the {@code boolean} type. See {@link #getSort}. */
+/// The sort of the {@code boolean} type. See {@link #getSort}.
 pub const BOOLEAN: u8 = 1;
 
-/** The sort of the {@code char} type. See {@link #getSort}. */
+/// The sort of the {@code char} type. See {@link #getSort}.
 pub const CHAR: u8 = 2;
 
-/** The sort of the {@code byte} type. See {@link #getSort}. */
+/// The sort of the {@code byte} type. See {@link #getSort}.
 pub const BYTE: u8 = 3;
 
-/** The sort of the {@code short} type. See {@link #getSort}. */
+/// The sort of the {@code short} type. See {@link #getSort}.
 pub const SHORT: u8 = 4;
 
-/** The sort of the {@code int} type. See {@link #getSort}. */
+/// The sort of the {@code int} type. See {@link #getSort}.
 pub const INT: u8 = 5;
 
-/** The sort of the {@code float} type. See {@link #getSort}. */
+/// The sort of the {@code float} type. See {@link #getSort}.
 pub const FLOAT: u8 = 6;
 
-/** The sort of the {@code long} type. See {@link #getSort}. */
+/// The sort of the {@code long} type. See {@link #getSort}.
 pub const LONG: u8 = 7;
 
-/** The sort of the {@code double} type. See {@link #getSort}. */
+/// The sort of the {@code double} type. See {@link #getSort}.
 pub const DOUBLE: u8 = 8;
 
-/** The sort of array reference types. See {@link #getSort}. */
+/// The sort of array reference types. See {@link #getSort}.
 pub const ARRAY: u8 = 9;
 
-/** The sort of object reference types. See {@link #getSort}. */
+/// The sort of object reference types. See {@link #getSort}.
 pub const OBJECT: u8 = 10;
 
-/** The sort of method types. See {@link #getSort}. */
+/// The sort of method types. See {@link #getSort}.
 pub const METHOD: u8 = 11;
 
-/** The (private) sort of object reference types represented with an internal name. */
+/// The (private) sort of object reference types represented with an internal name.
 const INTERNAL: u8 = 12;
 
-/** The descriptors of the primitive types. */
+/// The descriptors of the primitive types.
 const PRIMITIVE_DESCRIPTORS: &'static str = "VZCBSIFJD";
 
 pub struct Type {
@@ -66,16 +66,16 @@ impl Type {
     }
 }
 
-/** A type path step that steps into the element type of an array type. See {@link #getStep}. */
+/// A type path step that steps into the element type of an array type. See {@link #getStep}.
 pub const ARRAY_ELEMENT: u8 = 0;
 
-/** A type path step that steps into the nested type of a class type. See {@link #getStep}. */
+/// A type path step that steps into the nested type of a class type. See {@link #getStep}.
 pub const INNER_TYPE: u8 = 1;
 
-/** A type path step that steps into the bound of a wildcard type. See {@link #getStep}. */
+/// A type path step that steps into the bound of a wildcard type. See {@link #getStep}.
 pub const WILDCARD_BOUND: u8 = 2;
 
-/** A type path step that steps into a type argument of a generic type. See {@link #getStep}. */
+/// A type path step that steps into a type argument of a generic type. See {@link #getStep}.
 pub const TYPE_ARGUMENT: u8 = 3;
 
 pub struct TypePath {
@@ -193,6 +193,93 @@ impl ToString for TypePath {
         return result;
     }
 }
+
+/// The sort of type references that target a type parameter of a generic class. See {@link
+/// #getSort}.
+pub const CLASS_TYPE_PARAMETER: u8 = 0x00;
+
+/// The sort of type references that target a type parameter of a generic method. See {@link
+/// #getSort}.
+pub const METHOD_TYPE_PARAMETER: u8 = 0x01;
+
+/// The sort of type references that target the super class of a class or one of the interfaces it
+/// implements. See {@link #getSort}.
+pub const CLASS_EXTENDS: u8 = 0x10;
+
+/// The sort of type references that target a bound of a type parameter of a generic class. See
+/// {@link #getSort}.
+pub const CLASS_TYPE_PARAMETER_BOUND: u8 = 0x11;
+
+/// The sort of type references that target a bound of a type parameter of a generic method. See
+/// {@link #getSort}.
+pub const METHOD_TYPE_PARAMETER_BOUND: u8 = 0x12;
+
+/// The sort of type references that target the type of a field. See {@link #getSort}.
+pub const FIELD: u8 = 0x13;
+
+/// The sort of type references that target the return type of a method. See {@link #getSort}.
+pub const METHOD_RETURN: u8 = 0x14;
+
+/// The sort of type references that target the receiver type of a method. See {@link #getSort}.
+pub const METHOD_RECEIVER: u8 = 0x15;
+
+/// The sort of type references that target the type of a formal parameter of a method. See {@link
+/// #getSort}.
+pub const METHOD_FORMAL_PARAMETER: u8 = 0x16;
+
+/// The sort of type references that target the type of an exception declared in the throws clause
+/// of a method. See {@link #getSort}.
+pub const THROWS: u8 = 0x17;
+
+/// The sort of type references that target the type of a local variable in a method. See {@link
+/// #getSort}.
+pub const LOCAL_VARIABLE: u8 = 0x40;
+
+/// The sort of type references that target the type of a resource variable in a method. See {@link
+/// #getSort}.
+pub const RESOURCE_VARIABLE: u8 = 0x41;
+
+/// The sort of type references that target the type of the exception of a 'catch' clause in a
+/// method. See {@link #getSort}.
+pub const EXCEPTION_PARAMETER: u8 = 0x42;
+
+/// The sort of type references that target the type declared in an 'instanceof' instruction. See
+/// {@link #getSort}.
+pub const INSTANCEOF: u8 = 0x43;
+
+/// The sort of type references that target the type of the object created by a 'new' instruction.
+/// See {@link #getSort}.
+pub const NEW: u8 = 0x44;
+
+/// The sort of type references that target the receiver type of a constructor reference. See
+/// {@link #getSort}.
+pub const CONSTRUCTOR_REFERENCE: u8 = 0x45;
+
+/// The sort of type references that target the receiver type of a method reference. See {@link
+/// #getSort}.
+pub const METHOD_REFERENCE: u8 = 0x46;
+
+/// The sort of type references that target the type declared in an explicit or implicit cast
+/// instruction. See {@link #getSort}.
+pub const CAST: u8 = 0x47;
+
+/// The sort of type references that target a type parameter of a generic constructor in a
+/// constructor call. See {@link #getSort}.
+pub const CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT: u8 = 0x48;
+
+/// The sort of type references that target a type parameter of a generic method in a method call.
+/// See {@link #getSort}.
+pub const METHOD_INVOCATION_TYPE_ARGUMENT: u8 = 0x49;
+
+/// The sort of type references that target a type parameter of a generic constructor in a
+/// constructor reference. See {@link #getSort}.
+pub const CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT: u8 = 0x4A;
+
+/// The sort of type references that target a type parameter of a generic method in a method
+/// reference. See {@link #getSort}.
+pub const METHOD_REFERENCE_TYPE_ARGUMENT: u8 = 0x4B;
+
+pub trait TypeReferece {}
 
 #[cfg(test)]
 mod test {
