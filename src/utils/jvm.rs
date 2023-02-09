@@ -43,9 +43,7 @@ impl<'a> PseudoVMState<'a> {
 
 impl<'a> Debug for PseudoVMState<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PseudoVMState {{ attach_guard: ..., class_cache: ")?;
-        self.class_cache.fmt(f)?;
-        write!(f, " }}")
+        write!(f, "PseudoVMState {{ attach_guard: ..., class_cache: ... }}")
     }
 }
 
