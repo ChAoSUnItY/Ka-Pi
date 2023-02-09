@@ -1,7 +1,6 @@
 use crate::error::RasmError;
 
-pub trait ByteVec<T> {
-    fn data(&self) -> &T;
+pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
     fn len(&self) -> usize;
 
     fn put_u8(&mut self, u8: u8);
@@ -18,26 +17,22 @@ pub trait ByteVec<T> {
 
     fn put_utf8<S>(&mut self, string: S) -> Result<(), RasmError>
     where
-        S: ToString;
+        S: Into<String>;
 }
 
-pub(crate) struct ByteVecImpl(Vec<u8>);
+pub(crate) type ByteVecImpl = Vec<u8>;
 
-impl ByteVec<Vec<u8>> for ByteVecImpl {
-    fn data(&self) -> &Vec<u8> {
-        &self.0
-    }
-
+impl ByteVec for ByteVecImpl {
     fn len(&self) -> usize {
-        self.0.len()
+        self.len()
     }
 
     fn put_u8(&mut self, u8: u8) {
-        self.0.push(u8);
+        self.push(u8);
     }
 
     fn put_u8s(&mut self, u8s: &[u8]) {
-        self.0.extend_from_slice(u8s);
+        self.extend_from_slice(u8s);
     }
 
     fn put_byte(&mut self, byte: i8) {
@@ -45,8 +40,7 @@ impl ByteVec<Vec<u8>> for ByteVecImpl {
     }
 
     fn put_bytes(&mut self, bytes: &[i8]) {
-        self.0
-            .append(&mut bytes.iter().flat_map(|&b| b.to_ne_bytes()).collect());
+        self.append(&mut bytes.iter().flat_map(|&b| b.to_ne_bytes()).collect());
     }
 
     fn put_short(&mut self, short: i16) {
@@ -54,8 +48,7 @@ impl ByteVec<Vec<u8>> for ByteVecImpl {
     }
 
     fn put_shorts(&mut self, shorts: &[i16]) {
-        self.0
-            .append(&mut shorts.iter().flat_map(|&s| s.to_ne_bytes()).collect());
+        self.append(&mut shorts.iter().flat_map(|&s| s.to_ne_bytes()).collect());
     }
 
     fn put_int(&mut self, int: i32) {
@@ -63,21 +56,18 @@ impl ByteVec<Vec<u8>> for ByteVecImpl {
     }
 
     fn put_ints(&mut self, ints: &[i32]) {
-        self.0
-            .append(&mut ints.iter().flat_map(|&i| i.to_ne_bytes()).collect());
+        self.append(&mut ints.iter().flat_map(|&i| i.to_ne_bytes()).collect());
     }
 
     fn put_utf8<S>(&mut self, string: S) -> Result<(), RasmError>
     where
-        S: ToString,
+        S: Into<String>,
     {
-        let s = string.to_string();
+        let s = string.into();
         let len = s.chars().map(|c| c.len_utf8()).sum::<usize>();
 
         if len > 65535 {
-            return Err(RasmError::Utf8Error {
-                cause: "UTF8 string too large",
-            });
+            return Err(RasmError::Utf8Error(String::from("UTF8 string too large")));
         }
 
         self.put_u8s(&(s.len() as u16).to_ne_bytes()); // put length of string (bytes len)
