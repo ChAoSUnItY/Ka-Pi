@@ -18,6 +18,7 @@ required-features = ["interop"]
 [dependencies]
 jni = { version = "0.20.0", features = ["invocation"] }
 unicode-segmentation = "1.10.1"
+lazy_static = "1.4.0"
 
 [features]
 interop = []
