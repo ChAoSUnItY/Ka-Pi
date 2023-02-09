@@ -11,10 +11,6 @@ keywords = ["jvm", "jvm-bytecode", "bytecode"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[[bin]]
-name = "main"
-required-features = ["interop"]
-
 [dependencies]
 jni = { version = "0.20.0", features = ["invocation"] }
 unicode-segmentation = "1.10.1"
