@@ -1,11 +1,12 @@
 use std::{error::Error, fmt::{Display, Debug}};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum KapiError {
     StateError(String),
     Utf8Error(String),
     TypeError(String),
     ArgError(String),
+    ClassResolveError(String),
 }
 
 impl Display for KapiError {
@@ -15,6 +16,7 @@ impl Display for KapiError {
             KapiError::Utf8Error(cause) => write!(f, "{}", cause),
             KapiError::TypeError(cause) => write!(f, "{}", cause),
             KapiError::ArgError(cause) => write!(f, "{}", cause),
+            KapiError::ClassResolveError(cause) => write!(f, "{}", cause),
         }
     }
 }

@@ -26,5 +26,7 @@ pub mod utils;
 pub mod types;
 #[allow(unused)]
 pub mod macros;
+#[cfg(feature = "interop")]
+pub mod class;
 
 extern crate jni;
