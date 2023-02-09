@@ -8,6 +8,7 @@
 use std::sync::{Arc, Once};
 
 use jni::{AttachGuard, InitArgsBuilder, JNIVersion, JavaVM, errors::Result, objects::{JClass, JString}, signature::{ReturnType, Primitive}, JNIEnv};
+use jni::objects::{GlobalRef, JObject};
 
 fn jvm() -> &'static Arc<JavaVM> {
     static mut JVM: Option<Arc<JavaVM>> = None;
@@ -50,6 +51,12 @@ pub(crate) fn get_class<'a>(class_name: &String) -> Result<JClass<'a>> {
     let guard = attach_current_thread();
     
     guard.find_class(class_name)
+}
+
+pub(crate) fn as_global_ref<'a>(obj: JObject) -> Result<GlobalRef> {
+    let guard = attach_current_thread();
+    
+    guard.new_global_ref(obj)
 }
 
 /// Get a [`u32`] represents modifiers applied on class.
