@@ -1,6 +1,9 @@
 use std::ops::IndexMut;
 
+#[cfg(feature = "interop")]
 pub mod jvm;
+#[cfg(feature = "interop")]
+pub use jvm::*;
 
 pub(crate) trait Replacable<T>: IndexMut<usize, Output = T> {}
 

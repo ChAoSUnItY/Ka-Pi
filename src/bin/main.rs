@@ -1,5 +1,3 @@
-#[cfg(target_feature = "invocation")]
-
 use ka_pi::utils::jvm::{attach_current_thread, get_class_modifiers};
 use ka_pi::cp;
 

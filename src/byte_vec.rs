@@ -1,4 +1,4 @@
-use crate::error::RasmError;
+use crate::error::KapiError;
 
 pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
     fn len(&self) -> usize;
@@ -15,7 +15,7 @@ pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
     fn put_int(&mut self, int: i32);
     fn put_ints(&mut self, ints: &[i32]);
 
-    fn put_utf8<S>(&mut self, string: S) -> Result<(), RasmError>
+    fn put_utf8<S>(&mut self, string: S) -> Result<(), KapiError>
     where
         S: Into<String>;
 }
@@ -59,7 +59,7 @@ impl ByteVec for ByteVecImpl {
         self.append(&mut ints.iter().flat_map(|&i| i.to_ne_bytes()).collect());
     }
 
-    fn put_utf8<S>(&mut self, string: S) -> Result<(), RasmError>
+    fn put_utf8<S>(&mut self, string: S) -> Result<(), KapiError>
     where
         S: Into<String>,
     {
@@ -67,7 +67,7 @@ impl ByteVec for ByteVecImpl {
         let len = s.chars().map(|c| c.len_utf8()).sum::<usize>();
 
         if len > 65535 {
-            return Err(RasmError::Utf8Error(String::from("UTF8 string too large")));
+            return Err(KapiError::Utf8Error(String::from("UTF8 string too large")));
         }
 
         self.put_u8s(&(s.len() as u16).to_ne_bytes()); // put length of string (bytes len)

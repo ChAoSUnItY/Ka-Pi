@@ -4,7 +4,7 @@ use crate::{
     byte_vec::ByteVec,
     constants,
     edge::Edge,
-    error::RasmError,
+    error::KapiError,
     frame::Frame,
     opcodes,
     utils::{replace, Rev},
@@ -83,11 +83,9 @@ impl LabelImpl {
 }
 
 impl LabelImpl {
-    pub fn getOffset(&self) -> Result<i32, RasmError> {
+    pub fn getOffset(&self) -> Result<i32, KapiError> {
         if self.flags() & FLAG_RESOLVED == 0 {
-            Err(RasmError::StateError {
-                cause: "Label offset position has not been resolved yet",
-            })
+            Err(KapiError::StateError(String::from("Label offset position has not been resolved yet")))
         } else {
             Ok(self.bytecode_offset())
         }
@@ -119,9 +117,9 @@ impl LabelImpl {
 
     // TODO: accept
 
-    pub(crate) fn put<T>(
+    pub(crate) fn put(
         &mut self,
-        code: &mut impl ByteVec<T>,
+        code: &mut impl ByteVec,
         source_inst_bytecode_offset: i32,
         wide_reference: bool,
     ) {
