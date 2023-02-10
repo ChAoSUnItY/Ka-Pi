@@ -13,7 +13,7 @@ use std::rc::Rc;
 use std::sync::{Arc, Once};
 
 use jni::objects::{GlobalRef, JObject, JValue};
-use jni::sys::jvalue;
+use jni::sys::{jarray, jobjectArray, jvalue};
 use jni::{
     errors::Result,
     objects::JClass,
@@ -22,6 +22,7 @@ use jni::{
 };
 
 use crate::class::{Class, Method};
+use crate::symbol::BOOTSTRAP_METHOD_TAG;
 
 pub trait FromVMState<'a> {
     fn from(vm_state: Rc<RefCell<PseudoVMState<'a>>>, j_object: JObject<'a>) -> Result<Self>
@@ -106,7 +107,7 @@ pub(crate) fn as_global_ref(
 
 pub(crate) fn invoke_method<'a, S1, S2>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-    class: &JClass,
+    class: &JClass<'a>,
     name: S1,
     sig: S2,
     args: &[jvalue],
@@ -119,6 +120,22 @@ where
     let guard = &vm_state.borrow().attach_guard;
     let method_id = guard.get_method_id(*class, name.into(), sig.into())?;
     guard.call_method_unchecked(*class, method_id, return_type, args)
+}
+
+pub(crate) fn get_object_array<'a>(
+    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+    obj: &JObject<'a>,
+) -> Result<Vec<JObject<'a>>> {
+    let guard = &vm_state.borrow().attach_guard;
+    let arr = obj.cast();
+    let len = guard.get_array_length(arr)?;
+    let mut objs = Vec::with_capacity(len as usize);
+
+    for i in 0..len {
+        objs.push(guard.get_object_array_element(arr, i)?);
+    }
+    
+    Ok(objs)
 }
 
 /// Get a [`u32`] represents modifiers applied on class.
@@ -146,8 +163,8 @@ pub(crate) fn get_class_declared_methods<'a>(
     vm_state: Rc<RefCell<PseudoVMState>>,
     class: &JClass,
 ) -> Result<Vec<Rc<Method<'a>>>> {
-    let declared_methods_obj = invoke_method(
-        vm_state,
+    let declared_methods_arr_obj = invoke_method(
+        vm_state.clone(),
         class,
         "getDeclaredMethods",
         "()[java/lang/reflect/Method;",
@@ -155,13 +172,8 @@ pub(crate) fn get_class_declared_methods<'a>(
         ReturnType::Array,
     )?
     .l()?;
-    let guard = &vm_state.borrow().attach_guard;
-    let len = guard.get_array_length(declared_methods_obj.cast())?;
-    let mut declared_methods = Vec::with_capacity(len as usize);
-
-    for i in 0..len {
-        declared_methods.push(guard.get_object_array_element(declared_methods_obj.cast(), i)?);
-    }
+    let declared_methods_objs = get_object_array(vm_state.clone(), &declared_methods_arr_obj)?;
+    
 
     todo!()
 }
