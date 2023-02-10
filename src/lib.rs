@@ -25,6 +25,8 @@ pub mod opcodes;
 
 #[cfg(feature = "interop")]
 pub mod class;
+#[cfg(feature = "interop")]
+pub mod jvm;
 mod symbol;
 pub mod types;
-pub mod utils;
+mod utils;

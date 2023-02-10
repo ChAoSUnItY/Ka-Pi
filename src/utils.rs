@@ -1,8 +1,5 @@
 use std::ops::IndexMut;
 
-#[cfg(feature = "interop")]
-pub mod jvm;
-
 pub(crate) trait Replacable<T>: IndexMut<usize, Output=T> {}
 
 impl<T> Replacable<T> for Vec<T> {}

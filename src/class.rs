@@ -3,12 +3,12 @@ use std::cell::RefCell;
 use std::ops::Deref;
 use std::rc::Rc;
 
-use jni::objects::JClass;
+use jni::objects::{JClass, JObject};
 
 use crate::class::LazyClassMember::{Failed, Initialized};
 use crate::error::KapiError;
 use crate::types::canonical_to_internal;
-use crate::utils::jvm::{get_class, get_class_modifiers, PseudoVMState};
+use crate::utils::jvm::{FromVMState, get_class, get_class_modifiers, PseudoVMState};
 
 /// Simple representation of lazy initialized class member, to avoid heavy cost of communication between
 /// Rust and JVM. See [`Class`].
@@ -109,7 +109,7 @@ impl<'a> Class<'a> {
         let canonical_str = canonical_name.into();
         let internal_name = canonical_to_internal(&canonical_str);
 
-        if let Ok(class) = get_class(&internal_name) {
+        if let Ok(class) = get_class(vm_state.clone(), &internal_name) {
             if canonical_str.ends_with("[]") {
                 let component_class =
                     Self::resolve_class(vm_state, canonical_str.trim_end_matches("[]"))?;
@@ -194,7 +194,7 @@ impl<'a> Class<'a> {
     /// Returns the modifiers of class.
     pub fn modifiers(&mut self) -> Result<&u32, KapiError> {
         self.modifiers.get_or_init(|| {
-            get_class_modifiers(&self.internal_name).map_err(|_| {
+            get_class_modifiers(self.owner.clone(), &self.class).map_err(|_| {
                 KapiError::ClassResolveError(format!(
                     "Unable to resolve modifiers of class {}",
                     self.internal_name
@@ -215,6 +215,12 @@ impl<'a> PartialEq for Class<'a> {
 
 impl<'a> Eq for Class<'a> {}
 
+impl<'a> FromVMState<'a> for Class<'a> {
+    fn from(vm_state: &Rc<RefCell<PseudoVMState<'a>>>, j_object: JObject<'a>) -> Self {
+        todo!()
+    }
+}
+
 #[derive(Debug)]
 pub struct Method<'a> {
     parameter_types: Vec<Rc<Class<'a>>>,
@@ -222,7 +228,7 @@ pub struct Method<'a> {
 }
 
 impl<'a> Method<'a> {
-    
+
 }
 
 #[cfg(test)]
