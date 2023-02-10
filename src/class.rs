@@ -10,7 +10,7 @@ use crate::error::KapiError;
 use crate::types::{canonical_to_descriptor, canonical_to_internal};
 use crate::utils::jvm::{get_class, get_class_modifiers, PseudoVMState};
 
-/// Simple representation of lazy initialized class member, to avoid huge cost of communication between
+/// Simple representation of lazy initialized class member, to avoid heavy cost of communication between
 /// Rust and JVM. See [`Class`].
 #[derive(Debug, Eq, PartialEq)]
 enum LazyClassMember<T>
@@ -27,7 +27,7 @@ enum LazyClassMember<T>
 
 /// This is a lazy representation of Class<?>, to simplify the work of interop with [`Type`].
 ///
-/// All class data are lazily initialized to avoid huge cost of communication between Rust and JVM.
+/// All class data are lazily initialized to avoid heavy cost of communication between Rust and JVM.
 #[derive(Debug)]
 pub struct Class<'a> {
     owner: Rc<RefCell<PseudoVMState<'a>>>,
