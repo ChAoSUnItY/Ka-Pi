@@ -26,7 +26,7 @@ use crate::error::KapiError;
 use crate::symbol::BOOTSTRAP_METHOD_TAG;
 
 pub trait FromObj<'a> {
-    fn from_obj(vm_state: Rc<RefCell<PseudoVMState<'a>>>, obj: JObject<'a>) -> Result<Rc<Self>, KapiError>
+    fn from_obj(vm_state: Rc<RefCell<PseudoVMState<'a>>>, obj: &JObject<'a>) -> Result<Rc<Self>, KapiError>
     where
         Self: Sized;
 }

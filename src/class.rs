@@ -221,7 +221,7 @@ impl<'a> Eq for Class<'a> {}
 impl<'a> FromObj<'a> for Class<'a> {
     fn from_obj(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-        obj: JObject<'a>,
+        obj: &JObject<'a>,
     ) -> Result<Rc<Self>, KapiError>
     where
         Self: Sized,
@@ -256,7 +256,7 @@ impl<'a> Method<'a> {}
 impl<'a> FromObj<'a> for Method<'a> {
     fn from_obj(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-        obj: JObject<'a>,
+        obj: &JObject<'a>,
     ) -> Result<Rc<Self>, KapiError>
     where
         Self: Sized,
@@ -272,7 +272,7 @@ impl<'a> FromObj<'a> for Method<'a> {
         .l()?;
         let parameter_types = get_object_array(vm_state.clone(), &parameter_types_obj_arr)?
             .iter()
-            .map(|obj| Class::from_obj(vm_state.clone(), *obj))
+            .map(|obj| Class::from_obj(vm_state.clone(), obj))
             .collect::<Result<Vec<_>, KapiError>>()?;
         let return_type_obj = invoke_method(
             vm_state.clone(),
@@ -283,6 +283,7 @@ impl<'a> FromObj<'a> for Method<'a> {
             ReturnType::Object,
         )?
         .l()?;
+        let return_type = Class::from_obj(vm_state.clone(), &return_type_obj)?;
 
         todo!()
     }
