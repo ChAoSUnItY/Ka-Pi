@@ -1,4 +1,7 @@
-use std::{error::Error, fmt::{Display, Debug}};
+use std::{
+    error::Error,
+    fmt::{Debug, Display},
+};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum KapiError {

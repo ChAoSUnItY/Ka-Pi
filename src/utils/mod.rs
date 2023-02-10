@@ -3,7 +3,7 @@ use std::ops::IndexMut;
 #[cfg(feature = "interop")]
 pub mod jvm;
 
-pub(crate) trait Replacable<T>: IndexMut<usize, Output = T> {}
+pub(crate) trait Replacable<T>: IndexMut<usize, Output=T> {}
 
 impl<T> Replacable<T> for Vec<T> {}
 
@@ -12,7 +12,7 @@ impl<T, const N: usize> Replacable<T> for [T; N] {}
 pub(crate) fn replace<T>(
     start_index: usize,
     dest: &mut impl Replacable<T>,
-    items: impl IntoIterator<Item = T>,
+    items: impl IntoIterator<Item=T>,
     size: usize,
 ) where
     T: Copy,

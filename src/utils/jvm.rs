@@ -12,13 +12,13 @@ use std::fmt::Formatter;
 use std::rc::Rc;
 use std::sync::{Arc, Once};
 
-use jni::objects::{GlobalRef, JObject};
 use jni::{
+    AttachGuard,
     errors::Result,
-    objects::JClass,
-    signature::{Primitive, ReturnType},
-    AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
+    InitArgsBuilder,
+    JavaVM, JNIEnv, JNIVersion, objects::JClass, signature::{Primitive, ReturnType},
 };
+use jni::objects::{GlobalRef, JObject};
 
 use crate::class::Class;
 

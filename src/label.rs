@@ -22,7 +22,8 @@ pub(crate) const FLAG_LINE_NUMBER: u8 = 0b10000000;
 pub(crate) const LINE_NUMBERS_CAPACITY_INCREMENT: u32 = 4;
 pub(crate) const FORWARD_REFERENCES_CAPACITY_INCREMENT: u32 = 6;
 
-pub(crate) const FORWARD_REFERENCE_TYPE_MASK: i32 = 0xF0000000i64 as i32; // Force overflow
+pub(crate) const FORWARD_REFERENCE_TYPE_MASK: i32 = 0xF0000000i64 as i32;
+// Force overflow
 pub(crate) const FORWARD_REFERENCE_TYPE_SHORT: i32 = 0x10000000;
 pub(crate) const FORWARD_REFERENCE_TYPE_WIDE: i32 = 0x20000000;
 pub(crate) const FORWARD_REFERENCE_HANDLE_MASK: i32 = 0x0FFFFFFF;
@@ -38,12 +39,12 @@ pub(crate) trait Label {
     fn subroutine_id(&self) -> u16;
     fn frame(&self) -> Option<Rc<dyn Frame>>;
     fn next_basic_block(&self) -> Option<Rc<Self>>
-    where
-        Self: Sized;
+        where
+            Self: Sized;
     fn outgoing_edges(&self) -> Option<Rc<Edge>>;
     fn next_list_element(&self) -> Option<Rc<Self>>
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 }
 
 pub(crate) struct LabelImpl {
@@ -240,8 +241,8 @@ impl Label for LabelImpl {
     }
 
     fn next_basic_block(&self) -> Option<Rc<Self>>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         self.next_basic_block.clone()
     }
@@ -251,8 +252,8 @@ impl Label for LabelImpl {
     }
 
     fn next_list_element(&self) -> Option<Rc<Self>>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         self.next_list_element.clone()
     }

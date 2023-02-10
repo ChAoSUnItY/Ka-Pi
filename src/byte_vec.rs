@@ -16,8 +16,8 @@ pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
     fn put_ints(&mut self, ints: &[i32]);
 
     fn put_utf8<S>(&mut self, string: S) -> Result<(), KapiError>
-    where
-        S: Into<String>;
+        where
+            S: Into<String>;
 }
 
 pub(crate) type ByteVecImpl = Vec<u8>;
@@ -60,8 +60,8 @@ impl ByteVec for ByteVecImpl {
     }
 
     fn put_utf8<S>(&mut self, string: S) -> Result<(), KapiError>
-    where
-        S: Into<String>,
+        where
+            S: Into<String>,
     {
         let s = string.into();
         let len = s.chars().map(|c| c.len_utf8()).sum::<usize>();
