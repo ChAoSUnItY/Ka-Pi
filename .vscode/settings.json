@@ -1,3 +1,5 @@
 {
-    "rust-analyzer.cargo.features": ["interop"]
+  "rust-analyzer.cargo.features": [
+    "interop"
+  ]
 }

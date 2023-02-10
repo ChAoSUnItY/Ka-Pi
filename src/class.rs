@@ -10,7 +10,7 @@ use lazy_static::lazy_static;
 use crate::class::LazyClassMember::{Failed, Initialized};
 use crate::error::{KapiError, KapiResult};
 use crate::jvm::{
-    get_class, get_class_modifiers, get_obj_class, get_object_array, invoke_method, FromObj,
+    FromObj, get_class, get_class_modifiers, get_obj_class, get_object_array, invoke_method,
     PseudoVMState,
 };
 use crate::types::canonical_to_internal;
@@ -34,13 +34,13 @@ lazy_static! {
 }
 
 impl<T> LazyClassMember<T>
-where
-    T: Eq + PartialEq,
+    where
+        T: Eq + PartialEq,
 {
     fn get_or_init<F, TR>(&mut self, initializer: F) -> KapiResult<&T>
-    where
-        F: FnOnce() -> KapiResult<TR>,
-        TR: Into<T>,
+        where
+            F: FnOnce() -> KapiResult<TR>,
+            TR: Into<T>,
     {
         match self {
             Initialized(value) => Ok(value),
@@ -87,8 +87,8 @@ impl<'a> Class<'a> {
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         canonical_name: S,
     ) -> KapiResult<Rc<Self>>
-    where
-        S: Into<String>,
+        where
+            S: Into<String>,
     {
         let canonical_str = canonical_name.into();
         let internal_name = canonical_to_internal(&canonical_str);
@@ -154,7 +154,7 @@ impl<'a> Class<'a> {
             class,
             component_class,
             modifiers: LazyClassMember::Uninitialized,
-            declared_methods: LazyClassMember::Uninitialized
+            declared_methods: LazyClassMember::Uninitialized,
         }
     }
 
@@ -224,8 +224,8 @@ impl<'a> FromObj<'a> for Class<'a> {
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         obj: &JObject<'a>,
     ) -> KapiResult<Rc<Self>>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         let canonical_name_obj = invoke_method(
             vm_state.clone(),
@@ -235,7 +235,7 @@ impl<'a> FromObj<'a> for Class<'a> {
             &[],
             ReturnType::Object,
         )?
-        .l()?;
+            .l()?;
         let canonical_name: String = vm_state
             .borrow()
             .attach_guard
@@ -288,7 +288,7 @@ impl<'a> Method<'a> {
                 &[],
                 ReturnType::Array,
             )?
-            .l()?;
+                .l()?;
             get_object_array(self.owner.clone(), &parameter_types_obj_arr)?
                 .into_iter()
                 .map(|obj| Class::from_obj(self.owner.clone(), &obj))
@@ -306,7 +306,7 @@ impl<'a> Method<'a> {
                 &[],
                 ReturnType::Object,
             )?
-            .l()?;
+                .l()?;
 
             Class::from_obj(self.owner.clone(), &return_type_obj)
         })
@@ -318,8 +318,8 @@ impl<'a> FromObj<'a> for Method<'a> {
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         obj: &JObject<'a>,
     ) -> KapiResult<Rc<Self>>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         Ok(Rc::new(Self {
             owner: vm_state.clone(),
@@ -335,7 +335,7 @@ impl<'a> FromObj<'a> for Method<'a> {
 #[cfg(test)]
 mod test {
     use crate::class::Class;
-    use crate::jvm::{get_clazz, FromObj, PseudoVMState};
+    use crate::jvm::{FromObj, get_clazz, PseudoVMState};
 
     #[test]
     fn test_cache_class() {

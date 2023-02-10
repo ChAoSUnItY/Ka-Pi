@@ -12,13 +12,13 @@ use std::fmt::Formatter;
 use std::rc::Rc;
 use std::sync::{Arc, Once};
 
+use jni::{
+    AttachGuard,
+    InitArgsBuilder,
+    JavaVM, JNIEnv, JNIVersion, objects::JClass, signature::{Primitive, ReturnType},
+};
 use jni::objects::{GlobalRef, JObject, JValue};
 use jni::sys::jvalue;
-use jni::{
-    objects::JClass,
-    signature::{Primitive, ReturnType},
-    AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
-};
 
 use crate::class::{Class, Method};
 use crate::error::{IntoKapiResult, KapiError, KapiResult};
@@ -28,8 +28,8 @@ pub trait FromObj<'a> {
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         obj: &JObject<'a>,
     ) -> KapiResult<Rc<Self>>
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 }
 
 /// A [`PseudoVMState`] represents an intermediate communication bridge between Rust and JVM, which
@@ -136,9 +136,9 @@ pub(crate) fn invoke_method<'a, S1, S2>(
     args: &[jvalue],
     return_type: ReturnType,
 ) -> KapiResult<JValue<'a>>
-where
-    S1: Into<String>,
-    S2: Into<String>,
+    where
+        S1: Into<String>,
+        S2: Into<String>,
 {
     let guard = &vm_state.borrow().attach_guard;
     let method_id = guard.get_method_id(*class, name.into(), sig.into())?;
@@ -180,9 +180,9 @@ pub(crate) fn get_class_modifiers<'a>(
         &[],
         ReturnType::Primitive(Primitive::Int),
     )?
-    .i()
-    .map(|i| i as u32)
-    .into_kapi()
+        .i()
+        .map(|i| i as u32)
+        .into_kapi()
 }
 
 pub(crate) fn get_class_declared_methods<'a>(
@@ -197,7 +197,7 @@ pub(crate) fn get_class_declared_methods<'a>(
         &[],
         ReturnType::Array,
     )?
-    .l()?;
+        .l()?;
     let declared_methods_objs = get_object_array(vm_state.clone(), &declared_methods_obj_arr)?
         .iter()
         .map(|obj| Method::from_obj(vm_state.clone(), obj))

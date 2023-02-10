@@ -14,8 +14,8 @@ pub(crate) trait IntoKapiResult<T> {
 pub type KapiResult<T> = Result<T, KapiError>;
 
 impl<T, E> IntoKapiResult<T> for Result<T, E>
-where
-    E: Into<KapiError>,
+    where
+        E: Into<KapiError>,
 {
     fn into_kapi(self) -> KapiResult<T> {
         self.map_err(|e| e.into())
