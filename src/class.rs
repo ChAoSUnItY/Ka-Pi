@@ -8,7 +8,7 @@ use jni::signature::ReturnType;
 use lazy_static::lazy_static;
 
 use crate::class::LazyClassMember::{Failed, Initialized};
-use crate::error::KapiError;
+use crate::error::{KapiError, KapiResult};
 use crate::jvm::{
     get_class, get_class_modifiers, get_obj_class, get_object_array, invoke_method, FromObj,
     PseudoVMState,
@@ -37,15 +37,14 @@ impl<T> LazyClassMember<T>
 where
     T: Eq + PartialEq,
 {
-    fn get_or_init<F, TR, ER>(&mut self, initializer: F) -> Result<&T, &KapiError>
+    fn get_or_init<F, TR>(&mut self, initializer: F) -> KapiResult<&T>
     where
-        F: FnOnce() -> Result<TR, ER>,
+        F: FnOnce() -> KapiResult<TR>,
         TR: Into<T>,
-        ER: Into<KapiError>,
     {
         match self {
             Initialized(value) => Ok(value),
-            Failed(err) => Err(err),
+            Failed(err) => Err(err.clone()),
             LazyClassMember::Uninitialized => {
                 match initializer() {
                     Ok(value) => *self = Initialized(value.into()),
@@ -57,11 +56,11 @@ where
         }
     }
 
-    fn get(&self) -> Result<&T, &KapiError> {
+    fn get(&self) -> KapiResult<&T> {
         match self {
             Initialized(value) => Ok(value),
-            Failed(err) => Err(err),
-            LazyClassMember::Uninitialized => Err(&UNINITIALIZED_ERROR),
+            Failed(err) => Err(err.clone()),
+            LazyClassMember::Uninitialized => Err(UNINITIALIZED_ERROR.clone()),
         }
     }
 }
@@ -87,7 +86,7 @@ impl<'a> Class<'a> {
     pub fn get_class<S>(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         canonical_name: S,
-    ) -> Result<Rc<Self>, KapiError>
+    ) -> KapiResult<Rc<Self>>
     where
         S: Into<String>,
     {
@@ -112,7 +111,7 @@ impl<'a> Class<'a> {
         vm_state: &Rc<RefCell<PseudoVMState<'a>>>,
         canonical_name: String,
         internal_name: String,
-    ) -> Result<Rc<Self>, KapiError> {
+    ) -> KapiResult<Rc<Self>> {
         if let Ok(class) = get_class(vm_state.clone(), &internal_name) {
             if internal_name.starts_with("[") {
                 let component_class =
@@ -155,6 +154,7 @@ impl<'a> Class<'a> {
             class,
             component_class,
             modifiers: LazyClassMember::Uninitialized,
+            declared_methods: LazyClassMember::Uninitialized
         }
     }
 
@@ -196,7 +196,7 @@ impl<'a> Class<'a> {
     }
 
     /// Returns the modifiers of class.
-    pub fn modifiers(&mut self) -> Result<&u32, &KapiError> {
+    pub fn modifiers(&mut self) -> KapiResult<&u32> {
         self.modifiers.get_or_init(|| {
             get_class_modifiers(self.owner.clone(), &self.class).map_err(|_| {
                 KapiError::ClassResolveError(format!(
@@ -223,7 +223,7 @@ impl<'a> FromObj<'a> for Class<'a> {
     fn from_obj(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         obj: &JObject<'a>,
-    ) -> Result<Rc<Self>, KapiError>
+    ) -> KapiResult<Rc<Self>>
     where
         Self: Sized,
     {
@@ -257,27 +257,28 @@ pub struct Method<'a> {
 }
 
 impl<'a> Method<'a> {
-    pub fn name(&mut self) -> Result<&String, &KapiError> {
-        self.name.get_or_init(|| {
-            let name_obj = invoke_method(
-                self.owner.clone(),
-                &self.class.class,
-                "getName",
-                "()Ljava/lang/String;",
-                &[],
-                ReturnType::Object,
-            )?
-            .l()?;
-
-            self.owner
-                .borrow()
-                .attach_guard
-                .get_string(name_obj.into())
-                .map(|s| Into::<String>::into(s))
-        })
+    pub fn name(&mut self) -> KapiResult<&String> {
+        // self.name.get_or_init(|| {
+        //     let name_obj = invoke_method(
+        //         self.owner.clone(),
+        //         &self.class.class,
+        //         "getName",
+        //         "()Ljava/lang/String;",
+        //         &[],
+        //         ReturnType::Object,
+        //     )?
+        //     .l()?;
+        // 
+        //     self.owner
+        //         .borrow()
+        //         .attach_guard
+        //         .get_string(name_obj.into())
+        //         .map(|s| Into::<String>::into(s))
+        // })
+        todo!()
     }
 
-    pub fn parameter_types(&mut self) -> Result<&Vec<Rc<Class<'a>>>, &KapiError> {
+    pub fn parameter_types(&mut self) -> KapiResult<&Vec<Rc<Class<'a>>>> {
         self.parameter_types.get_or_init(|| {
             let parameter_types_obj_arr = invoke_method(
                 self.owner.clone(),
@@ -291,11 +292,11 @@ impl<'a> Method<'a> {
             get_object_array(self.owner.clone(), &parameter_types_obj_arr)?
                 .into_iter()
                 .map(|obj| Class::from_obj(self.owner.clone(), &obj))
-                .collect::<Result<Vec<_>, KapiError>>()
+                .collect::<KapiResult<Vec<_>>>()
         })
     }
 
-    pub fn return_type(&mut self) -> Result<&Rc<Class<'a>>, &KapiError> {
+    pub fn return_type(&mut self) -> KapiResult<&Rc<Class<'a>>> {
         self.return_type.get_or_init(|| {
             let return_type_obj = invoke_method(
                 self.owner.clone(),
@@ -316,7 +317,7 @@ impl<'a> FromObj<'a> for Method<'a> {
     fn from_obj(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         obj: &JObject<'a>,
-    ) -> Result<Rc<Self>, KapiError>
+    ) -> KapiResult<Rc<Self>>
     where
         Self: Sized,
     {

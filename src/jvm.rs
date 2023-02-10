@@ -13,9 +13,8 @@ use std::rc::Rc;
 use std::sync::{Arc, Once};
 
 use jni::objects::{GlobalRef, JObject, JValue};
-use jni::sys::{jarray, jobjectArray, jvalue};
+use jni::sys::jvalue;
 use jni::{
-    errors::Result as JniResult,
     objects::JClass,
     signature::{Primitive, ReturnType},
     AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
@@ -23,7 +22,6 @@ use jni::{
 
 use crate::class::{Class, Method};
 use crate::error::{IntoKapiResult, KapiError, KapiResult};
-use crate::symbol::BOOTSTRAP_METHOD_TAG;
 
 pub trait FromObj<'a> {
     fn from_obj(
@@ -81,7 +79,7 @@ fn jvm() -> &'static Arc<JavaVM> {
 }
 
 fn env<'a>() -> KapiResult<JNIEnv<'a>> {
-    jvm().get_env().as_kapi()
+    jvm().get_env().into_kapi()
 }
 
 fn attach_current_thread() -> AttachGuard<'static> {
@@ -93,7 +91,7 @@ fn attach_current_thread() -> AttachGuard<'static> {
 pub(crate) fn get_clazz<'a>() -> KapiResult<JClass<'a>> {
     attach_current_thread()
         .find_class("java/lang/Class")
-        .as_kapi()
+        .into_kapi()
 }
 
 /// Get a [`JClass`](JClass) from current JVM environment.
@@ -105,7 +103,7 @@ pub(crate) fn get_class<'a>(
         .borrow()
         .attach_guard
         .find_class(class_name)
-        .as_kapi()
+        .into_kapi()
 }
 
 pub(crate) fn get_obj_class<'a>(
@@ -116,7 +114,7 @@ pub(crate) fn get_obj_class<'a>(
         .borrow()
         .attach_guard
         .get_object_class(*obj)
-        .as_kapi()
+        .into_kapi()
 }
 
 pub(crate) fn as_global_ref<'a>(
@@ -127,7 +125,7 @@ pub(crate) fn as_global_ref<'a>(
         .borrow()
         .attach_guard
         .new_global_ref(*obj)
-        .as_kapi()
+        .into_kapi()
 }
 
 pub(crate) fn invoke_method<'a, S1, S2>(
@@ -146,7 +144,7 @@ where
     let method_id = guard.get_method_id(*class, name.into(), sig.into())?;
     guard
         .call_method_unchecked(*class, method_id, return_type, args)
-        .as_kapi()
+        .into_kapi()
 }
 
 pub(crate) fn get_object_array<'a>(
@@ -184,7 +182,7 @@ pub(crate) fn get_class_modifiers<'a>(
     )?
     .i()
     .map(|i| i as u32)
-    .as_kapi()
+    .into_kapi()
 }
 
 pub(crate) fn get_class_declared_methods<'a>(
@@ -203,7 +201,7 @@ pub(crate) fn get_class_declared_methods<'a>(
     let declared_methods_objs = get_object_array(vm_state.clone(), &declared_methods_obj_arr)?
         .iter()
         .map(|obj| Method::from_obj(vm_state.clone(), obj))
-        .collect::<Result<Vec<_>, KapiError>>()?;
+        .collect::<KapiResult<Vec<_>>>()?;
 
     todo!()
 }

@@ -1,4 +1,4 @@
-use crate::error::KapiError;
+use crate::error::{KapiError, KapiResult};
 
 pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
     fn len(&self) -> usize;
@@ -15,7 +15,7 @@ pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
     fn put_int(&mut self, int: i32);
     fn put_ints(&mut self, ints: &[i32]);
 
-    fn put_utf8<S>(&mut self, string: S) -> Result<(), KapiError>
+    fn put_utf8<S>(&mut self, string: S) -> KapiResult<()>
         where
             S: Into<String>;
 }
@@ -59,7 +59,7 @@ impl ByteVec for ByteVecImpl {
         self.append(&mut ints.iter().flat_map(|&i| i.to_ne_bytes()).collect());
     }
 
-    fn put_utf8<S>(&mut self, string: S) -> Result<(), KapiError>
+    fn put_utf8<S>(&mut self, string: S) -> KapiResult<()>
         where
             S: Into<String>,
     {

@@ -8,6 +8,7 @@ use crate::{
     byte_vec::{ByteVec, ByteVecImpl},
     error::KapiError,
 };
+use crate::error::KapiResult;
 
 lazy_static! {
     static ref PRIMITIVE_TYPE_2_DESC: HashMap<&'static str, &'static str> = HashMap::from([
@@ -204,7 +205,7 @@ impl TypePath {
 impl FromStr for TypePath {
     type Err = KapiError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> KapiResult<Self> {
         if s.is_empty() {
             return Err(KapiError::Utf8Error(String::from(
                 "Type string must not be empty",
@@ -431,7 +432,7 @@ impl TypeRef {
     pub(crate) fn put_target<BV>(
         target_type_and_info: i32,
         output: &mut BV,
-    ) -> Result<(), KapiError>
+    ) -> KapiResult<()>
         where
             BV: ByteVec,
     {

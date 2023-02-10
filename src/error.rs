@@ -3,18 +3,21 @@ use std::{
     fmt::{Debug, Display},
 };
 
-use jni::errors::Error as JniErr;
+use jni::errors::{Error as JniError, Result as JniResult};
 
 use crate::error::KapiError::JNIError;
 
 pub(crate) trait IntoKapiResult<T> {
-    fn as_kapi(&self) -> KapiResult<T>;
+    fn into_kapi(self) -> KapiResult<T>;
 }
 
 pub type KapiResult<T> = Result<T, KapiError>;
 
-impl<T> IntoKapiResult<T> for jni::errors::Result<T> {
-    fn as_kapi(&self) -> KapiResult<T> {
+impl<T, E> IntoKapiResult<T> for Result<T, E>
+where
+    E: Into<KapiError>,
+{
+    fn into_kapi(self) -> KapiResult<T> {
         self.map_err(|e| e.into())
     }
 }
@@ -44,8 +47,8 @@ impl Display for KapiError {
 
 impl Error for KapiError {}
 
-impl From<JniErr> for KapiError {
-    fn from(value: JniErr) -> Self {
+impl From<jni::errors::Error> for KapiError {
+    fn from(value: JniError) -> Self {
         JNIError(value.to_string())
     }
 }

@@ -9,6 +9,7 @@ use crate::{
     opcodes,
     utils::{replace, Rev},
 };
+use crate::error::KapiResult;
 
 pub(crate) const FLAG_DEBUG_ONLY: u8 = 0b00000001;
 pub(crate) const FLAG_JUMP_TARGET: u8 = 0b00000010;
@@ -84,7 +85,7 @@ impl LabelImpl {
 }
 
 impl LabelImpl {
-    pub fn getOffset(&self) -> Result<i32, KapiError> {
+    pub fn get_offset(&self) -> KapiResult<i32> {
         if self.flags() & FLAG_RESOLVED == 0 {
             Err(KapiError::StateError(String::from("Label offset position has not been resolved yet")))
         } else {
