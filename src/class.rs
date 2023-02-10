@@ -42,6 +42,7 @@ pub struct Class<'a> {
 }
 
 impl<'a> Class<'a> {
+    /// Tries to fetch a class JVM by canonical_name
     pub fn get_class<S>(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         canonical_name: S,
@@ -74,7 +75,6 @@ impl<'a> Class<'a> {
             S: Into<String>,
     {
         let canonical_str = canonical_name.into();
-        let descriptor = canonical_to_descriptor(&canonical_str);
         let internal_name = canonical_to_internal(&canonical_str);
 
         if let Ok(class) = get_class(&internal_name) {
@@ -177,8 +177,6 @@ impl<'a> Eq for Class<'a> {}
 
 #[cfg(test)]
 mod test {
-    use jni::signature::JavaType::Primitive;
-
     use crate::class::Class;
     use crate::utils::jvm::PseudoVMState;
 
@@ -200,9 +198,20 @@ mod test {
     fn test_get_array_class() {
         let vm = PseudoVMState::initVM();
 
-        let string_array_class = Class::get_class(vm.clone(), "java.lang.String[]");
+        let string_array_class_result = Class::get_class(vm.clone(), "java.lang.String[]");
 
-        assert!(string_array_class.is_ok());
-        assert!(string_array_class.unwrap().is_array());
+        assert!(string_array_class_result.is_ok());
+        
+        let string_array_class = string_array_class_result.unwrap();
+        
+        assert!(string_array_class.is_array());
+        
+        let string_class_option = &string_array_class.component_class;
+        
+        assert!(string_class_option.is_some());
+        
+        let string_class = string_class_option.as_ref().unwrap();
+        
+        assert!(!string_class.is_array());
     }
 }
