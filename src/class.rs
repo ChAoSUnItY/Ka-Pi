@@ -13,7 +13,7 @@ use crate::class::LazyClassMember::{Failed, Initialized};
 use crate::error::KapiError;
 use crate::jvm::{
     get_class, get_class_modifiers, get_clazz, get_obj_class, get_object_array, invoke_method,
-    FromVMState, PseudoVMState,
+    FromObj, PseudoVMState,
 };
 use crate::types::canonical_to_internal;
 
@@ -30,8 +30,9 @@ enum LazyClassMember<T> {
 }
 
 lazy_static! {
-    static ref UNINITIALIZED_ERROR: KapiError =
-        KapiError::StateError(String::from("Lazy value is initialized, try call `get_or_init` first"));
+    static ref UNINITIALIZED_ERROR: KapiError = KapiError::StateError(String::from(
+        "Lazy value is initialized, try call `get_or_init` first"
+    ));
 }
 
 impl<T> LazyClassMember<T>
@@ -217,8 +218,8 @@ impl<'a> PartialEq for Class<'a> {
 
 impl<'a> Eq for Class<'a> {}
 
-impl<'a> FromVMState<'a> for Class<'a> {
-    fn from_vm(
+impl<'a> FromObj<'a> for Class<'a> {
+    fn from_obj(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         obj: JObject<'a>,
     ) -> Result<Rc<Self>, KapiError>
@@ -252,8 +253,8 @@ pub struct Method<'a> {
 
 impl<'a> Method<'a> {}
 
-impl<'a> FromVMState<'a> for Method<'a> {
-    fn from_vm(
+impl<'a> FromObj<'a> for Method<'a> {
+    fn from_obj(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         obj: JObject<'a>,
     ) -> Result<Rc<Self>, KapiError>
@@ -269,7 +270,20 @@ impl<'a> FromVMState<'a> for Method<'a> {
             ReturnType::Array,
         )?
         .l()?;
-        let parameter_types_objs = get_object_array(vm_state.clone(), &parameter_types_obj_arr)?;
+        let parameter_types = get_object_array(vm_state.clone(), &parameter_types_obj_arr)?
+            .iter()
+            .map(|obj| Class::from_obj(vm_state.clone(), *obj))
+            .collect::<Result<Vec<_>, KapiError>>()?;
+        let return_type_obj = invoke_method(
+            vm_state.clone(),
+            &get_obj_class(vm_state.clone(), &obj)?,
+            "getReturnType",
+            "()Ljava/lang/Class;",
+            &[],
+            ReturnType::Object,
+        )?
+        .l()?;
+
         todo!()
     }
 }
@@ -277,7 +291,7 @@ impl<'a> FromVMState<'a> for Method<'a> {
 #[cfg(test)]
 mod test {
     use crate::class::Class;
-    use crate::jvm::{FromVMState, get_clazz, PseudoVMState};
+    use crate::jvm::{get_clazz, FromObj, PseudoVMState};
 
     #[test]
     fn test_cache_class() {
@@ -313,18 +327,18 @@ mod test {
 
         assert!(!string_class.is_array());
     }
-    
+
     #[test]
     fn test_class_from_obj() {
         let vm = PseudoVMState::init_vm();
-        
+
         let clazz_result = get_clazz();
-        
+
         assert!(clazz_result.is_ok());
-        
+
         let clazz = clazz_result.unwrap();
-        let class_result = Class::from_vm(vm.clone(), clazz.into());
-        
+        let class_result = Class::from_obj(vm.clone(), clazz.into());
+
         assert!(class_result.is_ok());
     }
 }
