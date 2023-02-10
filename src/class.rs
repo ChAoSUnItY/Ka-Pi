@@ -2,6 +2,7 @@ use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::rc::Rc;
+
 use jni::objects::JClass;
 
 use crate::class::LazyClassMember::Failed;
@@ -13,8 +14,8 @@ use crate::utils::jvm::{get_class, get_class_modifiers, PseudoVMState};
 /// Rust and JVM. See [`Class`].
 #[derive(Debug, Eq, PartialEq)]
 enum LazyClassMember<T>
-where
-    T: Eq + PartialEq,
+    where
+        T: Eq + PartialEq,
 {
     /// Represents the data had been successfully invoked and returned from JVM.
     Initialized(T),
@@ -41,18 +42,22 @@ pub struct Class<'a> {
 }
 
 impl<'a> Class<'a> {
-    pub fn get_class<S>(vm_state: Rc<RefCell<PseudoVMState<'a>>>, canonical_name: S) -> Result<Rc<Self>, KapiError>
-    where
-        S: Into<String>,
+    pub fn get_class<S>(
+        vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+        canonical_name: S,
+    ) -> Result<Rc<Self>, KapiError>
+        where
+            S: Into<String>,
     {
         let canonical_str = canonical_name.into();
         let internal_name = canonical_to_internal(&canonical_str);
 
-        {   // ugly block it ensure ownership unfortunately
-            // Look up for the cached class first, if the requested class is cached, 
+        {
+            // ugly block it ensure ownership unfortunately
+            // Look up for the cached class first, if the requested class is cached,
             // then returns it
             let vm = vm_state.deref().borrow();
-            
+
             if let Some(class) = vm.class_cache.get(&internal_name) {
                 return Ok(class.clone());
             }
@@ -61,35 +66,38 @@ impl<'a> Class<'a> {
         Self::resolve_class(&vm_state, canonical_str)
     }
 
-    fn resolve_class<S>(vm_state: &Rc<RefCell<PseudoVMState<'a>>>, canonical_name: S) -> Result<Rc<Self>, KapiError>
-    where
-        S: Into<String>,
+    fn resolve_class<S>(
+        vm_state: &Rc<RefCell<PseudoVMState<'a>>>,
+        canonical_name: S,
+    ) -> Result<Rc<Self>, KapiError>
+        where
+            S: Into<String>,
     {
         let canonical_str = canonical_name.into();
         let descriptor = canonical_to_descriptor(&canonical_str);
         let internal_name = canonical_to_internal(&canonical_str);
 
-        if let Ok(class) = get_class(&descriptor) {
+        if let Ok(class) = get_class(&internal_name) {
             if canonical_str.ends_with("[]") {
-                let component_class = Self::resolve_class(vm_state, canonical_str.trim_end_matches("[]"))?;
+                let component_class =
+                    Self::resolve_class(vm_state, canonical_str.trim_end_matches("[]"))?;
                 let class = Rc::new(Self::new(
                     vm_state.clone(),
                     internal_name.clone(),
                     class,
                     Some(component_class),
                 ));
-                let class_cache = &mut vm_state.deref().borrow_mut().class_cache;
 
-                class_cache.insert(internal_name, class.clone());
-
-                Ok(class)
+                Ok(class.cache_class(internal_name, &vm_state))
             } else {
-                let class = Rc::new(Self::new(vm_state.clone(), internal_name.clone(), class, None));
-                let class_cache = &mut vm_state.deref().borrow_mut().class_cache;
+                let class = Rc::new(Self::new(
+                    vm_state.clone(),
+                    internal_name.clone(),
+                    class,
+                    None,
+                ));
 
-                class_cache.insert(internal_name, class.clone());
-                
-                Ok(class)
+                Ok(class.cache_class(internal_name, &vm_state))
             }
         } else {
             Err(KapiError::ClassResolveError(format!(
@@ -112,6 +120,22 @@ impl<'a> Class<'a> {
             component_class,
             modifiers: LazyClassMember::Uninitialized,
         }
+    }
+
+    fn cache_class(
+        self: Rc<Self>,
+        internal_name: String,
+        vm_state: &Rc<RefCell<PseudoVMState<'a>>>,
+    ) -> Rc<Self> {
+        let class_cache = &mut vm_state.deref().borrow_mut().class_cache;
+
+        class_cache.insert(internal_name, self.clone());
+
+        self
+    }
+
+    pub fn is_array(&self) -> bool {
+        self.component_class != None
     }
 
     /// Returns array type's component class type. If class is not an array type, then returns
@@ -153,11 +177,13 @@ impl<'a> Eq for Class<'a> {}
 
 #[cfg(test)]
 mod test {
+    use jni::signature::JavaType::Primitive;
+
     use crate::class::Class;
     use crate::utils::jvm::PseudoVMState;
 
     #[test]
-    fn test_get_class() {
+    fn test_cache_class() {
         let vm = PseudoVMState::initVM();
 
         let string_class = Class::get_class(vm.clone(), "java.lang.String");
@@ -168,5 +194,15 @@ mod test {
 
         assert!(cached_string_class.is_ok());
         assert_eq!(*string_class.unwrap(), *cached_string_class.unwrap());
+    }
+
+    #[test]
+    fn test_get_array_class() {
+        let vm = PseudoVMState::initVM();
+
+        let string_array_class = Class::get_class(vm.clone(), "java.lang.String[]");
+
+        assert!(string_array_class.is_ok());
+        assert!(string_array_class.unwrap().is_array());
     }
 }
