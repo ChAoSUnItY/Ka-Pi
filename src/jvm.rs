@@ -15,17 +15,18 @@ use std::sync::{Arc, Once};
 use jni::objects::{GlobalRef, JObject, JValue};
 use jni::sys::{jarray, jobjectArray, jvalue};
 use jni::{
-    errors::Result,
+    errors::Result as JniResult,
     objects::JClass,
     signature::{Primitive, ReturnType},
     AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
 };
 
 use crate::class::{Class, Method};
+use crate::error::KapiError;
 use crate::symbol::BOOTSTRAP_METHOD_TAG;
 
 pub trait FromVMState<'a> {
-    fn from(vm_state: Rc<RefCell<PseudoVMState<'a>>>, j_object: JObject<'a>) -> Result<Self>
+    fn from_vm(vm_state: Rc<RefCell<PseudoVMState<'a>>>, obj: JObject<'a>) -> Result<Rc<Self>, KapiError>
     where
         Self: Sized;
 }
@@ -76,7 +77,7 @@ fn jvm() -> &'static Arc<JavaVM> {
     unsafe { JVM.as_ref().unwrap() }
 }
 
-fn env<'a>() -> Result<JNIEnv<'a>> {
+fn env<'a>() -> JniResult<JNIEnv<'a>> {
     jvm().get_env()
 }
 
@@ -86,7 +87,7 @@ fn attach_current_thread() -> AttachGuard<'static> {
         .expect("Failed to attach jvm thread")
 }
 
-fn get_clazz<'a>() -> Result<JClass<'a>> {
+pub(crate) fn get_clazz<'a>() -> JniResult<JClass<'a>> {
     attach_current_thread().find_class("java/lang/Class")
 }
 
@@ -94,15 +95,22 @@ fn get_clazz<'a>() -> Result<JClass<'a>> {
 pub(crate) fn get_class<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     class_name: &String,
-) -> Result<JClass<'a>> {
+) -> JniResult<JClass<'a>> {
     vm_state.borrow().attach_guard.find_class(class_name)
 }
 
-pub(crate) fn as_global_ref(
-    vm_state: Rc<RefCell<PseudoVMState>>,
-    obj: JObject,
-) -> Result<GlobalRef> {
-    vm_state.borrow().attach_guard.new_global_ref(obj)
+pub(crate) fn get_obj_class<'a>(
+    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+    obj: &JObject<'a>,
+) -> JniResult<JClass<'a>> {
+    vm_state.borrow().attach_guard.get_object_class(*obj)
+}
+
+pub(crate) fn as_global_ref<'a>(
+    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+    obj: &JObject<'a>,
+) -> JniResult<GlobalRef> {
+    vm_state.borrow().attach_guard.new_global_ref(*obj)
 }
 
 pub(crate) fn invoke_method<'a, S1, S2>(
@@ -112,7 +120,7 @@ pub(crate) fn invoke_method<'a, S1, S2>(
     sig: S2,
     args: &[jvalue],
     return_type: ReturnType,
-) -> Result<JValue<'a>>
+) -> JniResult<JValue<'a>>
 where
     S1: Into<String>,
     S2: Into<String>,
@@ -125,7 +133,7 @@ where
 pub(crate) fn get_object_array<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     obj: &JObject<'a>,
-) -> Result<Vec<JObject<'a>>> {
+) -> JniResult<Vec<JObject<'a>>> {
     let guard = &vm_state.borrow().attach_guard;
     let arr = obj.cast();
     let len = guard.get_array_length(arr)?;
@@ -143,10 +151,10 @@ pub(crate) fn get_object_array<'a>(
 /// The returned [`u32`] is a bitset to represents combination of access modifiers.
 ///
 /// ## See [JVM 4.1 Table 4.1](https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.1)
-pub(crate) fn get_class_modifiers(
-    vm_state: Rc<RefCell<PseudoVMState>>,
-    class: &JClass,
-) -> Result<u32> {
+pub(crate) fn get_class_modifiers<'a>(
+    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+    class: &JClass<'a>,
+) -> JniResult<u32> {
     invoke_method(
         vm_state,
         class,
@@ -160,10 +168,10 @@ pub(crate) fn get_class_modifiers(
 }
 
 pub(crate) fn get_class_declared_methods<'a>(
-    vm_state: Rc<RefCell<PseudoVMState>>,
-    class: &JClass,
-) -> Result<Vec<Rc<Method<'a>>>> {
-    let declared_methods_arr_obj = invoke_method(
+    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+    class: &JClass<'a>,
+) -> JniResult<Vec<Rc<Method<'a>>>> {
+    let declared_methods_obj_arr = invoke_method(
         vm_state.clone(),
         class,
         "getDeclaredMethods",
@@ -172,7 +180,7 @@ pub(crate) fn get_class_declared_methods<'a>(
         ReturnType::Array,
     )?
     .l()?;
-    let declared_methods_objs = get_object_array(vm_state.clone(), &declared_methods_arr_obj)?;
+    let declared_methods_objs = get_object_array(vm_state.clone(), &declared_methods_obj_arr)?;
     
 
     todo!()
