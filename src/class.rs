@@ -37,7 +37,6 @@ pub struct Class<'a> {
     class: JClass<'a>,
     /// Represents array type's component class type.
     component_class: Option<Rc<Class<'a>>>,
-    // descriptor: String,
     modifiers: LazyClassMember<u32>,
 }
 
@@ -133,18 +132,33 @@ impl<'a> Class<'a> {
 
         self
     }
+    
+    /// Gets the belonging [`PseudoVMState`] owner of this class.
+    pub fn owner(&self) -> Rc<RefCell<PseudoVMState<'a>>> {
+        self.owner.clone()
+    }
+    
+    /// Gets the internal name of class.
+    pub fn internal_name(&self) -> &String {
+        &self.internal_name
+    }
+    
+    pub fn class(&self) -> &JClass<'a> {
+        &self.class
+    }
 
+    /// Returns true if class is an array class.
     pub fn is_array(&self) -> bool {
         self.component_class != None
     }
 
     /// Returns array type's component class type. If class is not an array type, then returns
     /// [`None`] instead.
-    // pub fn component_class(&self) -> &Option<Box<Class>> {
-    //     &self.component_class
-    // }
-
-    /// Returns class type's modifiers.
+    pub fn component_class(&self) -> &Option<Rc<Class<'a>>> {
+        &self.component_class
+    }
+    
+    /// Returns the modifiers of class.
     pub fn modifiers(&mut self) -> Result<u32, KapiError> {
         if let LazyClassMember::Initialized(modifiers) = self.modifiers {
             Ok(modifiers)
@@ -165,6 +179,7 @@ impl<'a> Class<'a> {
     }
 }
 
+// TODO: A better way to check class's equality?
 impl<'a> PartialEq for Class<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.internal_name == other.internal_name
@@ -174,6 +189,11 @@ impl<'a> PartialEq for Class<'a> {
 }
 
 impl<'a> Eq for Class<'a> {}
+
+#[derive(Debug)]
+pub struct Method {
+    
+}
 
 #[cfg(test)]
 mod test {
