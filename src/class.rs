@@ -1,18 +1,16 @@
 use std::cell::RefCell;
-use std::error::Error;
 use std::ops::Deref;
 use std::rc::Rc;
 use std::string::ToString;
 
-use jni::objects::{JClass, JObject, JString};
+use jni::objects::{JClass, JObject};
 use jni::signature::ReturnType;
 use lazy_static::lazy_static;
-use unicode_segmentation::UnicodeSegmentation;
 
 use crate::class::LazyClassMember::{Failed, Initialized};
 use crate::error::KapiError;
 use crate::jvm::{
-    get_class, get_class_modifiers, get_clazz, get_obj_class, get_object_array, invoke_method,
+    get_class, get_class_modifiers, get_obj_class, get_object_array, invoke_method,
     FromObj, PseudoVMState,
 };
 use crate::types::canonical_to_internal;
@@ -247,11 +245,20 @@ impl<'a> FromObj<'a> for Class<'a> {
 
 #[derive(Debug)]
 pub struct Method<'a> {
-    parameter_types: Vec<Rc<Class<'a>>>,
-    return_type: Rc<Class<'a>>,
+    parameter_types: LazyClassMember<Vec<Rc<Class<'a>>>>,
+    return_type: LazyClassMember<Rc<Class<'a>>>,
 }
 
-impl<'a> Method<'a> {}
+impl<'a> Method<'a> {
+    const fn new(parameter_types: Vec<Rc<Class<'a>>>, return_type: Rc<Class<'a>>) -> Self {
+        Self{
+            parameter_types: Initialized(parameter_types),
+            return_type: Initialized(return_type)
+        }
+    }
+    
+    pub fn parameter_types
+}
 
 impl<'a> FromObj<'a> for Method<'a> {
     fn from_obj(
@@ -285,7 +292,7 @@ impl<'a> FromObj<'a> for Method<'a> {
         .l()?;
         let return_type = Class::from_obj(vm_state.clone(), &return_type_obj)?;
 
-        todo!()
+        Ok(Rc::new(Method::new(parameter_types, return_type)))
     }
 }
 
@@ -338,7 +345,7 @@ mod test {
         assert!(clazz_result.is_ok());
 
         let clazz = clazz_result.unwrap();
-        let class_result = Class::from_obj(vm.clone(), clazz.into());
+        let class_result = Class::from_obj(vm.clone(), &clazz);
 
         assert!(class_result.is_ok());
     }
