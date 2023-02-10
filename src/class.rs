@@ -14,8 +14,8 @@ use crate::utils::jvm::{get_class, get_class_modifiers, PseudoVMState};
 /// Rust and JVM. See [`Class`].
 #[derive(Debug, Eq, PartialEq)]
 enum LazyClassMember<T>
-    where
-        T: Eq + PartialEq,
+where
+    T: Eq + PartialEq,
 {
     /// Represents the data had been successfully invoked and returned from JVM.
     Initialized(T),
@@ -46,8 +46,8 @@ impl<'a> Class<'a> {
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         canonical_name: S,
     ) -> Result<Rc<Self>, KapiError>
-        where
-            S: Into<String>,
+    where
+        S: Into<String>,
     {
         let canonical_str = canonical_name.into();
         let internal_name = canonical_to_internal(&canonical_str);
@@ -70,8 +70,8 @@ impl<'a> Class<'a> {
         vm_state: &Rc<RefCell<PseudoVMState<'a>>>,
         canonical_name: S,
     ) -> Result<Rc<Self>, KapiError>
-        where
-            S: Into<String>,
+    where
+        S: Into<String>,
     {
         let canonical_str = canonical_name.into();
         let internal_name = canonical_to_internal(&canonical_str);
@@ -132,17 +132,17 @@ impl<'a> Class<'a> {
 
         self
     }
-    
+
     /// Gets the belonging [`PseudoVMState`] owner of this class.
     pub fn owner(&self) -> Rc<RefCell<PseudoVMState<'a>>> {
         self.owner.clone()
     }
-    
+
     /// Gets the internal name of class.
     pub fn internal_name(&self) -> &String {
         &self.internal_name
     }
-    
+
     pub fn class(&self) -> &JClass<'a> {
         &self.class
     }
@@ -157,7 +157,7 @@ impl<'a> Class<'a> {
     pub fn component_class(&self) -> &Option<Rc<Class<'a>>> {
         &self.component_class
     }
-    
+
     /// Returns the modifiers of class.
     pub fn modifiers(&mut self) -> Result<u32, KapiError> {
         if let LazyClassMember::Initialized(modifiers) = self.modifiers {
@@ -191,9 +191,7 @@ impl<'a> PartialEq for Class<'a> {
 impl<'a> Eq for Class<'a> {}
 
 #[derive(Debug)]
-pub struct Method {
-    
-}
+pub struct Method {}
 
 #[cfg(test)]
 mod test {
@@ -221,17 +219,17 @@ mod test {
         let string_array_class_result = Class::get_class(vm.clone(), "java.lang.String[]");
 
         assert!(string_array_class_result.is_ok());
-        
+
         let string_array_class = string_array_class_result.unwrap();
-        
+
         assert!(string_array_class.is_array());
-        
+
         let string_class_option = &string_array_class.component_class;
-        
+
         assert!(string_class_option.is_some());
-        
+
         let string_class = string_class_option.as_ref().unwrap();
-        
+
         assert!(!string_class.is_array());
     }
 }
