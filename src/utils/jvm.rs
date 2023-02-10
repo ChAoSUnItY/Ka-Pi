@@ -2,7 +2,7 @@
 //!
 //! To use it, you'll have to enable feature `interop`.
 //!
-//! Note: Before using any functions, you should call [`PseudoVMState::initVM()`](PseudoVMState::initVM)
+//! Note: Before using any functions, you should call [`PseudoVMState::init_vm()`](PseudoVMState::init_vm)
 //! first in order to create a JVM.
 
 use std::cell::RefCell;
@@ -33,7 +33,7 @@ pub struct PseudoVMState<'a> {
 impl<'a> PseudoVMState<'a> {
     /// Initializes Java Virtual Machine and returns a pseudo VM state struct to represent an intermediate
     /// communication bridge between Rust and JVM.
-    pub fn initVM() -> Rc<RefCell<PseudoVMState<'a>>> {
+    pub fn init_vm() -> Rc<RefCell<PseudoVMState<'a>>> {
         Rc::new(RefCell::new(PseudoVMState {
             attach_guard: attach_current_thread(),
             class_cache: HashMap::new(),

@@ -216,7 +216,14 @@ impl<'a> PartialEq for Class<'a> {
 impl<'a> Eq for Class<'a> {}
 
 #[derive(Debug)]
-pub struct Method {}
+pub struct Method<'a> {
+    parameter_types: Vec<Rc<Class<'a>>>,
+    return_type: Rc<Class<'a>>
+}
+
+impl<'a> Method<'a> {
+    
+}
 
 #[cfg(test)]
 mod test {
@@ -225,7 +232,7 @@ mod test {
 
     #[test]
     fn test_cache_class() {
-        let vm = PseudoVMState::initVM();
+        let vm = PseudoVMState::init_vm();
 
         let string_class = Class::get_class(vm.clone(), "java.lang.String");
 
@@ -239,7 +246,7 @@ mod test {
 
     #[test]
     fn test_get_array_class() {
-        let vm = PseudoVMState::initVM();
+        let vm = PseudoVMState::init_vm();
 
         let string_array_class_result = Class::get_class(vm.clone(), "java.lang.String[]");
 
