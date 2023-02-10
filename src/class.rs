@@ -5,9 +5,9 @@ use std::rc::Rc;
 
 use jni::objects::JClass;
 
-use crate::class::LazyClassMember::Failed;
+use crate::class::LazyClassMember::{Failed, Initialized};
 use crate::error::KapiError;
-use crate::types::{canonical_to_descriptor, canonical_to_internal};
+use crate::types::canonical_to_internal;
 use crate::utils::jvm::{get_class, get_class_modifiers, PseudoVMState};
 
 /// Simple representation of lazy initialized class member, to avoid heavy cost of communication between
@@ -23,6 +23,39 @@ where
     Failed(KapiError),
     /// Represents the data hasn't been initialized.
     Uninitialized,
+}
+
+impl<T> LazyClassMember<T>
+where
+    T: Eq + PartialEq,
+{
+    fn get_or_init<F>(&mut self, initializer: F) -> Result<&T, KapiError>
+    where
+        F: FnOnce() -> Result<T, KapiError>,
+    {
+        match self {
+            Initialized(value) => Ok(value),
+            Failed(err) => Err(err.clone()),
+            LazyClassMember::Uninitialized => {
+                match initializer() {
+                    Ok(value) => *self = Initialized(value),
+                    Err(err) => *self = Failed(err),
+                }
+
+                self.get()
+            }
+        }
+    }
+
+    fn get(&self) -> Result<&T, KapiError> {
+        match self {
+            Initialized(value) => Ok(value),
+            Failed(err) => Err(err.clone()),
+            LazyClassMember::Uninitialized => Err(KapiError::StateError(String::from(
+                "Lazy value is initialized, try call `get_or_init` first",
+            ))),
+        }
+    }
 }
 
 /// This is a lazy representation of Class<?>, to simplify the work of interop with [`Type`].
@@ -159,23 +192,15 @@ impl<'a> Class<'a> {
     }
 
     /// Returns the modifiers of class.
-    pub fn modifiers(&mut self) -> Result<u32, KapiError> {
-        if let LazyClassMember::Initialized(modifiers) = self.modifiers {
-            Ok(modifiers)
-        } else if let Ok(modifiers) = get_class_modifiers(&self.internal_name) {
-            self.modifiers = LazyClassMember::Initialized(modifiers);
-
-            Ok(modifiers)
-        } else {
-            let err = KapiError::ClassResolveError(format!(
-                "Unable to resolve modifiers of class {}",
-                self.internal_name
-            ));
-
-            self.modifiers = Failed(err.clone());
-
-            Err(err)
-        }
+    pub fn modifiers(&mut self) -> Result<&u32, KapiError> {
+        self.modifiers.get_or_init(|| {
+            get_class_modifiers(&self.internal_name).map_err(|_| {
+                KapiError::ClassResolveError(format!(
+                    "Unable to resolve modifiers of class {}",
+                    self.internal_name
+                ))
+            })
+        })
     }
 }
 
