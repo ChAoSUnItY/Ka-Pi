@@ -3,6 +3,10 @@ use std::{
     fmt::{Debug, Display},
 };
 
+use jni::errors::Error as JniErr;
+
+use crate::error::KapiError::JNIError;
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum KapiError {
     StateError(String),
@@ -10,6 +14,7 @@ pub enum KapiError {
     TypeError(String),
     ArgError(String),
     ClassResolveError(String),
+    JNIError(String),
 }
 
 impl Display for KapiError {
@@ -20,8 +25,15 @@ impl Display for KapiError {
             KapiError::TypeError(cause) => write!(f, "{}", cause),
             KapiError::ArgError(cause) => write!(f, "{}", cause),
             KapiError::ClassResolveError(cause) => write!(f, "{}", cause),
+            JNIError(cause) => write!(f, "{}", cause),
         }
     }
 }
 
 impl Error for KapiError {}
+
+impl From<JniErr> for KapiError {
+    fn from(value: JniErr) -> Self {
+        JNIError(value.to_string())
+    }
+}
