@@ -8,11 +8,8 @@ use jni::signature::ReturnType;
 use lazy_static::lazy_static;
 
 use crate::class::LazyClassMember::{Failed, Initialized};
-use crate::error::{KapiError, KapiResult};
-use crate::jvm::{
-    FromObj, get_class, get_class_modifiers, get_obj_class, get_object_array, invoke_method,
-    PseudoVMState,
-};
+use crate::error::{IntoKapiResult, KapiError, KapiResult};
+use crate::jvm::{get_class, get_class_declared_methods, get_class_modifiers, get_obj_class, get_object_array, get_string, invoke_method, FromObj, PseudoVMState, get_class_class};
 use crate::types::canonical_to_internal;
 
 /// Simple representation of lazy initialized class member, to avoid heavy cost of communication between
@@ -34,13 +31,13 @@ lazy_static! {
 }
 
 impl<T> LazyClassMember<T>
-    where
-        T: Eq + PartialEq,
+where
+    T: Eq + PartialEq,
 {
     fn get_or_init<F, TR>(&mut self, initializer: F) -> KapiResult<&T>
-        where
-            F: FnOnce() -> KapiResult<TR>,
-            TR: Into<T>,
+    where
+        F: FnOnce() -> KapiResult<TR>,
+        TR: Into<T>,
     {
         match self {
             Initialized(value) => Ok(value),
@@ -76,9 +73,9 @@ pub struct Class<'a> {
     internal_name: String,
     class: JClass<'a>,
     /// Represents array type's component class type.
-    component_class: Option<Rc<Class<'a>>>,
+    component_class: Option<Rc<RefCell<Class<'a>>>>,
     modifiers: LazyClassMember<u32>,
-    declared_methods: LazyClassMember<Vec<Rc<Method<'a>>>>,
+    declared_methods: LazyClassMember<Vec<Rc<RefCell<Method<'a>>>>>,
 }
 
 impl<'a> Class<'a> {
@@ -86,9 +83,9 @@ impl<'a> Class<'a> {
     pub fn get_class<S>(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         canonical_name: S,
-    ) -> KapiResult<Rc<Self>>
-        where
-            S: Into<String>,
+    ) -> KapiResult<Rc<RefCell<Self>>>
+    where
+        S: Into<String>,
     {
         let canonical_str = canonical_name.into();
         let internal_name = canonical_to_internal(&canonical_str);
@@ -111,28 +108,28 @@ impl<'a> Class<'a> {
         vm_state: &Rc<RefCell<PseudoVMState<'a>>>,
         canonical_name: String,
         internal_name: String,
-    ) -> KapiResult<Rc<Self>> {
+    ) -> KapiResult<Rc<RefCell<Self>>> {
         if let Ok(class) = get_class(vm_state.clone(), &internal_name) {
             if internal_name.starts_with("[") {
                 let component_class =
                     Self::resolve_class(vm_state, canonical_name, internal_name[1..].to_string())?;
-                let class = Rc::new(Self::new(
+                let class = Rc::new(RefCell::new(Self::new(
                     vm_state.clone(),
                     internal_name.clone(),
                     class,
                     Some(component_class),
-                ));
+                )));
 
-                Ok(class.cache_class(internal_name, &vm_state))
+                Ok(Self::cache_class(&vm_state, class, internal_name))
             } else {
-                let class = Rc::new(Self::new(
+                let class = Rc::new(RefCell::new(Self::new(
                     vm_state.clone(),
                     internal_name.clone(),
                     class,
                     None,
-                ));
+                )));
 
-                Ok(class.cache_class(internal_name, &vm_state))
+                Ok(Self::cache_class(&vm_state, class, internal_name))
             }
         } else {
             Err(KapiError::ClassResolveError(format!(
@@ -142,11 +139,23 @@ impl<'a> Class<'a> {
         }
     }
 
+    fn cache_class(
+        vm_state: &Rc<RefCell<PseudoVMState<'a>>>,
+        class: Rc<RefCell<Self>>,
+        internal_name: String,
+    ) -> Rc<RefCell<Self>> {
+        let class_cache = &mut vm_state.deref().borrow_mut().class_cache;
+
+        class_cache.insert(internal_name, class.clone());
+
+        class
+    }
+
     const fn new(
         owner: Rc<RefCell<PseudoVMState<'a>>>,
         internal_name: String,
         class: JClass<'a>,
-        component_class: Option<Rc<Self>>,
+        component_class: Option<Rc<RefCell<Self>>>,
     ) -> Self {
         Self {
             owner,
@@ -156,18 +165,6 @@ impl<'a> Class<'a> {
             modifiers: LazyClassMember::Uninitialized,
             declared_methods: LazyClassMember::Uninitialized,
         }
-    }
-
-    fn cache_class(
-        self: Rc<Self>,
-        internal_name: String,
-        vm_state: &Rc<RefCell<PseudoVMState<'a>>>,
-    ) -> Rc<Self> {
-        let class_cache = &mut vm_state.deref().borrow_mut().class_cache;
-
-        class_cache.insert(internal_name, self.clone());
-
-        self
     }
 
     /// Gets the belonging [`PseudoVMState`] owner of this class.
@@ -191,7 +188,7 @@ impl<'a> Class<'a> {
 
     /// Returns array type's component class type. If class is not an array type, then returns
     /// [`None`] instead.
-    pub fn component_class(&self) -> &Option<Rc<Class<'a>>> {
+    pub fn component_class(&self) -> &Option<Rc<RefCell<Class<'a>>>> {
         &self.component_class
     }
 
@@ -205,6 +202,12 @@ impl<'a> Class<'a> {
                 ))
             })
         })
+    }
+
+    /// Returns methods declared by this class
+    pub fn declared_methods(&mut self) -> KapiResult<&Vec<Rc<RefCell<Method<'a>>>>> {
+        self.declared_methods
+            .get_or_init(|| get_class_declared_methods(self.owner.clone(), &self.class))
     }
 }
 
@@ -220,22 +223,19 @@ impl<'a> PartialEq for Class<'a> {
 impl<'a> Eq for Class<'a> {}
 
 impl<'a> FromObj<'a> for Class<'a> {
-    fn from_obj(
-        vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-        obj: &JObject<'a>,
-    ) -> KapiResult<Rc<Self>>
-        where
-            Self: Sized,
+    fn from_obj(vm_state: Rc<RefCell<PseudoVMState<'a>>>, obj: &JObject<'a>) -> KapiResult<Rc<RefCell<Self>>>
+    where
+        Self: Sized,
     {
         let canonical_name_obj = invoke_method(
             vm_state.clone(),
-            &get_obj_class(vm_state.clone(), &obj)?,
+            &get_class_class(vm_state.clone(), &get_obj_class(vm_state.clone(), obj)?)?,
             "getCanonicalName",
             "()Ljava/lang/String;",
             &[],
             ReturnType::Object,
         )?
-            .l()?;
+        .l()?;
         let canonical_name: String = vm_state
             .borrow()
             .attach_guard
@@ -249,46 +249,41 @@ impl<'a> FromObj<'a> for Class<'a> {
 #[derive(Debug)]
 pub struct Method<'a> {
     owner: Rc<RefCell<PseudoVMState<'a>>>,
-    owner_class: LazyClassMember<Rc<Class<'a>>>,
-    class: Rc<Class<'a>>,
+    owner_class: LazyClassMember<Rc<RefCell<Class<'a>>>>,
+    class: Rc<RefCell<Class<'a>>>,
     name: LazyClassMember<String>,
-    parameter_types: LazyClassMember<Vec<Rc<Class<'a>>>>,
-    return_type: LazyClassMember<Rc<Class<'a>>>,
+    parameter_types: LazyClassMember<Vec<Rc<RefCell<Class<'a>>>>>,
+    return_type: LazyClassMember<Rc<RefCell<Class<'a>>>>,
 }
 
 impl<'a> Method<'a> {
     pub fn name(&mut self) -> KapiResult<&String> {
-        // self.name.get_or_init(|| {
-        //     let name_obj = invoke_method(
-        //         self.owner.clone(),
-        //         &self.class.class,
-        //         "getName",
-        //         "()Ljava/lang/String;",
-        //         &[],
-        //         ReturnType::Object,
-        //     )?
-        //     .l()?;
-        // 
-        //     self.owner
-        //         .borrow()
-        //         .attach_guard
-        //         .get_string(name_obj.into())
-        //         .map(|s| Into::<String>::into(s))
-        // })
-        todo!()
+        self.name.get_or_init(|| {
+            let name_obj = invoke_method(
+                self.owner.clone(),
+                &self.class.borrow().class,
+                "getName",
+                "()Ljava/lang/String;",
+                &[],
+                ReturnType::Object,
+            )?
+            .l()?;
+
+            get_string(self.owner.clone(), &name_obj)
+        })
     }
 
-    pub fn parameter_types(&mut self) -> KapiResult<&Vec<Rc<Class<'a>>>> {
+    pub fn parameter_types(&mut self) -> KapiResult<&Vec<Rc<RefCell<Class<'a>>>>> {
         self.parameter_types.get_or_init(|| {
             let parameter_types_obj_arr = invoke_method(
                 self.owner.clone(),
-                &self.class.class,
+                &self.class.borrow().class,
                 "getParameterTypes",
                 "()[Ljava/lang/Class;",
                 &[],
                 ReturnType::Array,
             )?
-                .l()?;
+            .l()?;
             get_object_array(self.owner.clone(), &parameter_types_obj_arr)?
                 .into_iter()
                 .map(|obj| Class::from_obj(self.owner.clone(), &obj))
@@ -296,46 +291,51 @@ impl<'a> Method<'a> {
         })
     }
 
-    pub fn return_type(&mut self) -> KapiResult<&Rc<Class<'a>>> {
+    pub fn return_type(&mut self) -> KapiResult<&Rc<RefCell<Class<'a>>>> {
         self.return_type.get_or_init(|| {
             let return_type_obj = invoke_method(
                 self.owner.clone(),
-                &self.class.class,
+                &self.class.borrow().class,
                 "getReturnType",
                 "()Ljava/lang/Class;",
                 &[],
                 ReturnType::Object,
             )?
-                .l()?;
+            .l()?;
 
             Class::from_obj(self.owner.clone(), &return_type_obj)
         })
     }
 }
 
+impl<'a> PartialEq<Self> for Method<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.class == other.class // TODO: Check method id should be enough
+    }
+}
+
+impl<'a> Eq for Method<'a> {}
+
 impl<'a> FromObj<'a> for Method<'a> {
-    fn from_obj(
-        vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-        obj: &JObject<'a>,
-    ) -> KapiResult<Rc<Self>>
-        where
-            Self: Sized,
+    fn from_obj(vm_state: Rc<RefCell<PseudoVMState<'a>>>, obj: &JObject<'a>) -> KapiResult<Rc<RefCell<Self>>>
+    where
+        Self: Sized,
     {
-        Ok(Rc::new(Self {
+        Ok(Rc::new(RefCell::new(Self {
             owner: vm_state.clone(),
             owner_class: LazyClassMember::Uninitialized,
             class: Class::from_obj(vm_state.clone(), obj)?,
             name: LazyClassMember::Uninitialized,
             parameter_types: LazyClassMember::Uninitialized,
             return_type: LazyClassMember::Uninitialized,
-        }))
+        })))
     }
 }
 
 #[cfg(test)]
 mod test {
     use crate::class::Class;
-    use crate::jvm::{FromObj, get_clazz, PseudoVMState};
+    use crate::jvm::{get_clazz, FromObj, PseudoVMState};
 
     #[test]
     fn test_cache_class() {
@@ -359,7 +359,8 @@ mod test {
 
         assert!(string_array_class_result.is_ok());
 
-        let string_array_class = string_array_class_result.unwrap();
+        let string_array_class_rfc = string_array_class_result.unwrap();
+        let string_array_class = string_array_class_rfc.borrow();
 
         assert!(string_array_class.is_array());
 
@@ -367,7 +368,7 @@ mod test {
 
         assert!(string_class_option.is_some());
 
-        let string_class = string_class_option.as_ref().unwrap();
+        let string_class = string_class_option.as_ref().unwrap().borrow();
 
         assert!(!string_class.is_array());
     }
@@ -384,5 +385,43 @@ mod test {
         let class_result = Class::from_obj(vm.clone(), &clazz);
 
         assert!(class_result.is_ok());
+    }
+    
+    #[test]
+    fn test_class_modifiers() {
+        let vm = PseudoVMState::init_vm();
+
+        let string_class_result = Class::get_class(vm.clone(), "java.lang.String");
+
+        assert!(string_class_result.is_ok());
+
+        let string_class_rfc = string_class_result.unwrap();
+        let mut string_class = string_class_rfc.borrow_mut();
+        let modifiers_result = string_class.modifiers();
+        
+        assert!(modifiers_result.is_ok());
+        
+        let modifiers = modifiers_result.unwrap();
+        
+        assert_eq!(17, *modifiers)
+    }
+
+    #[test]
+    fn test_class_declared_methods() {
+        let vm = PseudoVMState::init_vm();
+
+        let string_class_result = Class::get_class(vm.clone(), "java.lang.String");
+
+        assert!(string_class_result.is_ok());
+
+        let string_class_rfc = string_class_result.unwrap();
+        let mut string_class = string_class_rfc.borrow_mut();
+        let methods_result = string_class.declared_methods();
+        
+        assert!(methods_result.is_ok());
+        
+        let methods = methods_result.unwrap();
+        
+        println!("{:?}", methods.len());
     }
 }

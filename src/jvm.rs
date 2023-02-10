@@ -12,13 +12,13 @@ use std::fmt::Formatter;
 use std::rc::Rc;
 use std::sync::{Arc, Once};
 
-use jni::{
-    AttachGuard,
-    InitArgsBuilder,
-    JavaVM, JNIEnv, JNIVersion, objects::JClass, signature::{Primitive, ReturnType},
-};
-use jni::objects::{GlobalRef, JObject, JValue};
+use jni::objects::{GlobalRef, JObject, JString, JValue};
 use jni::sys::jvalue;
+use jni::{
+    objects::JClass,
+    signature::{Primitive, ReturnType},
+    AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
+};
 
 use crate::class::{Class, Method};
 use crate::error::{IntoKapiResult, KapiError, KapiResult};
@@ -27,9 +27,9 @@ pub trait FromObj<'a> {
     fn from_obj(
         vm_state: Rc<RefCell<PseudoVMState<'a>>>,
         obj: &JObject<'a>,
-    ) -> KapiResult<Rc<Self>>
-        where
-            Self: Sized;
+    ) -> KapiResult<Rc<RefCell<Self>>>
+    where
+        Self: Sized;
 }
 
 /// A [`PseudoVMState`] represents an intermediate communication bridge between Rust and JVM, which
@@ -37,7 +37,7 @@ pub trait FromObj<'a> {
 pub struct PseudoVMState<'a> {
     pub(crate) attach_guard: AttachGuard<'a>,
     /// caches classes to prevent huge cost while retrieving class info from JVM.
-    pub class_cache: HashMap<String, Rc<Class<'a>>>,
+    pub class_cache: HashMap<String, Rc<RefCell<Class<'a>>>>,
 }
 
 impl<'a> PseudoVMState<'a> {
@@ -99,11 +99,29 @@ pub(crate) fn get_class<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     class_name: &String,
 ) -> KapiResult<JClass<'a>> {
-    vm_state
+    let class = vm_state
         .borrow()
         .attach_guard
         .find_class(class_name)
-        .into_kapi()
+        .into_kapi()?;
+    
+    get_class_class(vm_state.clone(), &class)
+}
+
+pub(crate) fn get_class_class<'a>(
+    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+    class: &JClass<'a>
+) -> KapiResult<JClass<'a>> {
+    let class_class = invoke_method(
+        vm_state.clone(),
+        &class,
+        "getClass",
+        "()Ljava/lang/Class;",
+        &[],
+        ReturnType::Object
+    )?.l()?;
+
+    get_obj_class(vm_state.clone(), &class_class)
 }
 
 pub(crate) fn get_obj_class<'a>(
@@ -136,9 +154,9 @@ pub(crate) fn invoke_method<'a, S1, S2>(
     args: &[jvalue],
     return_type: ReturnType,
 ) -> KapiResult<JValue<'a>>
-    where
-        S1: Into<String>,
-        S2: Into<String>,
+where
+    S1: Into<String>,
+    S2: Into<String>,
 {
     let guard = &vm_state.borrow().attach_guard;
     let method_id = guard.get_method_id(*class, name.into(), sig.into())?;
@@ -163,6 +181,18 @@ pub(crate) fn get_object_array<'a>(
     Ok(objs)
 }
 
+pub(crate) fn get_string<'a>(
+    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+    obj: &JObject<'a>,
+) -> KapiResult<String> {
+    let guard = &vm_state.borrow().attach_guard;
+
+    guard
+        .get_string(Into::<JString>::into(*obj))
+        .into_kapi()
+        .map(|s| s.into())
+}
+
 /// Get a [`u32`] represents modifiers applied on class.
 ///
 /// The returned [`u32`] is a bitset to represents combination of access modifiers.
@@ -180,28 +210,27 @@ pub(crate) fn get_class_modifiers<'a>(
         &[],
         ReturnType::Primitive(Primitive::Int),
     )?
-        .i()
-        .map(|i| i as u32)
-        .into_kapi()
+    .i()
+    .map(|i| i as u32)
+    .into_kapi()
 }
 
 pub(crate) fn get_class_declared_methods<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     class: &JClass<'a>,
-) -> KapiResult<Vec<Rc<Method<'a>>>> {
+) -> KapiResult<Vec<Rc<RefCell<Method<'a>>>>> {
     let declared_methods_obj_arr = invoke_method(
         vm_state.clone(),
         class,
         "getDeclaredMethods",
-        "()[java/lang/reflect/Method;",
+        "()[Ljava/lang/reflect/Method;",
         &[],
         ReturnType::Array,
     )?
-        .l()?;
-    let declared_methods_objs = get_object_array(vm_state.clone(), &declared_methods_obj_arr)?
+    .l()?;
+
+    get_object_array(vm_state.clone(), &declared_methods_obj_arr)?
         .iter()
         .map(|obj| Method::from_obj(vm_state.clone(), obj))
-        .collect::<KapiResult<Vec<_>>>()?;
-
-    todo!()
+        .collect::<KapiResult<Vec<_>>>()
 }
