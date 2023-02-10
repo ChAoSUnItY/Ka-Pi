@@ -22,11 +22,14 @@ use jni::{
 };
 
 use crate::class::{Class, Method};
-use crate::error::KapiError;
+use crate::error::{IntoKapiResult, KapiError, KapiResult};
 use crate::symbol::BOOTSTRAP_METHOD_TAG;
 
 pub trait FromObj<'a> {
-    fn from_obj(vm_state: Rc<RefCell<PseudoVMState<'a>>>, obj: &JObject<'a>) -> Result<Rc<Self>, KapiError>
+    fn from_obj(
+        vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+        obj: &JObject<'a>,
+    ) -> KapiResult<Rc<Self>>
     where
         Self: Sized;
 }
@@ -77,8 +80,8 @@ fn jvm() -> &'static Arc<JavaVM> {
     unsafe { JVM.as_ref().unwrap() }
 }
 
-fn env<'a>() -> JniResult<JNIEnv<'a>> {
-    jvm().get_env()
+fn env<'a>() -> KapiResult<JNIEnv<'a>> {
+    jvm().get_env().as_kapi()
 }
 
 fn attach_current_thread() -> AttachGuard<'static> {
@@ -87,30 +90,44 @@ fn attach_current_thread() -> AttachGuard<'static> {
         .expect("Failed to attach jvm thread")
 }
 
-pub(crate) fn get_clazz<'a>() -> JniResult<JClass<'a>> {
-    attach_current_thread().find_class("java/lang/Class")
+pub(crate) fn get_clazz<'a>() -> KapiResult<JClass<'a>> {
+    attach_current_thread()
+        .find_class("java/lang/Class")
+        .as_kapi()
 }
 
 /// Get a [`JClass`](JClass) from current JVM environment.
 pub(crate) fn get_class<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     class_name: &String,
-) -> JniResult<JClass<'a>> {
-    vm_state.borrow().attach_guard.find_class(class_name)
+) -> KapiResult<JClass<'a>> {
+    vm_state
+        .borrow()
+        .attach_guard
+        .find_class(class_name)
+        .as_kapi()
 }
 
 pub(crate) fn get_obj_class<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     obj: &JObject<'a>,
-) -> JniResult<JClass<'a>> {
-    vm_state.borrow().attach_guard.get_object_class(*obj)
+) -> KapiResult<JClass<'a>> {
+    vm_state
+        .borrow()
+        .attach_guard
+        .get_object_class(*obj)
+        .as_kapi()
 }
 
 pub(crate) fn as_global_ref<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     obj: &JObject<'a>,
-) -> JniResult<GlobalRef> {
-    vm_state.borrow().attach_guard.new_global_ref(*obj)
+) -> KapiResult<GlobalRef> {
+    vm_state
+        .borrow()
+        .attach_guard
+        .new_global_ref(*obj)
+        .as_kapi()
 }
 
 pub(crate) fn invoke_method<'a, S1, S2>(
@@ -120,20 +137,22 @@ pub(crate) fn invoke_method<'a, S1, S2>(
     sig: S2,
     args: &[jvalue],
     return_type: ReturnType,
-) -> JniResult<JValue<'a>>
+) -> KapiResult<JValue<'a>>
 where
     S1: Into<String>,
     S2: Into<String>,
 {
     let guard = &vm_state.borrow().attach_guard;
     let method_id = guard.get_method_id(*class, name.into(), sig.into())?;
-    guard.call_method_unchecked(*class, method_id, return_type, args)
+    guard
+        .call_method_unchecked(*class, method_id, return_type, args)
+        .as_kapi()
 }
 
 pub(crate) fn get_object_array<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     obj: &JObject<'a>,
-) -> JniResult<Vec<JObject<'a>>> {
+) -> KapiResult<Vec<JObject<'a>>> {
     let guard = &vm_state.borrow().attach_guard;
     let arr = obj.cast();
     let len = guard.get_array_length(arr)?;
@@ -142,7 +161,7 @@ pub(crate) fn get_object_array<'a>(
     for i in 0..len {
         objs.push(guard.get_object_array_element(arr, i)?);
     }
-    
+
     Ok(objs)
 }
 
@@ -154,7 +173,7 @@ pub(crate) fn get_object_array<'a>(
 pub(crate) fn get_class_modifiers<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     class: &JClass<'a>,
-) -> JniResult<u32> {
+) -> KapiResult<u32> {
     invoke_method(
         vm_state,
         class,
@@ -165,12 +184,13 @@ pub(crate) fn get_class_modifiers<'a>(
     )?
     .i()
     .map(|i| i as u32)
+    .as_kapi()
 }
 
 pub(crate) fn get_class_declared_methods<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     class: &JClass<'a>,
-) -> JniResult<Vec<Rc<Method<'a>>>> {
+) -> KapiResult<Vec<Rc<Method<'a>>>> {
     let declared_methods_obj_arr = invoke_method(
         vm_state.clone(),
         class,
@@ -180,8 +200,10 @@ pub(crate) fn get_class_declared_methods<'a>(
         ReturnType::Array,
     )?
     .l()?;
-    let declared_methods_objs = get_object_array(vm_state.clone(), &declared_methods_obj_arr)?;
-    
+    let declared_methods_objs = get_object_array(vm_state.clone(), &declared_methods_obj_arr)?
+        .iter()
+        .map(|obj| Method::from_obj(vm_state.clone(), obj))
+        .collect::<Result<Vec<_>, KapiError>>()?;
 
     todo!()
 }

@@ -10,8 +10,8 @@ use lazy_static::lazy_static;
 use crate::class::LazyClassMember::{Failed, Initialized};
 use crate::error::KapiError;
 use crate::jvm::{
-    get_class, get_class_modifiers, get_obj_class, get_object_array, invoke_method,
-    FromObj, PseudoVMState,
+    get_class, get_class_modifiers, get_obj_class, get_object_array, invoke_method, FromObj,
+    PseudoVMState,
 };
 use crate::types::canonical_to_internal;
 
@@ -37,17 +37,19 @@ impl<T> LazyClassMember<T>
 where
     T: Eq + PartialEq,
 {
-    fn get_or_init<F>(&mut self, initializer: F) -> Result<&T, &KapiError>
+    fn get_or_init<F, TR, ER>(&mut self, initializer: F) -> Result<&T, &KapiError>
     where
-        F: FnOnce() -> Result<T, KapiError>,
+        F: FnOnce() -> Result<TR, ER>,
+        TR: Into<T>,
+        ER: Into<KapiError>,
     {
         match self {
             Initialized(value) => Ok(value),
             Failed(err) => Err(err),
             LazyClassMember::Uninitialized => {
                 match initializer() {
-                    Ok(value) => *self = Initialized(value),
-                    Err(err) => *self = Failed(err),
+                    Ok(value) => *self = Initialized(value.into()),
+                    Err(err) => *self = Failed(err.into()),
                 }
 
                 self.get()
@@ -77,6 +79,7 @@ pub struct Class<'a> {
     /// Represents array type's component class type.
     component_class: Option<Rc<Class<'a>>>,
     modifiers: LazyClassMember<u32>,
+    declared_methods: LazyClassMember<Vec<Rc<Method<'a>>>>,
 }
 
 impl<'a> Class<'a> {
@@ -245,19 +248,68 @@ impl<'a> FromObj<'a> for Class<'a> {
 
 #[derive(Debug)]
 pub struct Method<'a> {
+    owner: Rc<RefCell<PseudoVMState<'a>>>,
+    owner_class: LazyClassMember<Rc<Class<'a>>>,
+    class: Rc<Class<'a>>,
+    name: LazyClassMember<String>,
     parameter_types: LazyClassMember<Vec<Rc<Class<'a>>>>,
     return_type: LazyClassMember<Rc<Class<'a>>>,
 }
 
 impl<'a> Method<'a> {
-    const fn new(parameter_types: Vec<Rc<Class<'a>>>, return_type: Rc<Class<'a>>) -> Self {
-        Self{
-            parameter_types: Initialized(parameter_types),
-            return_type: Initialized(return_type)
-        }
+    pub fn name(&mut self) -> Result<&String, &KapiError> {
+        self.name.get_or_init(|| {
+            let name_obj = invoke_method(
+                self.owner.clone(),
+                &self.class.class,
+                "getName",
+                "()Ljava/lang/String;",
+                &[],
+                ReturnType::Object,
+            )?
+            .l()?;
+
+            self.owner
+                .borrow()
+                .attach_guard
+                .get_string(name_obj.into())
+                .map(|s| Into::<String>::into(s))
+        })
     }
-    
-    pub fn parameter_types
+
+    pub fn parameter_types(&mut self) -> Result<&Vec<Rc<Class<'a>>>, &KapiError> {
+        self.parameter_types.get_or_init(|| {
+            let parameter_types_obj_arr = invoke_method(
+                self.owner.clone(),
+                &self.class.class,
+                "getParameterTypes",
+                "()[Ljava/lang/Class;",
+                &[],
+                ReturnType::Array,
+            )?
+            .l()?;
+            get_object_array(self.owner.clone(), &parameter_types_obj_arr)?
+                .into_iter()
+                .map(|obj| Class::from_obj(self.owner.clone(), &obj))
+                .collect::<Result<Vec<_>, KapiError>>()
+        })
+    }
+
+    pub fn return_type(&mut self) -> Result<&Rc<Class<'a>>, &KapiError> {
+        self.return_type.get_or_init(|| {
+            let return_type_obj = invoke_method(
+                self.owner.clone(),
+                &self.class.class,
+                "getReturnType",
+                "()Ljava/lang/Class;",
+                &[],
+                ReturnType::Object,
+            )?
+            .l()?;
+
+            Class::from_obj(self.owner.clone(), &return_type_obj)
+        })
+    }
 }
 
 impl<'a> FromObj<'a> for Method<'a> {
@@ -268,31 +320,14 @@ impl<'a> FromObj<'a> for Method<'a> {
     where
         Self: Sized,
     {
-        let parameter_types_obj_arr = invoke_method(
-            vm_state.clone(),
-            &get_obj_class(vm_state.clone(), &obj)?,
-            "getParameterTypes",
-            "()[Ljava/lang/Class;",
-            &[],
-            ReturnType::Array,
-        )?
-        .l()?;
-        let parameter_types = get_object_array(vm_state.clone(), &parameter_types_obj_arr)?
-            .iter()
-            .map(|obj| Class::from_obj(vm_state.clone(), obj))
-            .collect::<Result<Vec<_>, KapiError>>()?;
-        let return_type_obj = invoke_method(
-            vm_state.clone(),
-            &get_obj_class(vm_state.clone(), &obj)?,
-            "getReturnType",
-            "()Ljava/lang/Class;",
-            &[],
-            ReturnType::Object,
-        )?
-        .l()?;
-        let return_type = Class::from_obj(vm_state.clone(), &return_type_obj)?;
-
-        Ok(Rc::new(Method::new(parameter_types, return_type)))
+        Ok(Rc::new(Self {
+            owner: vm_state.clone(),
+            owner_class: LazyClassMember::Uninitialized,
+            class: Class::from_obj(vm_state.clone(), obj)?,
+            name: LazyClassMember::Uninitialized,
+            parameter_types: LazyClassMember::Uninitialized,
+            return_type: LazyClassMember::Uninitialized,
+        }))
     }
 }
 

@@ -7,6 +7,18 @@ use jni::errors::Error as JniErr;
 
 use crate::error::KapiError::JNIError;
 
+pub(crate) trait IntoKapiResult<T> {
+    fn as_kapi(&self) -> KapiResult<T>;
+}
+
+pub type KapiResult<T> = Result<T, KapiError>;
+
+impl<T> IntoKapiResult<T> for jni::errors::Result<T> {
+    fn as_kapi(&self) -> KapiResult<T> {
+        self.map_err(|e| e.into())
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum KapiError {
     StateError(String),
