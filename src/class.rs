@@ -274,15 +274,6 @@ pub struct Method<'a> {
 }
 
 impl<'a> Method<'a> {
-    fn get_method_clazz(vm_state: Rc<RefCell<PseudoVMState<'a>>>) -> KapiResult<JClass<'a>> {
-        vm_state
-            .clone()
-            .borrow()
-            .attach_guard
-            .find_class("java/lang/reflect/Method")
-            .into_kapi()
-    }
-
     pub fn name(&mut self) -> KapiResult<&String> {
         self.name.get_or_init(|| {
             let name_obj = invoke_reflector_method(
