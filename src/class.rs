@@ -3,14 +3,15 @@ use std::ops::Deref;
 use std::rc::Rc;
 use std::string::ToString;
 
-use jni::objects::{JClass, JObject, JValue};
+use jni::objects::{GlobalRef, JClass, JObject, JValue};
 use lazy_static::lazy_static;
 
 use crate::class::LazyClassMember::{Failed, Initialized};
 use crate::error::{IntoKapiResult, KapiError, KapiResult};
 use crate::jvm::{
-    get_class, get_class_declared_methods, get_class_modifiers, get_class_name, get_obj_class,
-    get_object_array, get_string, invoke_reflector_method, FromObj, PseudoVMState,
+    as_global_ref, get_class, get_class_declared_methods, get_class_modifiers, get_class_name,
+    get_obj_class, get_string, invoke_reflector_method, transform_object_array, FromObj,
+    PseudoVMState,
 };
 use crate::types::{canonical_to_descriptor, canonical_to_internal};
 
@@ -74,7 +75,7 @@ pub struct Class<'a> {
     /// Represents class' full qualified path with a 'L' prefixed and ';' suffixed, if class is an
     /// object class; otherwise, represents primitive type's actual name which has only 1 characters.
     internal_name: String,
-    class: JClass<'a>,
+    class: GlobalRef,
     /// Represents array type's component class type.
     component_class: Option<Rc<RefCell<Class<'a>>>>,
     modifiers: LazyClassMember<u32>,
@@ -112,8 +113,10 @@ impl<'a> Class<'a> {
         canonical_name: &String,
         internal_name: &String,
     ) -> KapiResult<Rc<RefCell<Self>>> {
-        println!("{}", internal_name.replace("/", "."));
-        if let Ok(class) = get_class(vm_state.clone(), canonical_to_descriptor(canonical_name)) {
+        if let Ok(class_obj) = get_class(vm_state.clone(), canonical_to_descriptor(canonical_name))
+        {
+            let class = as_global_ref(vm_state.clone(), &class_obj)?;
+
             if internal_name.starts_with("[") {
                 let component_class = Self::resolve_class(
                     vm_state,
@@ -172,7 +175,7 @@ impl<'a> Class<'a> {
         owner: Rc<RefCell<PseudoVMState<'a>>>,
         canonical_name: String,
         internal_name: String,
-        class: JClass<'a>,
+        class: GlobalRef,
         component_class: Option<Rc<RefCell<Self>>>,
     ) -> Self {
         Self {
@@ -200,7 +203,7 @@ impl<'a> Class<'a> {
         &self.internal_name
     }
 
-    pub fn class(&self) -> &JClass<'a> {
+    pub fn class(&self) -> &GlobalRef {
         &self.class
     }
 
@@ -217,9 +220,8 @@ impl<'a> Class<'a> {
 
     /// Returns the modifiers of class.
     pub fn modifiers(&mut self) -> KapiResult<&u32> {
-        self.modifiers.get_or_init(|| {
-            get_class_modifiers(self.owner.clone(), &self.class)
-        })
+        self.modifiers
+            .get_or_init(|| get_class_modifiers(self.owner.clone(), &self.class))
     }
 
     /// Returns methods declared by this class
@@ -269,8 +271,7 @@ impl<'a> FromObj<'a> for Class<'a> {
 pub struct Method<'a> {
     owner: Rc<RefCell<PseudoVMState<'a>>>,
     owner_class: LazyClassMember<Rc<RefCell<Class<'a>>>>,
-    object: JObject<'a>,
-    class: JClass<'a>,
+    object: GlobalRef,
     name: LazyClassMember<String>,
     parameter_types: LazyClassMember<Vec<Rc<RefCell<Class<'a>>>>>,
     return_type: LazyClassMember<Rc<RefCell<Class<'a>>>>,
@@ -292,7 +293,7 @@ impl<'a> Method<'a> {
                 self.owner.clone(),
                 "getName",
                 "(Ljava/lang/reflect/Method;)Ljava/lang/String;",
-                &[Into::<JValue>::into(self.object)],
+                &[Into::<JValue>::into(self.object.as_obj())],
             )?
             .l()?;
 
@@ -302,17 +303,20 @@ impl<'a> Method<'a> {
 
     pub fn parameter_types(&mut self) -> KapiResult<&Vec<Rc<RefCell<Class<'a>>>>> {
         self.parameter_types.get_or_init(|| {
-            let parameter_types_obj_arr = invoke_reflector_method(
+            let parameter_types_obj_arr = as_global_ref(
                 self.owner.clone(),
-                "getParameterTypes",
-                "()[Ljava/lang/Class;",
-                &[Into::<JValue>::into(self.class)],
-            )?
-            .l()?;
-            get_object_array(self.owner.clone(), &parameter_types_obj_arr)?
-                .into_iter()
-                .map(|obj| Class::from_obj(self.owner.clone(), &obj))
-                .collect::<KapiResult<Vec<_>>>()
+                &invoke_reflector_method(
+                    self.owner.clone(),
+                    "getParameterTypes",
+                    "()[Ljava/lang/Class;",
+                    &[Into::<JValue>::into(self.object.as_obj())],
+                )?
+                .l()?,
+            )?;
+
+            transform_object_array(self.owner.clone(), &parameter_types_obj_arr, |obj| {
+                Class::from_obj(self.owner.clone(), &obj)
+            })
         })
     }
 
@@ -322,7 +326,7 @@ impl<'a> Method<'a> {
                 self.owner.clone(),
                 "getReturnType",
                 "()Ljava/lang/Class;",
-                &[Into::<JValue>::into(self.class)],
+                &[Into::<JValue>::into(self.object.as_obj())],
             )?
             .l()?;
 
@@ -351,8 +355,7 @@ impl<'a> FromObj<'a> for Method<'a> {
         Ok(Rc::new(RefCell::new(Self {
             owner: vm_state.clone(),
             owner_class: LazyClassMember::Uninitialized,
-            object: *obj,
-            class: get_obj_class(vm_state.clone(), obj)?,
+            object: as_global_ref(vm_state.clone(), obj)?,
             name: LazyClassMember::Uninitialized,
             parameter_types: LazyClassMember::Uninitialized,
             return_type: LazyClassMember::Uninitialized,
@@ -363,8 +366,7 @@ impl<'a> FromObj<'a> for Method<'a> {
 #[cfg(test)]
 mod test {
     use crate::class::Class;
-    use crate::error::KapiResult;
-    use crate::jvm::{get_class_name, get_obj_class, new_string, FromObj, PseudoVMState};
+    use crate::jvm::{new_string, FromObj, PseudoVMState};
 
     #[test]
     fn test_cache_class() {
@@ -406,7 +408,7 @@ mod test {
         let vm = PseudoVMState::init_vm().unwrap();
 
         let string = new_string(vm.clone(), "").unwrap();
-        let class_result = Class::from_obj(vm.clone(), &string).unwrap();
+        let _ = Class::from_obj(vm.clone(), &string).unwrap();
     }
 
     #[test]
@@ -451,7 +453,5 @@ mod test {
 
             names.push(name.clone());
         }
-
-        println!("{:?}", names);
     }
 }

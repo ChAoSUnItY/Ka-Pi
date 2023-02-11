@@ -71,7 +71,7 @@ fn jvm() -> KapiResult<&'static Arc<JavaVM>> {
                 .unwrap_or_else(|e| panic!("{:#?}", e));
 
             let jvm = JavaVM::new(jvm_args).unwrap_or_else(|e| panic!("{:#?}", e));
-            
+
             {
                 let guard = jvm.attach_current_thread()?;
 
@@ -97,10 +97,10 @@ fn jvm() -> KapiResult<&'static Arc<JavaVM>> {
         }
     });
 
-    unsafe { 
+    unsafe {
         match INIT_RESULT.as_ref().unwrap() {
             Ok(vm) => Ok(vm),
-            Err(err) => Err(err.clone())
+            Err(err) => Err(err.clone()),
         }
     }
 }
@@ -116,7 +116,7 @@ fn attach_current_thread() -> KapiResult<AttachGuard<'static>> {
 pub(crate) fn get_class<S>(
     vm_state: Rc<RefCell<PseudoVMState>>,
     class_name: S,
-) -> KapiResult<JClass>
+) -> KapiResult<JObject>
 where
     S: Into<String>,
 {
@@ -132,7 +132,7 @@ where
         &[Into::<JValue>::into(class_name_string)],
     )?;
 
-    Ok(class_obj_value.l()?.into())
+    Ok(class_obj_value.l()?)
 }
 
 /// Get the [`JClass`](JClass) from current JVM based on given [`JObject`](JObject) instance.
@@ -180,17 +180,25 @@ where
         .into_kapi()
 }
 
-pub(crate) fn get_object_array<'a>(
+pub(crate) fn transform_object_array<'a, F, T>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-    obj: &JObject<'a>,
-) -> KapiResult<Vec<JObject<'a>>> {
+    obj: &GlobalRef,
+    mapper: F,
+) -> KapiResult<Vec<T>>
+where
+    F: Fn(&JObject<'a>) -> KapiResult<T>,
+{
     let guard = &vm_state.borrow().attach_guard;
-    let arr = obj.cast();
+    let arr = obj.as_obj().cast();
     let len = guard.get_array_length(arr)?;
     let mut objs = Vec::with_capacity(len as usize);
 
     for i in 0..len {
-        objs.push(guard.get_object_array_element(arr, i)?);
+        let obj = guard.get_object_array_element(arr, i)?;
+
+        objs.push(mapper(&obj)?);
+        
+        guard.delete_local_ref(obj)?;
     }
 
     Ok(objs)
@@ -217,15 +225,15 @@ pub(crate) fn get_string<'a>(
         .map(|s| s.into())
 }
 
-pub(crate) fn get_class_name<'a>(
-    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-    class: &JClass<'a>,
+pub(crate) fn get_class_name(
+    vm_state: Rc<RefCell<PseudoVMState>>,
+    class: &GlobalRef,
 ) -> KapiResult<String> {
     let name_obj = invoke_reflector_method(
         vm_state.clone(),
         "getName",
         "(Ljava/lang/Class;)Ljava/lang/String;",
-        &[Into::<JValue>::into(*class)],
+        &[Into::<JValue>::into(class.as_obj())],
     )?
     .l()?;
 
@@ -237,15 +245,15 @@ pub(crate) fn get_class_name<'a>(
 /// The returned [`u32`] is a bitset to represents combination of access modifiers.
 ///
 /// ## See [JVM 4.1 Table 4.1](https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.1)
-pub(crate) fn get_class_modifiers<'a>(
-    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-    class: &JClass<'a>,
+pub(crate) fn get_class_modifiers(
+    vm_state: Rc<RefCell<PseudoVMState>>,
+    class: &GlobalRef,
 ) -> KapiResult<u32> {
     invoke_reflector_method(
         vm_state,
         "getModifiers",
         "(Ljava/lang/Class;)I",
-        &[Into::<JValue>::into(*class)],
+        &[Into::<JValue>::into(class.as_obj())],
     )?
     .i()
     .map(|i| i as u32)
@@ -254,18 +262,20 @@ pub(crate) fn get_class_modifiers<'a>(
 
 pub(crate) fn get_class_declared_methods<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-    class: &JClass<'a>,
+    class: &GlobalRef,
 ) -> KapiResult<Vec<Rc<RefCell<Method<'a>>>>> {
-    let declared_methods_obj_arr = invoke_reflector_method(
+    let declared_methods_obj_arr = as_global_ref(
         vm_state.clone(),
-        "getDeclaredMethods",
-        "(Ljava/lang/Class;)[Ljava/lang/reflect/Method;",
-        &[Into::<JValue>::into(*class)],
-    )?
-    .l()?;
+        &invoke_reflector_method(
+            vm_state.clone(),
+            "getDeclaredMethods",
+            "(Ljava/lang/Class;)[Ljava/lang/reflect/Method;",
+            &[Into::<JValue>::into(class.as_obj())],
+        )?
+        .l()?,
+    )?;
 
-    get_object_array(vm_state.clone(), &declared_methods_obj_arr)?
-        .iter()
-        .map(|obj| Method::from_obj(vm_state.clone(), obj))
-        .collect::<KapiResult<Vec<_>>>()
+    transform_object_array(vm_state.clone(), &declared_methods_obj_arr, |obj| {
+        Method::from_obj(vm_state.clone(), obj)
+    })
 }
