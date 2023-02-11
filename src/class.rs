@@ -3,11 +3,11 @@ use std::ops::Deref;
 use std::rc::Rc;
 use std::string::ToString;
 
-use jni::objects::{GlobalRef, JClass, JObject, JValue};
+use jni::objects::{GlobalRef, JObject, JValue};
 use lazy_static::lazy_static;
 
 use crate::class::LazyClassMember::{Failed, Initialized};
-use crate::error::{IntoKapiResult, KapiError, KapiResult};
+use crate::error::{KapiError, KapiResult};
 use crate::jvm::{as_global_ref, get_class, get_class_declared_methods, get_class_modifiers, get_class_name, get_obj_class, get_string, invoke_reflector_method, transform_object_array, FromObj, PseudoVMState, delete_local_ref};
 use crate::types::{canonical_to_descriptor, canonical_to_internal};
 
