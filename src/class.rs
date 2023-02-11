@@ -8,11 +8,7 @@ use lazy_static::lazy_static;
 
 use crate::class::LazyClassMember::{Failed, Initialized};
 use crate::error::{IntoKapiResult, KapiError, KapiResult};
-use crate::jvm::{
-    as_global_ref, get_class, get_class_declared_methods, get_class_modifiers, get_class_name,
-    get_obj_class, get_string, invoke_reflector_method, transform_object_array, FromObj,
-    PseudoVMState,
-};
+use crate::jvm::{as_global_ref, get_class, get_class_declared_methods, get_class_modifiers, get_class_name, get_obj_class, get_string, invoke_reflector_method, transform_object_array, FromObj, PseudoVMState, delete_local_ref};
 use crate::types::{canonical_to_descriptor, canonical_to_internal};
 
 /// Simple representation of lazy initialized class member, to avoid heavy cost of communication between
@@ -297,7 +293,11 @@ impl<'a> Method<'a> {
             )?
             .l()?;
 
-            get_string(self.owner.clone(), &name_obj)
+            let string = get_string(self.owner.clone(), &name_obj);
+            
+            delete_local_ref(self.owner.clone(), name_obj)?;
+            
+            string
         })
     }
 

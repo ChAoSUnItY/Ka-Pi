@@ -159,6 +159,18 @@ pub(crate) fn as_global_ref<'a>(
         .into_kapi()
 }
 
+/// Force drops a [`JObject`](JObject).
+pub(crate) fn delete_local_ref<'a>(
+    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+    obj: JObject<'a>,
+) -> KapiResult<()> {
+    vm_state
+        .borrow()
+        .attach_guard
+        .delete_local_ref(obj)
+        .into_kapi()
+}
+
 /// Invokes an instance function based on the given class method from [`class`](JClass) argument,
 /// e.g. to get class `java.lang.String`'s name through `Class<?>#getName()`, you'll have to pass
 /// first [`JClass`](JClass) argument with an `Class<?>`, notice that you can directly call
