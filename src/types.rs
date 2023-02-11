@@ -1,14 +1,14 @@
-use std::{rc::Rc, str::FromStr};
 use std::collections::HashMap;
+use std::{rc::Rc, str::FromStr};
 
 use lazy_static::lazy_static;
 use unicode_segmentation::UnicodeSegmentation;
 
+use crate::error::KapiResult;
 use crate::{
     byte_vec::{ByteVec, ByteVecImpl},
     error::KapiError,
 };
-use crate::error::KapiResult;
 
 lazy_static! {
     static ref PRIMITIVE_TYPE_2_DESC: HashMap<&'static str, &'static str> = HashMap::from([
@@ -30,40 +30,15 @@ lazy_static! {
 /// `java.lang.String` -> `Ljava/lang/String;`<br/>
 /// `int[]` -> `[I`
 pub(crate) fn canonical_to_internal<S>(canonical: S) -> String
-    where
-        S: Into<String>,
+where
+    S: Into<String>,
 {
-    // array type preprocess
-    let canonical_name = canonical.into();
-    let dim = canonical_name.matches("[]").count();
-    let mut internal_name_builder =
-        String::with_capacity(canonical_name.graphemes(true).count() - dim);
-
-    internal_name_builder.push_str(&String::from("[").repeat(dim));
-
-    for (type_name, internal_name) in PRIMITIVE_TYPE_2_DESC.iter() {
-        if canonical_name.starts_with(type_name) {
-            // primitive type
-            internal_name_builder.push_str(internal_name);
-
-            return internal_name_builder;
-        }
-    }
-
-    // object type
-    let class_name = format!(
-        "L{};",
-        canonical_name.trim_end_matches("[]").replace(".", "/")
-    );
-
-    internal_name_builder.push_str(&class_name);
-
-    internal_name_builder
+    canonical_to_descriptor(canonical).replace(".", "/")
 }
 
 pub(crate) fn canonical_to_descriptor<S>(canonical: S) -> String
-    where
-        S: Into<String>,
+where
+    S: Into<String>,
 {
     // array type preprocess
     let canonical_name = canonical.into();
@@ -83,9 +58,13 @@ pub(crate) fn canonical_to_descriptor<S>(canonical: S) -> String
     }
 
     // object type
-    let class_name = canonical_name.trim_end_matches("[]").replace(".", "/");
-
-    internal_name_builder.push_str(&class_name);
+    if dim > 0 {
+        internal_name_builder.push('L');
+        internal_name_builder.push_str(&canonical_name.trim_end_matches("[]"));
+        internal_name_builder.push(';');
+    } else {
+        internal_name_builder.push_str(&canonical_name.trim_end_matches("[]"));
+    }
 
     internal_name_builder
 }
@@ -175,8 +154,8 @@ impl TypePath {
     }
 
     pub fn put<BV>(type_path: Option<&TypePath>, output: &mut BV)
-        where
-            BV: ByteVec,
+    where
+        BV: ByteVec,
     {
         if let Some(type_path) = type_path {
             let len = (type_path.type_path_container[type_path.type_path_offset] * 2 + 1) as usize;
@@ -429,12 +408,9 @@ impl TypeRef {
         Self::new((sort << 24) | arg_index)
     }
 
-    pub(crate) fn put_target<BV>(
-        target_type_and_info: i32,
-        output: &mut BV,
-    ) -> KapiResult<()>
-        where
-            BV: ByteVec,
+    pub(crate) fn put_target<BV>(target_type_and_info: i32, output: &mut BV) -> KapiResult<()>
+    where
+        BV: ByteVec,
     {
         match target_type_and_info {
             CLASS_TYPE_PARAMETER | METHOD_TYPE_PARAMETER | METHOD_FORMAL_PARAMETER => {
@@ -511,11 +487,11 @@ impl TypeRef {
 mod test {
     use std::str::FromStr;
 
-    use crate::types::{self, canonical_to_internal, THROWS, TypePath};
+    use crate::types::{self, canonical_to_internal, TypePath, THROWS};
 
     use super::{
-        CAST, CLASS_EXTENDS, CLASS_TYPE_PARAMETER, EXCEPTION_PARAMETER, FIELD, METHOD_FORMAL_PARAMETER,
-        TypeRef,
+        TypeRef, CAST, CLASS_EXTENDS, CLASS_TYPE_PARAMETER, EXCEPTION_PARAMETER, FIELD,
+        METHOD_FORMAL_PARAMETER,
     };
 
     #[test]
@@ -623,7 +599,7 @@ mod test {
 
         assert_eq!("I", primitive_internal_name);
         assert_eq!("[I", primitive_array_internal_name);
-        assert_eq!("Ljava/lang/String;", internal_name);
+        assert_eq!("java/lang/String", internal_name);
         assert_eq!("[Ljava/lang/String;", internal_name_with_array);
     }
 }

@@ -5,16 +5,22 @@ import java.lang.reflect.Method;
 // unnesccesary complexity.
 //
 // Reflector will only be used when "interop" features is on, and
-// will be built in build.rs, this means the build environment should
+// will be built in build.rs, this means the build environment should be
 // based on your machine instead of pre-compiled binary file being shared
 // around.
 public class Reflector {
-    public static Class<?> forName(String name) {
+    public static Class<?> forName(String name) throws ClassNotFoundException {
         return Class.forName(name);
     }
     
+    // Class<?> interface
+    
     public static String getName(Class<?> clazz) {
         return clazz.getName();
+    }
+    
+    public static String getCanonicalName(Class<?> clazz) {
+        return clazz.getCanonicalName();
     }
     
     public static int getModifiers(Class<?> clazz) {
@@ -22,6 +28,12 @@ public class Reflector {
     }
     
     public static Method[] getDeclaredMethods(Class<?> clazz) {
-        return clazz.getgetDeclaredMethods();
+        return clazz.getDeclaredMethods();
+    }
+    
+    // Method interface
+    
+    public static String getName(Method method) {
+        return method.getName();
     }
 }

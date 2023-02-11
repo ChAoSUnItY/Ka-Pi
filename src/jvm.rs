@@ -13,12 +13,8 @@ use std::rc::Rc;
 use std::sync::{Arc, Once};
 
 use jni::objects::{GlobalRef, JObject, JString, JValue};
-use jni::sys::jvalue;
-use jni::{
-    objects::JClass,
-    signature::{Primitive, ReturnType},
-    AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
-};
+use jni::strings::JNIString;
+use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM};
 
 use crate::class::{Class, Method};
 use crate::error::{IntoKapiResult, KapiError, KapiResult};
@@ -38,16 +34,21 @@ pub struct PseudoVMState<'a> {
     pub(crate) attach_guard: AttachGuard<'a>,
     /// caches classes to prevent huge cost while retrieving class info from JVM.
     pub class_cache: HashMap<String, Rc<RefCell<Class<'a>>>>,
+    reflector_class: JClass<'a>,
 }
 
 impl<'a> PseudoVMState<'a> {
     /// Initializes Java Virtual Machine and returns a pseudo VM state struct to represent an intermediate
     /// communication bridge between Rust and JVM.
-    pub fn init_vm() -> Rc<RefCell<PseudoVMState<'a>>> {
-        Rc::new(RefCell::new(PseudoVMState {
-            attach_guard: attach_current_thread(),
+    pub fn init_vm() -> KapiResult<Rc<RefCell<PseudoVMState<'a>>>> {
+        let guard = attach_current_thread()?;
+        let reflector_class = guard.find_class("Reflector")?;
+
+        Ok(Rc::new(RefCell::new(PseudoVMState {
+            attach_guard: guard,
             class_cache: HashMap::new(),
-        }))
+            reflector_class,
+        })))
     }
 }
 
@@ -57,73 +58,84 @@ impl<'a> Debug for PseudoVMState<'a> {
     }
 }
 
-fn jvm() -> &'static Arc<JavaVM> {
-    static mut JVM: Option<Arc<JavaVM>> = None;
+fn jvm() -> KapiResult<&'static Arc<JavaVM>> {
+    static mut INIT_RESULT: Option<KapiResult<Arc<JavaVM>>> = None;
     static INIT: Once = Once::new();
 
     INIT.call_once(|| {
-        let jvm_args = InitArgsBuilder::new()
-            .version(JNIVersion::V8)
-            .option("-Xcheck:jni")
-            .build()
-            .unwrap_or_else(|e| panic!("{:#?}", e));
+        let reflector_loading_result = || -> KapiResult<Arc<JavaVM>> {
+            let jvm_args = InitArgsBuilder::new()
+                .version(JNIVersion::V8)
+                .option("-Xcheck:jni")
+                .build()
+                .unwrap_or_else(|e| panic!("{:#?}", e));
 
-        let jvm = JavaVM::new(jvm_args).unwrap_or_else(|e| panic!("{:#?}", e));
+            let jvm = JavaVM::new(jvm_args).unwrap_or_else(|e| panic!("{:#?}", e));
+            
+            {
+                let guard = jvm.attach_current_thread()?;
+
+                // Load lib/src/Reflector.class
+                let class_class = guard.find_class("java/lang/Class")?;
+                let class_loader = guard
+                    .call_method(
+                        class_class,
+                        "getClassLoader",
+                        "()Ljava/lang/ClassLoader;",
+                        &[],
+                    )?
+                    .l()?;
+                let class_bytes = include_bytes!("../lib/src/Reflector.class");
+                let reflector_class = guard.define_class("Reflector", class_loader, class_bytes)?;
+            }
+
+            Ok(Arc::new(jvm))
+        };
 
         unsafe {
-            JVM = Some(Arc::new(jvm));
+            INIT_RESULT = Some(reflector_loading_result());
         }
     });
 
-    unsafe { JVM.as_ref().unwrap() }
+    unsafe { 
+        match INIT_RESULT.as_ref().unwrap() {
+            Ok(vm) => Ok(vm),
+            Err(err) => Err(err.clone())
+        }
+    }
 }
 
 fn env<'a>() -> KapiResult<JNIEnv<'a>> {
-    jvm().get_env().into_kapi()
+    jvm()?.get_env().into_kapi()
 }
 
-fn attach_current_thread() -> AttachGuard<'static> {
-    jvm()
-        .attach_current_thread()
-        .expect("Failed to attach jvm thread")
+fn attach_current_thread() -> KapiResult<AttachGuard<'static>> {
+    jvm()?.attach_current_thread().into_kapi()
 }
 
-pub(crate) fn get_clazz<'a>() -> KapiResult<JClass<'a>> {
-    attach_current_thread()
-        .find_class("java/lang/Class")
-        .into_kapi()
-}
+pub(crate) fn get_class<S>(
+    vm_state: Rc<RefCell<PseudoVMState>>,
+    class_name: S,
+) -> KapiResult<JClass>
+where
+    S: Into<String>,
+{
+    let class_name_string = {
+        let vm = vm_state.borrow();
 
-/// Get a [`JClass`](JClass) from current JVM environment.
-pub(crate) fn get_class<'a>(
-    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-    class_name: &String,
-) -> KapiResult<JClass<'a>> {
-    let class = vm_state
-        .borrow()
-        .attach_guard
-        .find_class(class_name)
-        .into_kapi()?;
-    
-    get_class_class(vm_state.clone(), &class)
-}
-
-pub(crate) fn get_class_class<'a>(
-    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-    class: &JClass<'a>
-) -> KapiResult<JClass<'a>> {
-    let class_class = invoke_method(
+        vm.attach_guard.new_string(class_name.into())?
+    };
+    let class_obj_value = invoke_reflector_method(
         vm_state.clone(),
-        &class,
-        "getClass",
-        "()Ljava/lang/Class;",
-        &[],
-        ReturnType::Object
-    )?.l()?;
+        "forName",
+        "(Ljava/lang/String;)Ljava/lang/Class;",
+        &[Into::<JValue>::into(class_name_string)],
+    )?;
 
-    get_obj_class(vm_state.clone(), &class_class)
+    Ok(class_obj_value.l()?.into())
 }
 
+/// Get the [`JClass`](JClass) from current JVM based on given [`JObject`](JObject) instance.
 pub(crate) fn get_obj_class<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     obj: &JObject<'a>,
@@ -135,6 +147,7 @@ pub(crate) fn get_obj_class<'a>(
         .into_kapi()
 }
 
+/// Mark a [`JObject`](JObject) to ensure JVM won't gc the object.
 pub(crate) fn as_global_ref<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     obj: &JObject<'a>,
@@ -146,22 +159,24 @@ pub(crate) fn as_global_ref<'a>(
         .into_kapi()
 }
 
-pub(crate) fn invoke_method<'a, S1, S2>(
+/// Invokes an instance function based on the given class method from [`class`](JClass) argument,
+/// e.g. to get class `java.lang.String`'s name through `Class<?>#getName()`, you'll have to pass
+/// first [`JClass`](JClass) argument with an `Class<?>`, notice that you can directly call
+/// [`get_clazz`](get_clazz) to retrieve, and you'll have to pass second [`JClass`](JClass) argument
+/// with class `Class<String>`, and by supplying the remaining arguments, the result would be expected.
+pub(crate) fn invoke_reflector_method<'a, S1, S2>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
-    class: &JClass<'a>,
     name: S1,
     sig: S2,
-    args: &[jvalue],
-    return_type: ReturnType,
+    args: &[JValue],
 ) -> KapiResult<JValue<'a>>
 where
     S1: Into<String>,
     S2: Into<String>,
 {
-    let guard = &vm_state.borrow().attach_guard;
-    let method_id = guard.get_method_id(*class, name.into(), sig.into())?;
-    guard
-        .call_method_unchecked(*class, method_id, return_type, args)
+    let vm = vm_state.borrow();
+    vm.attach_guard
+        .call_static_method(vm.reflector_class, name.into(), sig.into(), args)
         .into_kapi()
 }
 
@@ -181,6 +196,15 @@ pub(crate) fn get_object_array<'a>(
     Ok(objs)
 }
 
+pub(crate) fn new_string<S>(vm_state: Rc<RefCell<PseudoVMState>>, str: S) -> KapiResult<JString>
+where
+    S: Into<JNIString>,
+{
+    let vm = vm_state.borrow();
+
+    vm.attach_guard.new_string(str).into_kapi()
+}
+
 pub(crate) fn get_string<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     obj: &JObject<'a>,
@@ -193,6 +217,21 @@ pub(crate) fn get_string<'a>(
         .map(|s| s.into())
 }
 
+pub(crate) fn get_class_name<'a>(
+    vm_state: Rc<RefCell<PseudoVMState<'a>>>,
+    class: &JClass<'a>,
+) -> KapiResult<String> {
+    let name_obj = invoke_reflector_method(
+        vm_state.clone(),
+        "getName",
+        "(Ljava/lang/Class;)Ljava/lang/String;",
+        &[Into::<JValue>::into(*class)],
+    )?
+    .l()?;
+
+    get_string(vm_state.clone(), &name_obj).into_kapi()
+}
+
 /// Get a [`u32`] represents modifiers applied on class.
 ///
 /// The returned [`u32`] is a bitset to represents combination of access modifiers.
@@ -202,13 +241,11 @@ pub(crate) fn get_class_modifiers<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     class: &JClass<'a>,
 ) -> KapiResult<u32> {
-    invoke_method(
+    invoke_reflector_method(
         vm_state,
-        class,
         "getModifiers",
-        "()I",
-        &[],
-        ReturnType::Primitive(Primitive::Int),
+        "(Ljava/lang/Class;)I",
+        &[Into::<JValue>::into(*class)],
     )?
     .i()
     .map(|i| i as u32)
@@ -219,13 +256,11 @@ pub(crate) fn get_class_declared_methods<'a>(
     vm_state: Rc<RefCell<PseudoVMState<'a>>>,
     class: &JClass<'a>,
 ) -> KapiResult<Vec<Rc<RefCell<Method<'a>>>>> {
-    let declared_methods_obj_arr = invoke_method(
+    let declared_methods_obj_arr = invoke_reflector_method(
         vm_state.clone(),
-        class,
         "getDeclaredMethods",
-        "()[Ljava/lang/reflect/Method;",
-        &[],
-        ReturnType::Array,
+        "(Ljava/lang/Class;)[Ljava/lang/reflect/Method;",
+        &[Into::<JValue>::into(*class)],
     )?
     .l()?;
 
