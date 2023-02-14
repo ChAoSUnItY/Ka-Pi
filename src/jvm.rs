@@ -41,7 +41,7 @@ impl<'a> PseudoVM<'a> {
         Ok(Rc::new(RefCell::new(Self::new(guard)?)))
     }
 
-    pub fn new(attach_guard: AttachGuard<'a>) -> KapiResult<Self> {
+    fn new(attach_guard: AttachGuard<'a>) -> KapiResult<Self> {
         let class_clazz = attach_guard.find_class("java/lang/Class")?;
 
         Ok(Self {
@@ -50,18 +50,36 @@ impl<'a> PseudoVM<'a> {
             class_clazz,
         })
     }
+    
+    fn get_class_clazz(vm: RefPseudoVM<'a>) -> JClass<'a> {
+        vm.borrow().class_clazz
+    }
+    
+    fn get_cached_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> Option<RefClass<'a>>
+        where
+            S: Into<String>,
+    {
+        vm.borrow_mut().class_cache.get(&class_name.into()).map(|class_ref| class_ref.clone())
+    }
+    
+    fn cache_class<S>(vm: RefPseudoVM<'a>, class_name: S, class_ref: RefClass<'a>) -> RefClass<'a> where
+        S: Into<String>,{
+        vm.borrow_mut().class_cache.insert(class_name.into(), class_ref.clone()).unwrap_or(class_ref)
+    }
 
-    pub fn get_or_init_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> KapiResult<RefClass<'a>>
+    fn get_or_init_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> KapiResult<RefClass<'a>>
     where
         S: Into<String>,
     {
         let class_name = class_name.into();
-        let class_cache = &mut vm.borrow_mut().class_cache;
 
-        if let Some(class) = class_cache.get(&class_name) {
+        if let Some(class) = Self::get_cached_class(vm.clone(), &class_name) {
             Ok(class.clone())
         } else {
-            Self::get_class(vm.clone(), class_name)
+            let class = Self::get_class(vm.clone(), class_name.clone())?;
+            let class = Self::cache_class(vm.clone(), class_name, class);
+            
+            Ok(class)
         }
     }
 
@@ -69,7 +87,7 @@ impl<'a> PseudoVM<'a> {
     where
         S: Into<String>,
     {
-        let class_clazz = vm.clone().borrow().class_clazz;
+        let class_clazz = Self::get_class_clazz(vm.clone());
         let class_name = class_name.into();
         let descriptor = Self::new_string(vm.clone(), canonical_to_descriptor(&class_name))?;
         let class = Self::call_static_method(
@@ -90,9 +108,17 @@ impl<'a> PseudoVM<'a> {
         Self::delete_local_ref(vm.clone(), class)?;
         
         let component_class = if is_array {
+            let component_class_name = if class_name.matches("[").count() > 1 {
+                // Remove "["
+                &class_name[1..]
+            } else {
+                // Remove "[L" and ";"
+                &class_name[2..class_name.len() - 1]
+            };
+            
             Some(Self::get_or_init_class(
                 vm.clone(),
-                &class_name[..class_name.len() - 2],
+                component_class_name,
             )?)
         } else {
             None
@@ -197,7 +223,7 @@ fn jvm() -> KapiResult<&'static Arc<JavaVM>> {
     }
 }
 
-#[cfg!(test)]
+#[cfg(test)]
 mod test {
     use crate::jvm::PseudoVM;
 
