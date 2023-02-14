@@ -4,6 +4,9 @@
 
 extern crate jni;
 
+#[cfg(feature = "interop")]
+pub use class::{RefClass, RefMethod};
+
 pub mod byte_vec;
 #[allow(unused)]
 mod constants;
