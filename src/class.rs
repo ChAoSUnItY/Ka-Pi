@@ -13,7 +13,7 @@ pub type RefMethod<'a> = Rc<RefCell<Method<'a>>>;
 
 /// Simple representation of lazy initialized class member, to avoid heavy cost of communication between
 /// Rust and JVM. See [`Class`].
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 enum LazyClassMember<T> {
     /// Represents the data had been successfully invoked and returned from JVM.
     Initialized(T),
@@ -64,7 +64,7 @@ where
 /// This is a lazy representation of Class<?>, to simplify the work of interop with [`Type`].
 ///
 /// All class data are lazily initialized to avoid heavy cost of communication between Rust and JVM.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Class<'a> {
     vm: RefPseudoVM<'a>,
     class: GlobalRef,
@@ -94,6 +94,12 @@ impl<'a> Class<'a> {
             modifiers: LazyClassMember::Uninitialized,
             declared_methods: LazyClassMember::Uninitialized,
         }
+    }
+
+    pub fn component_class(class: RefClass<'a>) -> Option<RefClass<'a>> {
+        let class_ref = class.borrow();
+        
+        class_ref.component_class.clone()
     }
 }
 
@@ -131,16 +137,38 @@ impl<'a> Eq for Method<'a> {}
 mod test {
     use crate::class::Class;
     use crate::jvm::PseudoVM;
-    
+
     #[test]
     fn test_get_class() {
         let vm = PseudoVM::init_vm().unwrap();
-    
+
         let string_class = PseudoVM::get_class(vm.clone(), "java.lang.String");
-    
+
         assert!(string_class.is_ok());
     }
-    
+
+    #[test]
+    fn test_get_array_class() {
+        let vm = PseudoVM::init_vm().unwrap();
+
+        let array_class = PseudoVM::get_class(vm.clone(), "[Ljava.lang.String;");
+
+        assert!(array_class.is_ok());
+
+        let array_class = array_class.unwrap();
+        let component_class = Class::component_class(array_class.clone());
+
+        assert!(component_class.is_some());
+
+        let string_class = PseudoVM::get_class(vm.clone(), "java.lang.String");
+        
+        assert!(string_class.is_ok());
+        
+        let string_class = string_class.unwrap();
+        
+        // TODO: assert_eq here with component_class && string_class
+    }
+
     // #[test]
     // fn test_get_array_class() {
     //     let vm = PseudoVM::init_vm().unwrap();
