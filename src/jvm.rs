@@ -196,3 +196,15 @@ fn jvm() -> KapiResult<&'static Arc<JavaVM>> {
         }
     }
 }
+
+#[cfg!(test)]
+mod test {
+    use crate::jvm::PseudoVM;
+
+    #[test]
+    fn test_init_vm() {
+        let vm = PseudoVM::init_vm();
+        
+        assert!(vm.is_ok());
+    }
+}
