@@ -1,11 +1,11 @@
 use std::cell::RefCell;
+use std::convert::Into;
 use std::rc::Rc;
 
 use jni::objects::GlobalRef;
-use lazy_static::lazy_static;
 
-use crate::class::LazyClassMember::{Failed, Initialized};
-use crate::error::{IntoKapiResult, KapiError, KapiResult};
+use crate::class::LazyClassMember::{Failed, Initialized, Uninitialized};
+use crate::error::{KapiError, KapiResult};
 use crate::jvm::{PseudoVM, RefPseudoVM};
 
 pub type RefClass<'a> = Rc<RefCell<Class<'a>>>;
@@ -23,16 +23,16 @@ enum LazyClassMember<T> {
     Uninitialized,
 }
 
-lazy_static! {
-    static ref UNINITIALIZED_ERROR: KapiError = KapiError::StateError(String::from(
-        "Lazy value is initialized, try call `get_or_init` first"
-    ));
-}
-
 impl<T> LazyClassMember<T>
 where
     T: Eq + PartialEq,
 {
+    const UNINITIALIZED_ERROR: KapiError = KapiError::StateError("Member hasn't been initialized yet.");
+    
+    const fn new() -> Self {
+        Uninitialized
+    }
+    
     fn get_or_init<F, TR>(&mut self, initializer: F) -> KapiResult<&T>
     where
         F: FnOnce() -> KapiResult<TR>,
@@ -41,7 +41,7 @@ where
         match self {
             Initialized(value) => Ok(value),
             Failed(err) => Err(err.clone()),
-            LazyClassMember::Uninitialized => {
+            Uninitialized => {
                 match initializer() {
                     Ok(value) => *self = Initialized(value.into()),
                     Err(err) => *self = Failed(err.into()),
@@ -56,7 +56,7 @@ where
         match self {
             Initialized(value) => Ok(value),
             Failed(err) => Err(err.clone()),
-            LazyClassMember::Uninitialized => Err(UNINITIALIZED_ERROR.clone()),
+            Uninitialized => Err(Self::UNINITIALIZED_ERROR),
         }
     }
 }
@@ -91,8 +91,8 @@ impl<'a> Class<'a> {
             vm,
             class,
             component_class,
-            modifiers: LazyClassMember::Uninitialized,
-            declared_methods: LazyClassMember::Uninitialized,
+            modifiers: LazyClassMember::new(),
+            declared_methods: LazyClassMember::new(),
         }
     }
 
@@ -100,6 +100,18 @@ impl<'a> Class<'a> {
         let class_ref = class.borrow();
 
         class_ref.component_class.clone()
+    }
+
+    pub fn modifiers(&mut self) -> KapiResult<&u32> {
+        self.modifiers.get_or_init(|| {
+            let self_obj = PseudoVM::new_local_ref(self.vm.clone(), &self.class)?;
+            let modifiers =
+                PseudoVM::call_method(self.vm.clone(), self_obj, "getModifiers", "()I", &[])?
+                    .i()?;
+            PseudoVM::delete_local_ref(self.vm.clone(), self_obj)?;
+
+            Ok(modifiers as u32)
+        })
     }
 }
 
@@ -180,7 +192,7 @@ mod test {
         let component_class = Class::component_class(array_class.clone());
 
         assert!(component_class.is_some());
-        
+
         let component_class = component_class.unwrap();
         let string_class = PseudoVM::get_class(vm.clone(), "java.lang.String");
 
@@ -191,47 +203,25 @@ mod test {
         assert_eq!(component_class, string_class);
     }
 
-    // #[test]
-    // fn test_get_array_class() {
-    //     let vm = PseudoVM::init_vm().unwrap();
-    //
-    //     let string_array_class_result = Class::get_class(vm.clone(), "java.lang.String[]");
-    //
-    //     assert!(string_array_class_result.is_ok());
-    //
-    //     let string_array_class_rfc = string_array_class_result.unwrap();
-    //     let string_array_class = string_array_class_rfc.borrow();
-    //
-    //     assert!(string_array_class.is_array());
-    //
-    //     let string_class_option = &string_array_class.component_class;
-    //
-    //     assert!(string_class_option.is_some());
-    //
-    //     let string_class = string_class_option.as_ref().unwrap().borrow();
-    //
-    //     assert!(!string_class.is_array());
-    // }
-    //
-    // #[test]
-    // fn test_class_from_obj() {
-    //     let vm = PseudoVM::init_vm().unwrap();
-    //
-    //     let string = new_string(vm.clone(), "").unwrap();
-    //     let _ = Class::from_obj(vm.clone(), &string).unwrap();
-    // }
-    //
-    // #[test]
-    // fn test_class_modifiers() {
-    //     let vm = PseudoVM::init_vm().unwrap();
-    //
-    //     let string_class_rfc = Class::get_class(vm.clone(), "java.lang.String").unwrap();
-    //     let mut string_class = string_class_rfc.borrow_mut();
-    //     let modifiers = string_class.modifiers().unwrap();
-    //
-    //     assert_eq!(17, *modifiers)
-    // }
-    //
+    #[test]
+    fn test_class_modifiers() {
+        let vm = PseudoVM::init_vm().unwrap();
+    
+        let string_class = PseudoVM::get_class(vm.clone(), "java.lang.String");
+        
+        assert!(string_class.is_ok());
+        
+        let string_class = string_class.unwrap();
+        let mut string_class = string_class.borrow_mut();
+        let modifiers = string_class.modifiers();
+        
+        assert!(modifiers.is_ok());
+        
+        let modifiers = modifiers.unwrap();
+    
+        assert_eq!(17, *modifiers)
+    }
+    
     // #[test]
     // fn test_class_declared_methods() {
     //     let vm = PseudoVM::init_vm().unwrap();
