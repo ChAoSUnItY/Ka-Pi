@@ -103,7 +103,6 @@ impl<'a> Class<'a> {
     }
 }
 
-// TODO: A better way to check class's equality?
 impl PartialEq for Class<'_> {
     fn eq(&self, other: &Self) -> bool {
         let self_obj = PseudoVM::new_local_ref(self.vm.clone(), &self.class);
