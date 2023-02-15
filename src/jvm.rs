@@ -17,7 +17,7 @@ use jni::strings::JNIString;
 use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM};
 
 use crate::class::{Class, Method, RefClass};
-use crate::error::{IntoKapiResult, KapiResult};
+use crate::error::{IntoKapiResult, KapiError, KapiResult};
 use crate::types::canonical_to_descriptor;
 use crate::RefMethod;
 
@@ -100,8 +100,9 @@ impl<'a> PseudoVM<'a> {
         .l()?;
         
         Self::delete_local_ref(vm.clone(), descriptor.into())?;
-        
+
         let class_ref = Self::new_global_ref(vm.clone(), class)?;
+        
         let is_array =
             Self::call_method(vm.clone(), class, "isArray", "()Z", &[])?.z()?;
         
@@ -167,6 +168,10 @@ impl<'a> PseudoVM<'a> {
         O: Into<JObject<'a>>,
     {
         vm.borrow().attach_guard.new_global_ref(object).into_kapi()
+    }
+    
+    pub fn new_local_ref(vm: RefPseudoVM<'a>, global_ref: &GlobalRef) -> KapiResult<JObject<'a>> {
+        vm.borrow().attach_guard.new_local_ref(global_ref).into_kapi()
     }
 
     pub fn delete_local_ref(vm: RefPseudoVM<'a>, object: JObject<'a>) -> KapiResult<()> {

@@ -5,7 +5,7 @@ use jni::objects::GlobalRef;
 use lazy_static::lazy_static;
 
 use crate::class::LazyClassMember::{Failed, Initialized};
-use crate::error::{KapiError, KapiResult};
+use crate::error::{IntoKapiResult, KapiError, KapiResult};
 use crate::jvm::{PseudoVM, RefPseudoVM};
 
 pub type RefClass<'a> = Rc<RefCell<Class<'a>>>;
@@ -98,15 +98,37 @@ impl<'a> Class<'a> {
 
     pub fn component_class(class: RefClass<'a>) -> Option<RefClass<'a>> {
         let class_ref = class.borrow();
-        
+
         class_ref.component_class.clone()
     }
 }
 
 // TODO: A better way to check class's equality?
-impl<'a> PartialEq for Class<'a> {
+impl PartialEq for Class<'_> {
     fn eq(&self, other: &Self) -> bool {
-        todo!()
+        let self_obj = PseudoVM::new_local_ref(self.vm.clone(), &self.class);
+        let other_obj = PseudoVM::new_local_ref(self.vm.clone(), &other.class);
+
+        if self_obj.is_err() || other_obj.is_err() {
+            return false;
+        }
+
+        let self_obj = self_obj.unwrap();
+        let other_obj = other_obj.unwrap();
+
+        let eq = PseudoVM::call_method(
+            self.vm.clone(),
+            self_obj,
+            "equals",
+            "(Ljava/lang/Object;)Z",
+            &[other_obj.into()],
+        )
+        .map_or(false, |value| value.z().unwrap_or(false));
+
+        let _ = PseudoVM::delete_local_ref(self.vm.clone(), self_obj);
+        let _ = PseudoVM::delete_local_ref(self.vm.clone(), other_obj);
+
+        eq
     }
 }
 
@@ -159,14 +181,15 @@ mod test {
         let component_class = Class::component_class(array_class.clone());
 
         assert!(component_class.is_some());
-
+        
+        let component_class = component_class.unwrap();
         let string_class = PseudoVM::get_class(vm.clone(), "java.lang.String");
-        
+
         assert!(string_class.is_ok());
-        
+
         let string_class = string_class.unwrap();
-        
-        // TODO: assert_eq here with component_class && string_class
+
+        assert_eq!(component_class, string_class);
     }
 
     // #[test]
