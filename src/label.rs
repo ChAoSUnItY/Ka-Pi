@@ -87,7 +87,7 @@ impl LabelImpl {
 impl LabelImpl {
     pub fn get_offset(&self) -> KapiResult<i32> {
         if self.flags() & FLAG_RESOLVED == 0 {
-            Err(KapiError::StateError(String::from("Label offset position has not been resolved yet")))
+            Err(KapiError::StateError("Label offset position has not been resolved yet"))
         } else {
             Ok(self.bytecode_offset())
         }

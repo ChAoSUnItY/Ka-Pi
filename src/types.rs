@@ -186,9 +186,9 @@ impl FromStr for TypePath {
 
     fn from_str(s: &str) -> KapiResult<Self> {
         if s.is_empty() {
-            return Err(KapiError::Utf8Error(String::from(
+            return Err(KapiError::Utf8Error(
                 "Type string must not be empty",
-            )));
+            ));
         }
 
         let type_path_len = s.graphemes(true).count();

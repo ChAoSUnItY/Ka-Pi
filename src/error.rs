@@ -3,9 +3,9 @@ use std::{
     fmt::{Debug, Display},
 };
 
-use jni::errors::{Error as JniError, Result as JniResult};
+use jni::errors::Error as JniError;
 
-use crate::error::KapiError::JNIError;
+use crate::error::KapiError::*;
 
 pub(crate) trait IntoKapiResult<T> {
     fn into_kapi(self) -> KapiResult<T>;
@@ -24,22 +24,22 @@ impl<T, E> IntoKapiResult<T> for Result<T, E>
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum KapiError {
-    StateError(String),
-    Utf8Error(String),
-    TypeError(String),
+    StateError(&'static str),
+    Utf8Error(&'static str),
+    TypeError(&'static str),
     ArgError(String),
-    ClassResolveError(String),
+    ClassResolveError(&'static str),
     JNIError(String),
 }
 
 impl Display for KapiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            KapiError::StateError(cause) => write!(f, "{}", cause),
-            KapiError::Utf8Error(cause) => write!(f, "{}", cause),
-            KapiError::TypeError(cause) => write!(f, "{}", cause),
-            KapiError::ArgError(cause) => write!(f, "{}", cause),
-            KapiError::ClassResolveError(cause) => write!(f, "{}", cause),
+            StateError(cause) => write!(f, "{}", cause),
+            Utf8Error(cause) => write!(f, "{}", cause),
+            TypeError(cause) => write!(f, "{}", cause),
+            ArgError(cause) => write!(f, "{}", cause),
+            ClassResolveError(cause) => write!(f, "{}", cause),
             JNIError(cause) => write!(f, "{}", cause),
         }
     }
