@@ -29,10 +29,6 @@ where
 {
     const UNINITIALIZED_ERROR: KapiError = KapiError::StateError("Member hasn't been initialized yet.");
     
-    const fn new() -> Self {
-        Uninitialized
-    }
-    
     fn get_or_init<F, TR>(&mut self, initializer: F) -> KapiResult<&T>
     where
         F: FnOnce() -> KapiResult<TR>,
@@ -91,8 +87,8 @@ impl<'a> Class<'a> {
             vm,
             class,
             component_class,
-            modifiers: LazyClassMember::new(),
-            declared_methods: LazyClassMember::new(),
+            modifiers: Uninitialized,
+            declared_methods: Uninitialized,
         }
     }
 
@@ -147,15 +143,30 @@ impl<'a> Eq for Class<'a> {}
 
 #[derive(Debug)]
 pub struct Method<'a> {
-    owner: Rc<RefCell<PseudoVM<'a>>>,
-    owner_class: LazyClassMember<RefClass<'a>>,
-    object: GlobalRef,
+    vm: RefPseudoVM<'a>,
+    declaring_class: RefClass<'a>,
+    method: GlobalRef,
     name: LazyClassMember<String>,
     parameter_types: LazyClassMember<Vec<RefClass<'a>>>,
     return_type: LazyClassMember<RefClass<'a>>,
 }
 
-impl<'a> Method<'a> {}
+impl<'a> Method<'a> {
+    pub(crate) fn new_method_ref(vm: RefPseudoVM<'a>, declaring_class: RefClass<'a>, method: GlobalRef) -> RefMethod<'a> {
+        Rc::new(RefCell::new(Self::new(vm, declaring_class, method)))
+    }
+    
+    fn new(vm: RefPseudoVM<'a>, declaring_class: RefClass<'a>, method: GlobalRef) -> Self {
+        Self{
+            vm,
+            declaring_class,
+            method,
+            name: Uninitialized,
+            parameter_types: Uninitialized,
+            return_type: Uninitialized,
+        }
+    }
+}
 
 impl<'a> PartialEq<Self> for Method<'a> {
     fn eq(&self, other: &Self) -> bool {
