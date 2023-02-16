@@ -135,8 +135,8 @@ impl<'a> Class<'a> {
                 self.vm.clone(),
                 Into::<&JObjectArray<'a>>::into(&methods_obj),
                 |method_obj| {
-                    let method_ref = PseudoVM::new_global_ref(self.vm.clone(), method_obj)?;
                     let self_class = PseudoVM::get_class(self.vm.clone(), &self.class_name)?;
+                    let method_ref = PseudoVM::new_global_ref(self.vm.clone(), method_obj)?;
 
                     Ok(Method::new_method_ref(
                         self.vm.clone(),

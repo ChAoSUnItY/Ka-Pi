@@ -137,6 +137,7 @@ impl<'a> PseudoVM<'a> {
         )?
         .l()?;
 
+        Self::delete_local_ref(vm.clone(), class_clazz)?;
         Self::delete_local_ref(vm.clone(), descriptor)?;
 
         let class_ref = Self::new_global_ref(vm.clone(), &class)?;
@@ -267,14 +268,15 @@ impl<'a> PseudoVM<'a> {
     where
         F: Fn(&JObject<'a>) -> KapiResult<T>,
     {
-        let len = Self::get_array_length(vm.clone(), array.as_ref())?;
+        let array = array.as_ref();
+        let len = Self::get_array_length(vm.clone(), array)?;
         let mut result = Vec::with_capacity(len);
 
         for i in 0..len {
-            let obj = Self::get_obj_element(vm.clone(), &array, i)?;
+            let obj = Self::get_obj_element(vm.clone(), array, i)?;
             
             result.push(element_mapper(&obj)?);
-            
+
             Self::delete_local_ref(vm.clone(), obj)?;
         }
 
