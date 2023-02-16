@@ -12,8 +12,10 @@ use std::fmt::Formatter;
 use std::rc::Rc;
 use std::sync::{Arc, Once};
 
-use jni::objects::{AsJArrayRaw, GlobalRef, JObject, JObjectArray, JString, JValue, JValueOwned};
-use jni::strings::{JavaStr, JNIString};
+use jni::objects::{
+    AsJArrayRaw, AutoLocal, GlobalRef, JObject, JObjectArray, JString, JValue, JValueOwned,
+};
+use jni::strings::{JNIString, JavaStr};
 use jni::sys::jsize;
 use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIVersion, JavaVM};
 
@@ -165,6 +167,13 @@ impl<'a> PseudoVM<'a> {
             class_ref,
             component_class,
         ))
+    }
+
+    pub fn auto_local<O>(vm: RefPseudoVM<'a>, obj: O) -> AutoLocal<'a, O>
+    where
+        O: Into<JObject<'a>>,
+    {
+        vm.borrow().attach_guard.auto_local(obj)
     }
 
     pub fn get_string<'other_local: 'obj_ref, 'obj_ref>(
