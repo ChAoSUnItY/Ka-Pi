@@ -12,9 +12,9 @@ use std::fmt::Formatter;
 use std::rc::Rc;
 use std::sync::{Arc, Once};
 
-use jni::objects::{AsJArrayRaw, GlobalRef, JObject, JString, JValue, JValueOwned};
+use jni::objects::{AsJArrayRaw, GlobalRef, JObject, JObjectArray, JString, JValue, JValueOwned};
 use jni::strings::JNIString;
-use jni::sys::jarray;
+use jni::sys::{jarray, jsize};
 use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM};
 
 use crate::class::{Class, Method, RefClass};
@@ -113,10 +113,11 @@ impl<'a> PseudoVM<'a> {
             Ok(class)
         }
     }
-    
+
     pub fn find_class<S>(vm: RefPseudoVM<'a>, name: S) -> KapiResult<JClass<'a>>
     where
-    S: Into<JNIString>, {
+        S: Into<JNIString>,
+    {
         vm.borrow_mut().attach_guard.find_class(name).into_kapi()
     }
 
@@ -133,7 +134,8 @@ impl<'a> PseudoVM<'a> {
             "forName",
             "(Ljava/lang/String;)Ljava/lang/Class;",
             &[(&descriptor).into()],
-        )?.l()?;
+        )?
+        .l()?;
 
         Self::delete_local_ref(vm.clone(), descriptor)?;
 
@@ -202,14 +204,23 @@ impl<'a> PseudoVM<'a> {
         vm.borrow().attach_guard.new_global_ref(object).into_kapi()
     }
 
-    pub fn new_local_ref(vm: RefPseudoVM<'a>, global_ref: &GlobalRef) -> KapiResult<JObject<'a>> {
+    pub fn new_local_ref<'other_local, O>(
+        vm: RefPseudoVM<'a>,
+        global_ref: O,
+    ) -> KapiResult<JObject<'a>>
+    where
+        O: AsRef<JObject<'a>>,
+    {
         vm.borrow()
             .attach_guard
             .new_local_ref(global_ref)
             .into_kapi()
     }
 
-    pub fn delete_local_ref<'other_local, O>(vm: RefPseudoVM<'a>, object: O) -> KapiResult<()> where O: Into<JObject<'other_local>> {
+    pub fn delete_local_ref<'other_local, O>(vm: RefPseudoVM<'a>, object: O) -> KapiResult<()>
+    where
+        O: Into<JObject<'other_local>>,
+    {
         vm.borrow()
             .attach_guard
             .delete_local_ref(object)
@@ -218,7 +229,7 @@ impl<'a> PseudoVM<'a> {
 
     pub fn new_string<S>(vm: RefPseudoVM<'a>, string: S) -> KapiResult<JString<'a>>
     where
-        S: Into<String>,
+        S: Into<JNIString>,
     {
         vm.borrow()
             .attach_guard
@@ -226,17 +237,48 @@ impl<'a> PseudoVM<'a> {
             .into_kapi()
     }
 
-    pub fn get_array_length<'other_local, 'array, A>(vm: RefPseudoVM<'a>, array: &'array impl AsJArrayRaw<'other_local>) -> KapiResult<usize>
-    {
+    pub fn get_array_length<'other_local, 'array>(
+        vm: RefPseudoVM<'a>,
+        array: &'array impl AsJArrayRaw<'other_local>,
+    ) -> KapiResult<usize> {
         vm.borrow()
             .attach_guard
             .get_array_length(array)
             .map(|size| size as _)
             .into_kapi()
     }
-    
-    pub fn map_obj_array<A, F>(vm: RefPseudoVM<'a>, array: A, element_getter: F) where A: Into<jarray> {
-        todo!()
+
+    pub fn get_obj_element<'other_local>(
+        vm: RefPseudoVM<'a>,
+        array: impl AsRef<JObjectArray<'other_local>>,
+        index: usize,
+    ) -> KapiResult<JObject<'a>> {
+        vm.borrow_mut()
+            .attach_guard
+            .get_object_array_element(array, index as jsize)
+            .into_kapi()
+    }
+
+    pub fn map_obj_array<'other_local, 'array, F, T>(
+        vm: RefPseudoVM<'a>,
+        array: &'array impl AsRef<JObjectArray<'other_local>>,
+        element_mapper: F,
+    ) -> KapiResult<Vec<T>>
+    where
+        F: Fn(&JObject<'a>) -> KapiResult<T>,
+    {
+        let len = Self::get_array_length(vm.clone(), array.as_ref())?;
+        let mut result = Vec::with_capacity(len);
+
+        for i in 0..len {
+            let obj = Self::get_obj_element(vm.clone(), &array, i)?;
+            
+            result.push(element_mapper(obj.as_ref())?);
+            
+            Self::delete_local_ref(vm.clone(), obj)?;
+        }
+
+        Ok(result)
     }
 }
 
@@ -245,8 +287,6 @@ impl<'a> Debug for PseudoVM<'a> {
         write!(f, "PseudoVMState {{ attach_guard: ..., class_cache: ... }}")
     }
 }
-
-
 
 #[cfg(test)]
 mod test {
