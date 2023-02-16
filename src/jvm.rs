@@ -5,22 +5,21 @@
 //! Note: Before using any functions, you should call [`PseudoVMState::init_vm()`](PseudoVM::init_vm)
 //! first in order to create a JVM.
 
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::rc::Rc;
 use std::sync::{Arc, Once};
 
+use jni::{AttachGuard, InitArgsBuilder, JavaVM, JNIVersion, objects::JClass};
 use jni::objects::{AsJArrayRaw, GlobalRef, JObject, JObjectArray, JString, JValue, JValueOwned};
 use jni::strings::JNIString;
-use jni::sys::{jarray, jsize};
-use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM};
+use jni::sys::jsize;
 
-use crate::class::{Class, Method, RefClass};
-use crate::error::{IntoKapiResult, KapiError, KapiResult};
+use crate::class::{Class, RefClass};
+use crate::error::{IntoKapiResult, KapiResult};
 use crate::types::canonical_to_descriptor;
-use crate::RefMethod;
 
 pub type RefPseudoVM<'a> = Rc<RefCell<PseudoVM<'a>>>;
 
@@ -160,7 +159,12 @@ impl<'a> PseudoVM<'a> {
             None
         };
 
-        Ok(Class::new_class_ref(vm.clone(), class_name, class_ref, component_class))
+        Ok(Class::new_class_ref(
+            vm.clone(),
+            class_name,
+            class_ref,
+            component_class,
+        ))
     }
 
     pub fn call_static_method<S1, S2>(
@@ -274,7 +278,7 @@ impl<'a> PseudoVM<'a> {
 
         for i in 0..len {
             let obj = Self::get_obj_element(vm.clone(), array, i)?;
-            
+
             result.push(element_mapper(&obj)?);
 
             Self::delete_local_ref(vm.clone(), obj)?;
