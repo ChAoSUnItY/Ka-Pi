@@ -99,7 +99,7 @@ pub struct Class<'a> {
     class: GlobalRef,
     component_class: Option<RefClass<'a>>,
     modifiers: LazyClassMember<u32>,
-    declared_methods: LazyClassMember<RefCell<Vec<RefMethod<'a>>>>,
+    declared_methods: LazyClassMember<Vec<RefMethod<'a>>>,
 }
 
 impl<'a> Class<'a> {
@@ -151,7 +151,7 @@ impl<'a> Class<'a> {
         })
     }
 
-    pub fn declared_methods(&mut self) -> KapiResult<&RefCell<Vec<RefMethod<'a>>>> {
+    pub fn declared_methods(&mut self) -> KapiResult<&Vec<RefMethod<'a>>> {
         self.declared_methods.get_or_init(|| {
             let self_obj = PseudoVM::new_local_ref(self.vm.clone(), &self.class)?;
             let methods_obj = PseudoVM::call_method(
@@ -180,7 +180,7 @@ impl<'a> Class<'a> {
             PseudoVM::delete_local_ref(self.vm.clone(), self_obj)?;
             PseudoVM::delete_local_ref(self.vm.clone(), methods_obj)?;
 
-            Ok(RefCell::new(methods))
+            Ok(methods)
         })
     }
 }
@@ -349,9 +349,8 @@ mod test {
         assert!(methods.is_ok());
         
         let methods = methods.unwrap();
-        let mut methods = methods.borrow_mut();
     
-        for method_rfc in methods.iter_mut() {
+        for method_rfc in methods.iter() {
             let mut method = method_rfc.borrow_mut();
             let name = method.name();
             
