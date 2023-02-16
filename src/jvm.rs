@@ -12,10 +12,10 @@ use std::fmt::Formatter;
 use std::rc::Rc;
 use std::sync::{Arc, Once};
 
-use jni::{AttachGuard, InitArgsBuilder, JavaVM, JNIVersion, objects::JClass};
 use jni::objects::{AsJArrayRaw, GlobalRef, JObject, JObjectArray, JString, JValue, JValueOwned};
-use jni::strings::JNIString;
+use jni::strings::{JavaStr, JNIString};
 use jni::sys::jsize;
+use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIVersion, JavaVM};
 
 use crate::class::{Class, RefClass};
 use crate::error::{IntoKapiResult, KapiResult};
@@ -165,6 +165,17 @@ impl<'a> PseudoVM<'a> {
             class_ref,
             component_class,
         ))
+    }
+
+    pub fn get_string<'other_local: 'obj_ref, 'obj_ref>(
+        vm: RefPseudoVM<'a>,
+        obj: &'obj_ref JObject<'other_local>,
+    ) -> KapiResult<String> {
+        vm.borrow_mut()
+            .attach_guard
+            .get_string(obj.into())
+            .map(JavaStr::into)
+            .into_kapi()
     }
 
     pub fn call_static_method<S1, S2>(
