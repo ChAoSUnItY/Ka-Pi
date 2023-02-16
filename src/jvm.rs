@@ -209,7 +209,7 @@ impl<'a> PseudoVM<'a> {
         global_ref: O,
     ) -> KapiResult<JObject<'a>>
     where
-        O: AsRef<JObject<'a>>,
+        O: AsRef<JObject<'other_local>>,
     {
         vm.borrow()
             .attach_guard
