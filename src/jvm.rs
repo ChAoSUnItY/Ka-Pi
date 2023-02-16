@@ -71,7 +71,7 @@ impl<'a> PseudoVM<'a> {
         Ok(Rc::new(RefCell::new(Self::new(guard)?)))
     }
 
-    fn new(mut attach_guard: AttachGuard<'a>) -> KapiResult<Self> {
+    fn new(attach_guard: AttachGuard<'a>) -> KapiResult<Self> {
         Ok(Self {
             attach_guard,
             class_cache: HashMap::new(),
@@ -159,7 +159,7 @@ impl<'a> PseudoVM<'a> {
             None
         };
 
-        Ok(Class::new_class_ref(vm.clone(), class_ref, component_class))
+        Ok(Class::new_class_ref(vm.clone(), class_name, class_ref, component_class))
     }
 
     pub fn call_static_method<S1, S2>(
@@ -273,7 +273,7 @@ impl<'a> PseudoVM<'a> {
         for i in 0..len {
             let obj = Self::get_obj_element(vm.clone(), &array, i)?;
             
-            result.push(element_mapper(obj.as_ref())?);
+            result.push(element_mapper(&obj)?);
             
             Self::delete_local_ref(vm.clone(), obj)?;
         }

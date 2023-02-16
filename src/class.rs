@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::convert::Into;
 use std::rc::Rc;
 
-use jni::objects::GlobalRef;
+use jni::objects::{GlobalRef, JObjectArray};
 
 use crate::class::LazyClassMember::{Failed, Initialized, Uninitialized};
 use crate::error::{KapiError, KapiResult};
@@ -27,8 +27,9 @@ impl<T> LazyClassMember<T>
 where
     T: Eq + PartialEq,
 {
-    const UNINITIALIZED_ERROR: KapiError = KapiError::StateError("Member hasn't been initialized yet.");
-    
+    const UNINITIALIZED_ERROR: KapiError =
+        KapiError::StateError("Member hasn't been initialized yet.");
+
     fn get_or_init<F, TR>(&mut self, initializer: F) -> KapiResult<&T>
     where
         F: FnOnce() -> KapiResult<TR>,
@@ -63,6 +64,7 @@ where
 #[derive(Debug, Clone)]
 pub struct Class<'a> {
     vm: RefPseudoVM<'a>,
+    class_name: String,
     class: GlobalRef,
     component_class: Option<RefClass<'a>>,
     modifiers: LazyClassMember<u32>,
@@ -72,19 +74,27 @@ pub struct Class<'a> {
 impl<'a> Class<'a> {
     pub(crate) fn new_class_ref(
         vm: RefPseudoVM<'a>,
+        class_name: String,
         class: GlobalRef,
         component_class: Option<RefClass<'a>>,
     ) -> RefClass<'a> {
-        Rc::new(RefCell::new(Self::new(vm, class, component_class)))
+        Rc::new(RefCell::new(Self::new(
+            vm,
+            class_name,
+            class,
+            component_class,
+        )))
     }
 
     const fn new(
         vm: RefPseudoVM<'a>,
+        class_name: String,
         class: GlobalRef,
         component_class: Option<RefClass<'a>>,
     ) -> Self {
         Self {
             vm,
+            class_name,
             class,
             component_class,
             modifiers: Uninitialized,
@@ -107,6 +117,39 @@ impl<'a> Class<'a> {
             PseudoVM::delete_local_ref(self.vm.clone(), self_obj)?;
 
             Ok(modifiers as u32)
+        })
+    }
+
+    pub fn declared_methods(&mut self) -> KapiResult<&Vec<RefMethod<'a>>> {
+        self.declared_methods.get_or_init(|| {
+            let self_obj = PseudoVM::new_local_ref(self.vm.clone(), &self.class)?;
+            let methods_obj = PseudoVM::call_method(
+                self.vm.clone(),
+                &self_obj,
+                "getDeclaredMethods",
+                "()[Ljava/lang/reflect/Method;",
+                &[],
+            )?
+            .l()?;
+            let methods = PseudoVM::map_obj_array(
+                self.vm.clone(),
+                Into::<&JObjectArray<'a>>::into(&methods_obj),
+                |method_obj| {
+                    let method_ref = PseudoVM::new_global_ref(self.vm.clone(), method_obj)?;
+                    let self_class = PseudoVM::get_class(self.vm.clone(), &self.class_name)?;
+
+                    Ok(Method::new_method_ref(
+                        self.vm.clone(),
+                        self_class,
+                        method_ref,
+                    ))
+                },
+            )?;
+
+            PseudoVM::delete_local_ref(self.vm.clone(), self_obj)?;
+            PseudoVM::delete_local_ref(self.vm.clone(), methods_obj)?;
+
+            Ok(methods)
         })
     }
 }
@@ -152,12 +195,16 @@ pub struct Method<'a> {
 }
 
 impl<'a> Method<'a> {
-    pub(crate) fn new_method_ref(vm: RefPseudoVM<'a>, declaring_class: RefClass<'a>, method: GlobalRef) -> RefMethod<'a> {
+    pub(crate) fn new_method_ref(
+        vm: RefPseudoVM<'a>,
+        declaring_class: RefClass<'a>,
+        method: GlobalRef,
+    ) -> RefMethod<'a> {
         Rc::new(RefCell::new(Self::new(vm, declaring_class, method)))
     }
-    
+
     fn new(vm: RefPseudoVM<'a>, declaring_class: RefClass<'a>, method: GlobalRef) -> Self {
-        Self{
+        Self {
             vm,
             declaring_class,
             method,
@@ -217,37 +264,37 @@ mod test {
     #[test]
     fn test_class_modifiers() {
         let vm = PseudoVM::init_vm().unwrap();
-    
+
         let string_class = PseudoVM::get_class(vm.clone(), "java.lang.String");
-        
+
         assert!(string_class.is_ok());
-        
+
         let string_class = string_class.unwrap();
         let mut string_class = string_class.borrow_mut();
         let modifiers = string_class.modifiers();
-        
+
         assert!(modifiers.is_ok());
-        
+
         let modifiers = modifiers.unwrap();
-    
+
         assert_eq!(17, *modifiers)
     }
-    
-    // #[test]
-    // fn test_class_declared_methods() {
-    //     let vm = PseudoVM::init_vm().unwrap();
-    //
-    //     let string_class_result = Class::get_class(vm.clone(), "java.lang.String");
-    //
-    //     assert!(string_class_result.is_ok());
-    //
-    //     let string_class_rfc = string_class_result.unwrap();
-    //     let mut string_class = string_class_rfc.borrow_mut();
-    //     let methods_result = string_class.declared_methods();
-    //
-    //     assert!(methods_result.is_ok());
-    // }
-    //
+
+    #[test]
+    fn test_class_declared_methods() {
+        let vm = PseudoVM::init_vm().unwrap();
+
+        let string_class = PseudoVM::get_class(vm.clone(), "java.lang.String");
+
+        assert!(string_class.is_ok());
+
+        let string_class = string_class.unwrap();
+        let mut string_class = string_class.borrow_mut();
+        let declared_methods = string_class.declared_methods();
+
+        assert!(declared_methods.is_ok());
+    }
+
     // #[test]
     // fn test_method_name() {
     //     let vm = PseudoVM::init_vm().unwrap();
