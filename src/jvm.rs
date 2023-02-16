@@ -5,15 +5,16 @@
 //! Note: Before using any functions, you should call [`PseudoVMState::init_vm()`](PseudoVM::init_vm)
 //! first in order to create a JVM.
 
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::rc::Rc;
 use std::sync::{Arc, Once};
 
-use jni::objects::{GlobalRef, JObject, JString, JValue};
+use jni::objects::{AsJArrayRaw, GlobalRef, JObject, JString, JValue, JValueOwned};
 use jni::strings::JNIString;
+use jni::sys::jarray;
 use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM};
 
 use crate::class::{Class, Method, RefClass};
@@ -22,181 +23,6 @@ use crate::types::canonical_to_descriptor;
 use crate::RefMethod;
 
 pub type RefPseudoVM<'a> = Rc<RefCell<PseudoVM<'a>>>;
-
-/// A [`PseudoVM`] represents an intermediate communication bridge between Rust and JVM, which
-/// contains several useful functions and a class cache.
-pub struct PseudoVM<'a> {
-    pub(crate) attach_guard: AttachGuard<'a>,
-    /// caches classes to prevent huge cost while retrieving class info from JVM.
-    pub class_cache: HashMap<String, RefClass<'a>>,
-    pub(crate) class_clazz: JClass<'a>,
-}
-
-impl<'a> PseudoVM<'a> {
-    /// Initializes Java Virtual Machine and returns a pseudo VM state struct to represent an intermediate
-    /// communication bridge between Rust and JVM.
-    pub fn init_vm() -> KapiResult<RefPseudoVM<'a>> {
-        let guard = jvm()?.attach_current_thread()?;
-
-        Ok(Rc::new(RefCell::new(Self::new(guard)?)))
-    }
-
-    fn new(attach_guard: AttachGuard<'a>) -> KapiResult<Self> {
-        let class_clazz = attach_guard.find_class("java/lang/Class")?;
-
-        Ok(Self {
-            attach_guard,
-            class_cache: HashMap::new(),
-            class_clazz,
-        })
-    }
-    
-    fn get_class_clazz(vm: RefPseudoVM<'a>) -> JClass<'a> {
-        vm.borrow().class_clazz
-    }
-    
-    fn get_cached_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> Option<RefClass<'a>>
-        where
-            S: Into<String>,
-    {
-        vm.borrow_mut().class_cache.get(&class_name.into()).map(|class_ref| class_ref.clone())
-    }
-    
-    fn cache_class<S>(vm: RefPseudoVM<'a>, class_name: S, class_ref: RefClass<'a>) -> RefClass<'a> where
-        S: Into<String>,{
-        vm.borrow_mut().class_cache.insert(class_name.into(), class_ref.clone()).unwrap_or(class_ref)
-    }
-
-    fn get_or_init_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> KapiResult<RefClass<'a>>
-    where
-        S: Into<String>,
-    {
-        let class_name = class_name.into();
-
-        if let Some(class) = Self::get_cached_class(vm.clone(), &class_name) {
-            Ok(class.clone())
-        } else {
-            let class = Self::get_class(vm.clone(), class_name.clone())?;
-            let class = Self::cache_class(vm.clone(), class_name, class);
-            
-            Ok(class)
-        }
-    }
-
-    pub fn get_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> KapiResult<RefClass<'a>>
-    where
-        S: Into<String>,
-    {
-        let class_clazz = Self::get_class_clazz(vm.clone());
-        let class_name = class_name.into();
-        let descriptor = Self::new_string(vm.clone(), canonical_to_descriptor(&class_name))?;
-        let class = Self::call_static_method(
-            vm.clone(),
-            class_clazz,
-            "forName",
-            "(Ljava/lang/String;)Ljava/lang/Class;",
-            &[descriptor.into()],
-        )?
-        .l()?;
-        
-        Self::delete_local_ref(vm.clone(), descriptor.into())?;
-
-        let class_ref = Self::new_global_ref(vm.clone(), class)?;
-        
-        let is_array =
-            Self::call_method(vm.clone(), class, "isArray", "()Z", &[])?.z()?;
-        
-        Self::delete_local_ref(vm.clone(), class)?;
-        
-        let component_class = if is_array {
-            let component_class_name = if class_name.matches("[").count() > 1 {
-                // Remove "["
-                &class_name[1..]
-            } else {
-                // Remove "[L" and ";"
-                &class_name[2..class_name.len() - 1]
-            };
-            
-            Some(Self::get_or_init_class(
-                vm.clone(),
-                component_class_name,
-            )?)
-        } else {
-            None
-        };
-        
-        Ok(Class::new_class_ref(vm.clone(), class_ref, component_class))
-    }
-
-    pub fn call_static_method<S1, S2>(
-        vm: RefPseudoVM<'a>,
-        class: JClass<'a>,
-        name: S1,
-        sig: S2,
-        args: &[JValue<'a>],
-    ) -> KapiResult<JValue<'a>>
-    where
-        S1: Into<String>,
-        S2: Into<String>,
-    {
-        vm.borrow()
-            .attach_guard
-            .call_static_method(class, name.into(), sig.into(), args)
-            .into_kapi()
-    }
-
-    pub fn call_method<O, S1, S2>(
-        vm: RefPseudoVM<'a>,
-        object: O,
-        name: S1,
-        sig: S2,
-        args: &[JValue<'a>],
-    ) -> KapiResult<JValue<'a>>
-    where
-        O: Into<JObject<'a>>,
-        S1: Into<String>,
-        S2: Into<String>,
-    {
-        vm.borrow()
-            .attach_guard
-            .call_method(object, name.into(), sig.into(), args)
-            .into_kapi()
-    }
-
-    pub fn new_global_ref<O>(vm: RefPseudoVM<'a>, object: O) -> KapiResult<GlobalRef>
-    where
-        O: Into<JObject<'a>>,
-    {
-        vm.borrow().attach_guard.new_global_ref(object).into_kapi()
-    }
-    
-    pub fn new_local_ref(vm: RefPseudoVM<'a>, global_ref: &GlobalRef) -> KapiResult<JObject<'a>> {
-        vm.borrow().attach_guard.new_local_ref(global_ref).into_kapi()
-    }
-
-    pub fn delete_local_ref(vm: RefPseudoVM<'a>, object: JObject<'a>) -> KapiResult<()> {
-        vm.borrow()
-            .attach_guard
-            .delete_local_ref(object)
-            .into_kapi()
-    }
-
-    pub fn new_string<S>(vm: RefPseudoVM<'a>, string: S) -> KapiResult<JString<'a>>
-    where
-        S: Into<String>,
-    {
-        vm.borrow()
-            .attach_guard
-            .new_string(string.into())
-            .into_kapi()
-    }
-}
-
-impl<'a> Debug for PseudoVM<'a> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PseudoVMState {{ attach_guard: ..., class_cache: ... }}")
-    }
-}
 
 fn jvm() -> KapiResult<&'static Arc<JavaVM>> {
     static mut INIT_RESULT: Option<KapiResult<Arc<JavaVM>>> = None;
@@ -228,6 +54,200 @@ fn jvm() -> KapiResult<&'static Arc<JavaVM>> {
     }
 }
 
+/// A [`PseudoVM`] represents an intermediate communication bridge between Rust and JVM, which
+/// contains several useful functions and a class cache.
+pub struct PseudoVM<'a> {
+    pub(crate) attach_guard: AttachGuard<'a>,
+    /// caches classes to prevent huge cost while retrieving class info from JVM.
+    pub class_cache: HashMap<String, RefClass<'a>>,
+}
+
+impl<'a> PseudoVM<'a> {
+    /// Initializes Java Virtual Machine and returns a pseudo VM state struct to represent an intermediate
+    /// communication bridge between Rust and JVM.
+    pub fn init_vm() -> KapiResult<RefPseudoVM<'a>> {
+        let guard = jvm()?.attach_current_thread()?;
+
+        Ok(Rc::new(RefCell::new(Self::new(guard)?)))
+    }
+
+    fn new(mut attach_guard: AttachGuard<'a>) -> KapiResult<Self> {
+        Ok(Self {
+            attach_guard,
+            class_cache: HashMap::new(),
+        })
+    }
+
+    fn get_cached_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> Option<RefClass<'a>>
+    where
+        S: Into<String>,
+    {
+        vm.borrow_mut()
+            .class_cache
+            .get(&class_name.into())
+            .map(|class_ref| class_ref.clone())
+    }
+
+    fn cache_class<S>(vm: RefPseudoVM<'a>, class_name: S, class_ref: RefClass<'a>) -> RefClass<'a>
+    where
+        S: Into<String>,
+    {
+        vm.borrow_mut()
+            .class_cache
+            .insert(class_name.into(), class_ref.clone())
+            .unwrap_or(class_ref)
+    }
+
+    fn get_or_init_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> KapiResult<RefClass<'a>>
+    where
+        S: Into<String>,
+    {
+        let class_name = class_name.into();
+
+        if let Some(class) = Self::get_cached_class(vm.clone(), &class_name) {
+            Ok(class.clone())
+        } else {
+            let class = Self::get_class(vm.clone(), class_name.clone())?;
+            let class = Self::cache_class(vm.clone(), class_name, class);
+
+            Ok(class)
+        }
+    }
+    
+    pub fn find_class<S>(vm: RefPseudoVM<'a>, name: S) -> KapiResult<JClass<'a>>
+    where
+    S: Into<JNIString>, {
+        vm.borrow_mut().attach_guard.find_class(name).into_kapi()
+    }
+
+    pub fn get_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> KapiResult<RefClass<'a>>
+    where
+        S: Into<String>,
+    {
+        let class_clazz = Self::find_class(vm.clone(), "java/lang/Class")?;
+        let class_name = class_name.into();
+        let descriptor = Self::new_string(vm.clone(), canonical_to_descriptor(&class_name))?;
+        let class = Self::call_static_method(
+            vm.clone(),
+            &class_clazz,
+            "forName",
+            "(Ljava/lang/String;)Ljava/lang/Class;",
+            &[(&descriptor).into()],
+        )?.l()?;
+
+        Self::delete_local_ref(vm.clone(), descriptor)?;
+
+        let class_ref = Self::new_global_ref(vm.clone(), &class)?;
+
+        let is_array = Self::call_method(vm.clone(), &class, "isArray", "()Z", &[])?.z()?;
+
+        Self::delete_local_ref(vm.clone(), class)?;
+
+        let component_class = if is_array {
+            let component_class_name = if class_name.matches("[").count() > 1 {
+                // Remove "["
+                &class_name[1..]
+            } else {
+                // Remove "[L" and ";"
+                &class_name[2..class_name.len() - 1]
+            };
+
+            Some(Self::get_or_init_class(vm.clone(), component_class_name)?)
+        } else {
+            None
+        };
+
+        Ok(Class::new_class_ref(vm.clone(), class_ref, component_class))
+    }
+
+    pub fn call_static_method<S1, S2>(
+        vm: RefPseudoVM<'a>,
+        class: &JClass<'a>,
+        name: S1,
+        sig: S2,
+        args: &[JValue],
+    ) -> KapiResult<JValueOwned<'a>>
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        vm.borrow_mut()
+            .attach_guard
+            .call_static_method(class, name.into(), sig.into(), args)
+            .into_kapi()
+    }
+
+    pub fn call_method<'local_ref, O, S1, S2>(
+        vm: RefPseudoVM<'a>,
+        object: O,
+        name: S1,
+        sig: S2,
+        args: &[JValue],
+    ) -> KapiResult<JValueOwned<'a>>
+    where
+        O: AsRef<JObject<'local_ref>>,
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        vm.borrow_mut()
+            .attach_guard
+            .call_method(object, name.into(), sig.into(), args)
+            .into_kapi()
+    }
+
+    pub fn new_global_ref<'other_local, O>(vm: RefPseudoVM<'a>, object: O) -> KapiResult<GlobalRef>
+    where
+        O: AsRef<JObject<'other_local>>,
+    {
+        vm.borrow().attach_guard.new_global_ref(object).into_kapi()
+    }
+
+    pub fn new_local_ref(vm: RefPseudoVM<'a>, global_ref: &GlobalRef) -> KapiResult<JObject<'a>> {
+        vm.borrow()
+            .attach_guard
+            .new_local_ref(global_ref)
+            .into_kapi()
+    }
+
+    pub fn delete_local_ref<'other_local, O>(vm: RefPseudoVM<'a>, object: O) -> KapiResult<()> where O: Into<JObject<'other_local>> {
+        vm.borrow()
+            .attach_guard
+            .delete_local_ref(object)
+            .into_kapi()
+    }
+
+    pub fn new_string<S>(vm: RefPseudoVM<'a>, string: S) -> KapiResult<JString<'a>>
+    where
+        S: Into<String>,
+    {
+        vm.borrow()
+            .attach_guard
+            .new_string(string.into())
+            .into_kapi()
+    }
+
+    pub fn get_array_length<'other_local, 'array, A>(vm: RefPseudoVM<'a>, array: &'array impl AsJArrayRaw<'other_local>) -> KapiResult<usize>
+    {
+        vm.borrow()
+            .attach_guard
+            .get_array_length(array)
+            .map(|size| size as _)
+            .into_kapi()
+    }
+    
+    pub fn map_obj_array<A, F>(vm: RefPseudoVM<'a>, array: A, element_getter: F) where A: Into<jarray> {
+        todo!()
+    }
+}
+
+impl<'a> Debug for PseudoVM<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "PseudoVMState {{ attach_guard: ..., class_cache: ... }}")
+    }
+}
+
+
+
 #[cfg(test)]
 mod test {
     use crate::jvm::PseudoVM;
@@ -235,7 +255,7 @@ mod test {
     #[test]
     fn test_init_vm() {
         let vm = PseudoVM::init_vm();
-        
+
         assert!(vm.is_ok());
     }
 }

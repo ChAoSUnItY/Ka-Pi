@@ -106,7 +106,7 @@ impl<'a> Class<'a> {
         self.modifiers.get_or_init(|| {
             let self_obj = PseudoVM::new_local_ref(self.vm.clone(), &self.class)?;
             let modifiers =
-                PseudoVM::call_method(self.vm.clone(), self_obj, "getModifiers", "()I", &[])?
+                PseudoVM::call_method(self.vm.clone(), &self_obj, "getModifiers", "()I", &[])?
                     .i()?;
             PseudoVM::delete_local_ref(self.vm.clone(), self_obj)?;
 
@@ -129,10 +129,10 @@ impl PartialEq for Class<'_> {
 
         let eq = PseudoVM::call_method(
             self.vm.clone(),
-            self_obj,
+            &self_obj,
             "equals",
             "(Ljava/lang/Object;)Z",
-            &[other_obj.into()],
+            &[(&other_obj).into()],
         )
         .map_or(false, |value| value.z().unwrap_or(false));
 
