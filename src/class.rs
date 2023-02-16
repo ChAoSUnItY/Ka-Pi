@@ -11,6 +11,37 @@ use crate::jvm::{PseudoVM, RefPseudoVM};
 pub type RefClass<'a> = Rc<RefCell<Class<'a>>>;
 pub type RefMethod<'a> = Rc<RefCell<Method<'a>>>;
 
+pub trait ObjectEq<'a> {
+    fn vm(&self) -> RefPseudoVM<'a>;
+    fn instance(&self) -> &GlobalRef;
+
+    fn object_eq(&self, other: &Self) -> bool {
+        let self_obj = PseudoVM::new_local_ref(self.vm(), &self.instance());
+        let other_obj = PseudoVM::new_local_ref(self.vm(), &other.instance());
+
+        if self_obj.is_err() || other_obj.is_err() {
+            return false;
+        }
+
+        let self_obj = self_obj.unwrap();
+        let other_obj = other_obj.unwrap();
+
+        let eq = PseudoVM::call_method(
+            self.vm(),
+            &self_obj,
+            "equals",
+            "(Ljava/lang/Object;)Z",
+            &[(&other_obj).into()],
+        )
+        .map_or(false, |value| value.z().unwrap_or(false));
+
+        let _ = PseudoVM::delete_local_ref(self.vm(), self_obj);
+        let _ = PseudoVM::delete_local_ref(self.vm(), other_obj);
+
+        eq
+    }
+}
+
 /// Simple representation of lazy initialized class member, to avoid heavy cost of communication between
 /// Rust and JVM. See [`Class`].
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -154,35 +185,23 @@ impl<'a> Class<'a> {
     }
 }
 
-impl PartialEq for Class<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        let self_obj = PseudoVM::new_local_ref(self.vm.clone(), &self.class);
-        let other_obj = PseudoVM::new_local_ref(self.vm.clone(), &other.class);
+impl<'a> ObjectEq<'a> for Class<'a> {
+    fn vm(&self) -> RefPseudoVM<'a> {
+        self.vm.clone()
+    }
 
-        if self_obj.is_err() || other_obj.is_err() {
-            return false;
-        }
-
-        let self_obj = self_obj.unwrap();
-        let other_obj = other_obj.unwrap();
-
-        let eq = PseudoVM::call_method(
-            self.vm.clone(),
-            &self_obj,
-            "equals",
-            "(Ljava/lang/Object;)Z",
-            &[(&other_obj).into()],
-        )
-        .map_or(false, |value| value.z().unwrap_or(false));
-
-        let _ = PseudoVM::delete_local_ref(self.vm.clone(), self_obj);
-        let _ = PseudoVM::delete_local_ref(self.vm.clone(), other_obj);
-
-        eq
+    fn instance(&self) -> &GlobalRef {
+        &self.class
     }
 }
 
-impl<'a> Eq for Class<'a> {}
+impl PartialEq for Class<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.object_eq(other)
+    }
+}
+
+impl Eq for Class<'_> {}
 
 #[derive(Debug)]
 pub struct Method<'a> {
@@ -215,14 +234,23 @@ impl<'a> Method<'a> {
     }
 }
 
-impl<'a> PartialEq<Self> for Method<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        todo!()
-        // TODO: Check method id should be enough
+impl<'a> ObjectEq<'a> for Method<'a> {
+    fn vm(&self) -> RefPseudoVM<'a> {
+        self.vm.clone()
+    }
+
+    fn instance(&self) -> &GlobalRef {
+        &self.method
     }
 }
 
-impl<'a> Eq for Method<'a> {}
+impl PartialEq for Method<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.object_eq(other)
+    }
+}
+
+impl Eq for Method<'_> {}
 
 #[cfg(test)]
 mod test {
