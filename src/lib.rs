@@ -33,3 +33,4 @@ pub mod jvm;
 mod symbol;
 pub mod types;
 mod utils;
+mod attribute;
