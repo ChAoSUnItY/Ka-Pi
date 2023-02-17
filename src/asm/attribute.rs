@@ -1,4 +1,4 @@
-use crate::label::Label;
+use crate::asm::label::Label;
 
 pub(crate) trait Attribute<'a> {
     fn r#type(&self) -> &String;

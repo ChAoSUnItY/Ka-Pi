@@ -21,7 +21,7 @@ use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIVersion, JavaVM};
 
 use crate::class::{Class, RefClass};
 use crate::error::{IntoKapiResult, KapiResult};
-use crate::types::canonical_to_descriptor;
+use crate::asm::types::canonical_to_descriptor;
 
 pub type RefPseudoVM<'a> = Rc<RefCell<PseudoVM<'a>>>;
 

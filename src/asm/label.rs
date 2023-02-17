@@ -1,12 +1,14 @@
 use std::rc::Rc;
 
 use crate::{
-    byte_vec::ByteVec,
-    constants,
-    edge::Edge,
+    asm::{
+        byte_vec::ByteVec,
+        constants,
+        edge::Edge,
+        frame::Frame,
+        opcodes,
+    },
     error::KapiError,
-    frame::Frame,
-    opcodes,
     utils::{replace, Rev},
 };
 use crate::error::KapiResult;

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::label::Label;
+use crate::asm::label::Label;
 
 pub(crate) const JUMP: u32 = 0;
 pub(crate) const EXCEPTION: u32 = 0x7FFFFFFF;

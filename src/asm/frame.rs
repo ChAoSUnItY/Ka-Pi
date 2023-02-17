@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::label::Label;
+use crate::asm::label::Label;
 
 pub(crate) const SAME_FRAME: i32 = 0;
 pub(crate) const SAME_LOCALS_1_STACK_ITEM_FRAME: i32 = 64;

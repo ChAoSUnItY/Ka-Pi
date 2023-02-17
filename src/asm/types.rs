@@ -6,7 +6,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::error::KapiResult;
 use crate::{
-    byte_vec::{ByteVec, ByteVecImpl},
+    asm::byte_vec::{ByteVec, ByteVecImpl},
     error::KapiError,
 };
 
@@ -487,7 +487,7 @@ impl TypeRef {
 mod test {
     use std::str::FromStr;
 
-    use crate::types::{self, canonical_to_internal, TypePath, THROWS};
+    use crate::asm::types::{self, canonical_to_internal, TypePath, THROWS};
 
     use super::{
         TypeRef, CAST, CLASS_EXTENDS, CLASS_TYPE_PARAMETER, EXCEPTION_PARAMETER, FIELD,

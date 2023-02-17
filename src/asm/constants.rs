@@ -1,7 +1,7 @@
 // The ClassFile attribute names, in the order they are defined in
 // https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.7-300.
 
-use crate::opcodes;
+use crate::asm::opcodes;
 
 pub(crate) const CONSTANT_VALUE: &'static str = "ConstantValue";
 pub(crate) const CODE: &'static str = "Code";
@@ -140,3 +140,9 @@ pub(crate) const ASM_JSR: u8 = opcodes::JSR + ASM_OPCODE_DELTA;
 pub(crate) const ASM_IFNULL: u8 = opcodes::IFNULL + ASM_IFNULL_OPCODE_DELTA;
 pub(crate) const ASM_IFNONNULL: u8 = opcodes::IFNONNULL + ASM_IFNULL_OPCODE_DELTA;
 pub(crate) const ASM_GOTO_W: u8 = 220;
+
+pub struct ConstantDynamic {
+    name: String,
+    descriptor: String,
+    
+}
