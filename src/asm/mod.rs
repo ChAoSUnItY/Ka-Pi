@@ -1,3 +1,5 @@
+pub use handle::Handle;
+
 /// The JVM opcodes, access flags and array type codes. This interface does not define all the JVM
 /// opcodes because some opcodes are automatically handled. For example, the xLOAD and xSTORE opcodes
 /// are automatically replaced by xLOAD_n and xSTORE_n opcodes when possible. The xLOAD_n and
@@ -17,3 +19,5 @@ mod label;
 mod symbol;
 pub mod types;
 mod attribute;
+mod handle;
+mod handler;

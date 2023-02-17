@@ -63,12 +63,8 @@ pub(crate) const DOUBLE: i32 = CONSTANT_KIND | ITEM_DOUBLE as i32;
 pub(crate) const NULL: i32 = CONSTANT_KIND | ITEM_NULL as i32;
 pub(crate) const UNINITIALIZED_THIS: i32 = CONSTANT_KIND | ITEM_UNINITIALIZED_THIS as i32;
 
-pub(crate) trait Frame {
-    fn owner(&self) -> Rc<dyn Label>;
-}
-
-pub(crate) struct FrameImpl {
-    owner: Rc<dyn Label>,
+pub(crate) struct Frame {
+    owner: Rc<Label>,
     input_locals: Vec<i32>,
     input_stack: Vec<i32>,
     output_locals: Vec<i32>,
@@ -79,8 +75,8 @@ pub(crate) struct FrameImpl {
     initializations: Vec<i32>,
 }
 
-impl FrameImpl {
-    pub(crate) const fn new(owner: Rc<dyn Label>) -> Self {
+impl Frame {
+    pub(crate) const fn new(owner: Rc<Label>) -> Self {
         Self {
             owner,
             input_locals: vec![],
@@ -94,7 +90,11 @@ impl FrameImpl {
         }
     }
 
-    pub(crate) fn from(&mut self, frame: &FrameImpl) {
+    pub(crate) fn owner(&self) -> Rc<Label> {
+        self.owner.clone()
+    }
+
+    pub(crate) fn from(&mut self, frame: &Self) {
         self.input_locals.clone_from(&frame.input_locals);
         self.input_stack.clone_from(&frame.input_stack);
         self.output_locals.clone_from(&frame.output_locals);
@@ -103,11 +103,5 @@ impl FrameImpl {
         self.output_stack_top = frame.output_stack_top;
         self.initialization_count = frame.initialization_count;
         self.initializations.clone_from(&frame.initializations);
-    }
-}
-
-impl Frame for FrameImpl {
-    fn owner(&self) -> Rc<dyn Label> {
-        self.owner.clone()
     }
 }

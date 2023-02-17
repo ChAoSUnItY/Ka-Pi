@@ -31,26 +31,9 @@ pub(crate) const FORWARD_REFERENCE_TYPE_SHORT: i32 = 0x10000000;
 pub(crate) const FORWARD_REFERENCE_TYPE_WIDE: i32 = 0x20000000;
 pub(crate) const FORWARD_REFERENCE_HANDLE_MASK: i32 = 0x0FFFFFFF;
 
-pub(crate) const EMPTY_LIST: LabelImpl = LabelImpl::new();
+pub(crate) const EMPTY_LIST: Label = Label::new();
 
-pub(crate) trait Label {
-    fn flags(&self) -> u8;
-    fn bytecode_offset(&self) -> i32;
-    fn input_stack_size(&self) -> u16;
-    fn output_stack_size(&self) -> u16;
-    fn output_stack_max(&self) -> u16;
-    fn subroutine_id(&self) -> u16;
-    fn frame(&self) -> Option<Rc<dyn Frame>>;
-    fn next_basic_block(&self) -> Option<Rc<Self>>
-        where
-            Self: Sized;
-    fn outgoing_edges(&self) -> Option<Rc<Edge>>;
-    fn next_list_element(&self) -> Option<Rc<Self>>
-        where
-            Self: Sized;
-}
-
-pub(crate) struct LabelImpl {
+pub(crate) struct Label {
     pub(crate) flags: u8,
     line_number: u32,
     other_line_numbers: Option<Vec<u32>>,
@@ -60,13 +43,13 @@ pub(crate) struct LabelImpl {
     pub(crate) output_stack_size: u16,
     pub(crate) output_stack_max: u16,
     pub(crate) subroutine_id: u16,
-    pub(crate) frame: Option<Rc<dyn Frame>>,
+    pub(crate) frame: Option<Rc<Frame>>,
     pub(crate) next_basic_block: Option<Rc<Self>>,
     pub(crate) outgoing_edges: Option<Rc<Edge>>,
     pub(crate) next_list_element: Option<Rc<Self>>,
 }
 
-impl LabelImpl {
+impl Label {
     pub(crate) const fn new() -> Self {
         Self {
             flags: 0,
@@ -84,9 +67,49 @@ impl LabelImpl {
             next_list_element: None,
         }
     }
-}
 
-impl LabelImpl {
+    fn flags(&self) -> u8 {
+        self.flags
+    }
+
+    fn bytecode_offset(&self) -> i32 {
+        self.bytecode_offset
+    }
+
+    fn input_stack_size(&self) -> u16 {
+        self.input_stack_size
+    }
+
+    fn output_stack_size(&self) -> u16 {
+        self.output_stack_size
+    }
+
+    fn output_stack_max(&self) -> u16 {
+        self.output_stack_max
+    }
+
+    fn subroutine_id(&self) -> u16 {
+        self.subroutine_id
+    }
+
+    fn frame(&self) -> Option<Rc<Frame>> {
+        self.frame.clone()
+    }
+
+    fn next_basic_block(&self) -> Option<Rc<Self>>
+    {
+        self.next_basic_block.clone()
+    }
+
+    fn outgoing_edges(&self) -> Option<Rc<Edge>> {
+        self.outgoing_edges.clone()
+    }
+
+    fn next_list_element(&self) -> Option<Rc<Self>>
+    {
+        self.next_list_element.clone()
+    }
+
     pub fn get_offset(&self) -> KapiResult<i32> {
         if self.flags() & FLAG_RESOLVED == 0 {
             Err(KapiError::StateError("Label offset position has not been resolved yet"))
@@ -95,7 +118,7 @@ impl LabelImpl {
         }
     }
 
-    pub(crate) fn get_canonical_instance(self: Rc<Self>) -> Option<Rc<dyn Label>> {
+    pub(crate) fn get_canonical_instance(self: Rc<Self>) -> Option<Rc<Self>> {
         if self.frame.is_none() {
             Some(self)
         } else {
@@ -211,53 +234,5 @@ impl LabelImpl {
         }
 
         has_asm_instructions
-    }
-}
-
-impl Label for LabelImpl {
-    fn flags(&self) -> u8 {
-        self.flags
-    }
-
-    fn bytecode_offset(&self) -> i32 {
-        self.bytecode_offset
-    }
-
-    fn input_stack_size(&self) -> u16 {
-        self.input_stack_size
-    }
-
-    fn output_stack_size(&self) -> u16 {
-        self.output_stack_size
-    }
-
-    fn output_stack_max(&self) -> u16 {
-        self.output_stack_max
-    }
-
-    fn subroutine_id(&self) -> u16 {
-        self.subroutine_id
-    }
-
-    fn frame(&self) -> Option<Rc<dyn Frame>> {
-        self.frame.clone()
-    }
-
-    fn next_basic_block(&self) -> Option<Rc<Self>>
-        where
-            Self: Sized,
-    {
-        self.next_basic_block.clone()
-    }
-
-    fn outgoing_edges(&self) -> Option<Rc<Edge>> {
-        self.outgoing_edges.clone()
-    }
-
-    fn next_list_element(&self) -> Option<Rc<Self>>
-        where
-            Self: Sized,
-    {
-        self.next_list_element.clone()
     }
 }
