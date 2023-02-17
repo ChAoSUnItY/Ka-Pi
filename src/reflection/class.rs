@@ -4,9 +4,9 @@ use std::rc::Rc;
 
 use jni::objects::{GlobalRef, JObjectArray};
 
-use crate::class::LazyClassMember::{Failed, Initialized, Uninitialized};
+use crate::reflection::class::LazyClassMember::{Failed, Initialized, Uninitialized};
 use crate::error::{KapiError, KapiResult};
-use crate::jvm::{PseudoVM, RefPseudoVM};
+use crate::reflection::jvm::{PseudoVM, RefPseudoVM};
 
 pub type RefClass<'a> = Rc<RefCell<Class<'a>>>;
 pub type RefMethod<'a> = Rc<RefCell<Method<'a>>>;
@@ -265,8 +265,8 @@ impl Eq for Method<'_> {}
 
 #[cfg(test)]
 mod test {
-    use crate::class::Class;
-    use crate::jvm::PseudoVM;
+    use crate::reflection::class::Class;
+    use crate::reflection::jvm::PseudoVM;
 
     #[test]
     fn test_get_class() {

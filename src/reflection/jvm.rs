@@ -19,7 +19,7 @@ use jni::strings::{JNIString, JavaStr};
 use jni::sys::jsize;
 use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIVersion, JavaVM};
 
-use crate::class::{Class, RefClass};
+use crate::reflection::class::{Class, RefClass};
 use crate::error::{IntoKapiResult, KapiResult};
 use crate::asm::types::canonical_to_descriptor;
 
@@ -316,7 +316,7 @@ impl<'a> Debug for PseudoVM<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::jvm::PseudoVM;
+    use crate::reflection::jvm::PseudoVM;
 
     #[test]
     fn test_init_vm() {
