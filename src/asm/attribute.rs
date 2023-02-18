@@ -23,9 +23,11 @@ impl Attribute {
     fn is_unknown() -> bool {
         true
     }
+
     fn is_code_attribute() -> bool {
         false
     }
+
     fn labels(&self) -> Vec<Rc<Label>> {
         vec![]
     }
