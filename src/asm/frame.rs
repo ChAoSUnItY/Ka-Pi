@@ -63,6 +63,7 @@ pub(crate) const DOUBLE: i32 = CONSTANT_KIND | ITEM_DOUBLE as i32;
 pub(crate) const NULL: i32 = CONSTANT_KIND | ITEM_NULL as i32;
 pub(crate) const UNINITIALIZED_THIS: i32 = CONSTANT_KIND | ITEM_UNINITIALIZED_THIS as i32;
 
+#[derive(Debug, Clone)]
 pub(crate) struct Frame {
     owner: Rc<Label>,
     input_locals: Vec<i32>,

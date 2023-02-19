@@ -1,5 +1,7 @@
 {
   "rust-analyzer.cargo.features": [
-    "interop"
-  ]
+    "reflection"
+  ],
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000
 }

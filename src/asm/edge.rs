@@ -5,6 +5,7 @@ use crate::asm::label::Label;
 pub(crate) const JUMP: u32 = 0;
 pub(crate) const EXCEPTION: u32 = 0x7FFFFFFF;
 
+#[derive(Debug, Clone)]
 pub(crate) struct Edge {
     pub(crate) info: i32,
     pub(crate) successor: Rc<Label>,

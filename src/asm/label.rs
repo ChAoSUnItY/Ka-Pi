@@ -33,6 +33,7 @@ pub(crate) const FORWARD_REFERENCE_HANDLE_MASK: i32 = 0x0FFFFFFF;
 
 pub(crate) const EMPTY_LIST: Label = Label::new();
 
+#[derive(Debug, Clone)]
 pub(crate) struct Label {
     pub(crate) flags: u8,
     line_number: u32,

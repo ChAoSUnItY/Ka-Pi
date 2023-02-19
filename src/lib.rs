@@ -2,7 +2,7 @@
 //! ### A JVM Bytecode Manipulation Framework inspired by ASM.
 //!
 
-#[cfg(feature = "interop")]
+#[cfg(feature = "reflection")]
 pub mod reflection;
 pub mod asm;
 
