@@ -36,10 +36,10 @@ pub(crate) const EMPTY_LIST: Label = Label::new();
 #[derive(Debug, Clone, Eq)]
 pub(crate) struct Label {
     pub(crate) flags: u8,
-    line_number: u32,
-    other_line_numbers: Option<Vec<u32>>,
+    pub(crate) line_number: u32,
+    pub(crate) other_line_numbers: Option<Vec<u32>>,
     pub(crate) bytecode_offset: i32,
-    forward_references: Option<Vec<i32>>,
+    pub(crate) forward_references: Option<Vec<i32>>,
     pub(crate) input_stack_size: u16,
     pub(crate) output_stack_size: u16,
     pub(crate) output_stack_max: u16,
@@ -69,53 +69,11 @@ impl Label {
         }
     }
 
-    fn flags(&self) -> u8 {
-        self.flags
-    }
-
-    fn bytecode_offset(&self) -> i32 {
-        self.bytecode_offset
-    }
-
-    fn input_stack_size(&self) -> u16 {
-        self.input_stack_size
-    }
-
-    fn output_stack_size(&self) -> u16 {
-        self.output_stack_size
-    }
-
-    fn output_stack_max(&self) -> u16 {
-        self.output_stack_max
-    }
-
-    fn subroutine_id(&self) -> u16 {
-        self.subroutine_id
-    }
-
-    fn frame(&self) -> Option<Frame> {
-        self.frame.clone()
-    }
-
-    fn next_basic_block(&self) -> Option<Rc<Self>>
-    {
-        self.next_basic_block.clone()
-    }
-
-    fn outgoing_edges(&self) -> Option<Edge> {
-        self.outgoing_edges.clone()
-    }
-
-    fn next_list_element(&self) -> Option<Rc<Self>>
-    {
-        self.next_list_element.clone()
-    }
-
     pub fn get_offset(&self) -> KapiResult<i32> {
-        if self.flags() & FLAG_RESOLVED == 0 {
+        if self.flags & FLAG_RESOLVED == 0 {
             Err(KapiError::StateError("Label offset position has not been resolved yet"))
         } else {
-            Ok(self.bytecode_offset())
+            Ok(self.bytecode_offset)
         }
     }
 
@@ -123,12 +81,12 @@ impl Label {
         if self.frame.is_none() {
             Some(self)
         } else {
-            self.frame().map(|f| f.owner())
+            self.frame.clone().map(|f| f.owner())
         }
     }
 
     pub(crate) fn add_line_number(&mut self, line_number: u32) {
-        if self.flags() & FLAG_LINE_NUMBER == 0 {
+        if self.flags & FLAG_LINE_NUMBER == 0 {
             self.flags |= FLAG_LINE_NUMBER;
             self.line_number = line_number;
             return;
@@ -151,7 +109,7 @@ impl Label {
         source_inst_bytecode_offset: i32,
         wide_reference: bool,
     ) {
-        if self.flags() & FLAG_RESOLVED == 0 {
+        if self.flags & FLAG_RESOLVED == 0 {
             if wide_reference {
                 self.add_foward_reference(
                     source_inst_bytecode_offset,
@@ -169,9 +127,9 @@ impl Label {
             }
         } else {
             if wide_reference {
-                code.put_int(self.bytecode_offset() - source_inst_bytecode_offset);
+                code.put_int(self.bytecode_offset - source_inst_bytecode_offset);
             } else {
-                code.put_short((self.bytecode_offset() - source_inst_bytecode_offset) as i16);
+                code.put_short((self.bytecode_offset - source_inst_bytecode_offset) as i16);
             }
         }
     }
