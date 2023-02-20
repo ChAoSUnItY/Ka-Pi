@@ -47,7 +47,10 @@ impl Handler {
         start: &Option<Label>,
         end: &Option<Label>,
     ) -> KapiResult<()> {
-        for i in (1..handlers.len()).rev() {
+        let handlers_len = handlers.len();
+        let mut discarded_count = 0;
+        
+        for i in (0..handlers_len).rev() {
             let handler = handlers[i].clone();
             let handler_start = handler
                 .start_pc
@@ -70,12 +73,13 @@ impl Handler {
             };
 
             if range_start >= handler_end || range_end <= handler_start {
-                break;
+                continue;
             }
 
             if range_start <= handler_start {
                 if range_end >= handler_end {
-                    handlers.swap(i - 1, i + 1);
+                    handlers.swap(i, handlers_len - 1);
+                    discarded_count += 1;
                 } else {
                     handlers[i] = Self::from_handler(&handler, end.clone(), handler.end_pc.clone());
                 }
@@ -89,6 +93,8 @@ impl Handler {
                 handlers[i] = Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
             }
         }
+        
+        handlers.truncate(handlers_len - discarded_count);
 
         Ok(())
     }
@@ -96,8 +102,26 @@ impl Handler {
 
 #[cfg(test)]
 mod test {
+    use rstest::rstest;
+
     use crate::asm::handler::Handler;
     use crate::asm::label::Label;
+
+    fn new_handler(start_pc: i32, end_pc: i32) -> Handler {
+        Handler::new(
+            new_label(start_pc).into(),
+            new_label(end_pc).into(),
+            new_label(0).into(),
+            0,
+            String::from(""),
+        )
+    }
+
+    fn new_label(pc: i32) -> Label {
+        let mut label = Label::new();
+        label.bytecode_offset = pc;
+        label
+    }
 
     #[test]
     fn test_new_handler() {
@@ -129,5 +153,27 @@ mod test {
             Handler::from_handler(&handler, Label::new().into(), Label::new().into());
 
         assert_eq!(handler, copied_handler);
+    }
+
+    #[rstest]
+    #[case(new_label(0), new_label(10), vec![], vec![])]
+    #[case(new_label(0), new_label(10), vec![new_handler(10, 20)], vec![new_handler(10, 20)])]
+    #[case(new_label(20), new_label(30), vec![new_handler(10, 20)], vec![new_handler(10, 20)])]
+    #[case(new_label(30), None, vec![new_handler(10, 20)], vec![new_handler(10, 20)])]
+    #[case(new_label(0), new_label(30), vec![new_handler(10, 20)], vec![])]
+    fn test_remove_range_remove_all_or_nothing<L1, L2>(
+        #[case] start_pc: L1,
+        #[case] end_pc: L2,
+        #[case] input_handlers: Vec<Handler>,
+        #[case] expected_handlers: Vec<Handler>,
+    ) where L1: Into<Option<Label>>, L2: Into<Option<Label>> {
+        let mut handlers = input_handlers.to_owned();
+
+        Handler::remove_range(&mut handlers, &start_pc.into(), &end_pc.into()).unwrap();
+        
+        assert_eq!(
+            expected_handlers,
+            handlers
+        );
     }
 }
