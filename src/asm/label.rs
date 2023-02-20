@@ -33,7 +33,7 @@ pub(crate) const FORWARD_REFERENCE_HANDLE_MASK: i32 = 0x0FFFFFFF;
 
 pub(crate) const EMPTY_LIST: Label = Label::new();
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub(crate) struct Label {
     pub(crate) flags: u8,
     line_number: u32,
@@ -44,9 +44,9 @@ pub(crate) struct Label {
     pub(crate) output_stack_size: u16,
     pub(crate) output_stack_max: u16,
     pub(crate) subroutine_id: u16,
-    pub(crate) frame: Option<Rc<Frame>>,
+    pub(crate) frame: Option<Frame>,
     pub(crate) next_basic_block: Option<Rc<Self>>,
-    pub(crate) outgoing_edges: Option<Rc<Edge>>,
+    pub(crate) outgoing_edges: Option<Edge>,
     pub(crate) next_list_element: Option<Rc<Self>>,
 }
 
@@ -93,7 +93,7 @@ impl Label {
         self.subroutine_id
     }
 
-    fn frame(&self) -> Option<Rc<Frame>> {
+    fn frame(&self) -> Option<Frame> {
         self.frame.clone()
     }
 
@@ -102,7 +102,7 @@ impl Label {
         self.next_basic_block.clone()
     }
 
-    fn outgoing_edges(&self) -> Option<Rc<Edge>> {
+    fn outgoing_edges(&self) -> Option<Edge> {
         self.outgoing_edges.clone()
     }
 
@@ -235,5 +235,23 @@ impl Label {
         }
 
         has_asm_instructions
+    }
+}
+
+impl PartialEq for Label {
+    fn eq(&self, other: &Self) -> bool {
+        self.flags == other.flags &&
+            self.line_number == other.line_number &&
+            self.other_line_numbers.as_deref() == other.other_line_numbers.as_deref() &&
+            self.bytecode_offset == other.bytecode_offset &&
+            self.forward_references.as_deref() == other.forward_references.as_deref() &&
+            self.input_stack_size == other.input_stack_size &&
+            self.output_stack_size == other.output_stack_size &&
+            self.output_stack_max == other.output_stack_max &&
+            self.subroutine_id == other.subroutine_id &&
+            self.frame.as_ref() == other.frame.as_ref() &&
+            self.next_basic_block.as_deref() == other.next_basic_block.as_deref() &&
+            self.outgoing_edges.as_ref() == other.outgoing_edges.as_ref() &&
+            self.next_list_element.as_deref() == other.next_list_element.as_deref()
     }
 }
