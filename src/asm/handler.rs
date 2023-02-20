@@ -1,5 +1,3 @@
-use std::{borrow::Borrow, cell::RefCell, rc::Rc};
-
 use crate::error::{KapiError, KapiResult};
 
 use super::label::Label;
@@ -79,19 +77,16 @@ impl Handler {
                 if range_end >= handler_end {
                     handlers.swap(i - 1, i + 1);
                 } else {
-                    handlers[i] =
-                        Self::from_handler(&handler, end.clone(), handler.end_pc.clone());
+                    handlers[i] = Self::from_handler(&handler, end.clone(), handler.end_pc.clone());
                 }
             } else if range_end >= handler_end {
-                handlers[i] =
-                    Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
+                handlers[i] = Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
             } else {
                 handlers.insert(
                     i + 1,
                     Self::from_handler(&handler, end.clone(), handler.end_pc.clone()),
                 );
-                handlers[i] =
-                    Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
+                handlers[i] = Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
             }
         }
 
@@ -113,14 +108,14 @@ mod test {
             123,
             String::from("123"),
         );
-        
+
         assert_eq!(Label::new(), handler.start_pc.unwrap());
         assert_eq!(Label::new(), handler.end_pc.unwrap());
         assert_eq!(Label::new(), handler.handler_pc.unwrap());
         assert_eq!(123, handler.catch_type);
         assert_eq!("123", handler.catch_type_descriptor);
     }
-    
+
     #[test]
     fn test_copy_handler() {
         let handler = Handler::new(
@@ -130,8 +125,9 @@ mod test {
             123,
             String::from("123"),
         );
-        let copied_handler = Handler::from_handler(&handler, Label::new().into(), Label::new().into());
-        
+        let copied_handler =
+            Handler::from_handler(&handler, Label::new().into(), Label::new().into());
+
         assert_eq!(handler, copied_handler);
     }
 }
