@@ -50,7 +50,7 @@ impl Handler {
         end: &Option<Label>,
     ) -> KapiResult<()> {
         for i in (1..handlers.len()).rev() {
-            let handler = &handlers[i];
+            let handler = handlers[i].clone();
             let handler_start = handler
                 .start_pc
                 .as_ref()
@@ -94,6 +94,12 @@ impl Handler {
 
         Ok(())
     }
+}
 
-    // pub(crate) fn cascade_remove(handler: Option<>)
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_new_handler() {
+        // TODO
+    }
 }
