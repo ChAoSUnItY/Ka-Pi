@@ -86,7 +86,10 @@ impl Handler {
                 handlers[i] =
                     Self::from_handler(handler.clone(), handler.start_pc.clone(), start.clone());
             } else {
-                handlers.insert(i + 1, Self::from_handler(handler.clone(), end.clone(), handler.end_pc.clone()));
+                handlers.insert(
+                    i + 1,
+                    Self::from_handler(handler.clone(), end.clone(), handler.end_pc.clone()),
+                );
                 handlers[i] =
                     Self::from_handler(handler.clone(), handler.start_pc.clone(), start.clone());
             }
@@ -98,8 +101,23 @@ impl Handler {
 
 #[cfg(test)]
 mod test {
+    use crate::asm::handler::Handler;
+    use crate::asm::label::Label;
+
     #[test]
     fn test_new_handler() {
-        // TODO
+        let handler = Handler::new(
+            Label::new().into(),
+            Label::new().into(),
+            Label::new().into(),
+            123,
+            String::from("123"),
+        );
+        
+        assert_eq!(Label::new(), handler.start_pc.unwrap());
+        assert_eq!(Label::new(), handler.end_pc.unwrap());
+        assert_eq!(Label::new(), handler.handler_pc.unwrap());
+        assert_eq!(123, handler.catch_type);
+        assert_eq!("123", handler.catch_type_descriptor);
     }
 }
