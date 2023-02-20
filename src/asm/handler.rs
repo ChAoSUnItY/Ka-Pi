@@ -12,27 +12,32 @@ pub(crate) struct Handler {
 }
 
 impl Handler {
-    pub(crate) const fn new(
-        start_pc: Option<Label>,
-        end_pc: Option<Label>,
-        handler_pc: Option<Label>,
+    pub(crate) fn new<L1, L2, L3>(
+        start_pc: L1,
+        end_pc: L2,
+        handler_pc: L3,
         catch_type: i32,
         catch_type_descriptor: String,
-    ) -> Self {
+    ) -> Self
+    where
+        L1: Into<Option<Label>>,
+        L2: Into<Option<Label>>,
+        L3: Into<Option<Label>>,
+    {
         Self {
-            start_pc,
-            end_pc,
-            handler_pc,
+            start_pc: start_pc.into(),
+            end_pc: end_pc.into(),
+            handler_pc: handler_pc.into(),
             catch_type,
             catch_type_descriptor,
         }
     }
 
-    pub(crate) fn from_handler(
-        handler: &Self,
-        start_pc: Option<Label>,
-        end_pc: Option<Label>,
-    ) -> Self {
+    pub(crate) fn from_handler<L1, L2>(handler: &Self, start_pc: L1, end_pc: L2) -> Self
+    where
+        L1: Into<Option<Label>>,
+        L2: Into<Option<Label>>,
+    {
         Self::new(
             start_pc,
             end_pc,
@@ -49,7 +54,7 @@ impl Handler {
     ) -> KapiResult<()> {
         let handlers_len = handlers.len();
         let mut discarded_count = 0;
-        
+
         for i in (0..handlers_len).rev() {
             let handler = handlers[i].clone();
             let handler_start = handler
@@ -93,7 +98,7 @@ impl Handler {
                 handlers[i] = Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
             }
         }
-        
+
         handlers.truncate(handlers_len - discarded_count);
 
         Ok(())
@@ -109,16 +114,16 @@ mod test {
 
     fn new_handler(start_pc: i32, end_pc: i32) -> Handler {
         Handler::new(
-            new_label(start_pc).into(),
-            new_label(end_pc).into(),
-            new_label(0).into(),
+            new_label(start_pc),
+            new_label(end_pc),
+            new_label(0),
             0,
             String::from(""),
         )
     }
 
     fn new_label(pc: i32) -> Label {
-        let mut label = Label::new();
+        let mut label = Label::default();
         label.bytecode_offset = pc;
         label
     }
@@ -126,16 +131,16 @@ mod test {
     #[test]
     fn test_new_handler() {
         let handler = Handler::new(
-            Label::new().into(),
-            Label::new().into(),
-            Label::new().into(),
+            Label::default(),
+            Label::default(),
+            Label::default(),
             123,
             String::from("123"),
         );
 
-        assert_eq!(Label::new(), handler.start_pc.unwrap());
-        assert_eq!(Label::new(), handler.end_pc.unwrap());
-        assert_eq!(Label::new(), handler.handler_pc.unwrap());
+        assert_eq!(Label::default(), handler.start_pc.unwrap());
+        assert_eq!(Label::default(), handler.end_pc.unwrap());
+        assert_eq!(Label::default(), handler.handler_pc.unwrap());
         assert_eq!(123, handler.catch_type);
         assert_eq!("123", handler.catch_type_descriptor);
     }
@@ -143,14 +148,13 @@ mod test {
     #[test]
     fn test_copy_handler() {
         let handler = Handler::new(
-            Label::new().into(),
-            Label::new().into(),
-            Label::new().into(),
+            Label::default(),
+            Label::default(),
+            Label::default(),
             123,
             String::from("123"),
         );
-        let copied_handler =
-            Handler::from_handler(&handler, Label::new().into(), Label::new().into());
+        let copied_handler = Handler::from_handler(&handler, Label::default(), Label::default());
 
         assert_eq!(handler, copied_handler);
     }
@@ -166,14 +170,14 @@ mod test {
         #[case] end_pc: L2,
         #[case] input_handlers: Vec<Handler>,
         #[case] expected_handlers: Vec<Handler>,
-    ) where L1: Into<Option<Label>>, L2: Into<Option<Label>> {
+    ) where
+        L1: Into<Option<Label>>,
+        L2: Into<Option<Label>>,
+    {
         let mut handlers = input_handlers.to_owned();
 
         Handler::remove_range(&mut handlers, &start_pc.into(), &end_pc.into()).unwrap();
-        
-        assert_eq!(
-            expected_handlers,
-            handlers
-        );
+
+        assert_eq!(expected_handlers, handlers);
     }
 }
