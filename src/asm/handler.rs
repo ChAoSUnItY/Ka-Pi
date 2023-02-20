@@ -4,7 +4,7 @@ use crate::error::{KapiError, KapiResult};
 
 use super::label::Label;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub(crate) struct Handler {
     start_pc: Option<Label>,
     end_pc: Option<Label>,
@@ -31,16 +31,16 @@ impl Handler {
     }
 
     pub(crate) fn from_handler(
-        handler: Self,
+        handler: &Self,
         start_pc: Option<Label>,
         end_pc: Option<Label>,
     ) -> Self {
         Self::new(
             start_pc,
             end_pc,
-            handler.handler_pc,
+            handler.handler_pc.clone(),
             handler.catch_type,
-            handler.catch_type_descriptor,
+            handler.catch_type_descriptor.clone(),
         )
     }
 
@@ -80,18 +80,18 @@ impl Handler {
                     handlers.swap(i - 1, i + 1);
                 } else {
                     handlers[i] =
-                        Self::from_handler(handler.clone(), end.clone(), handler.end_pc.clone());
+                        Self::from_handler(&handler, end.clone(), handler.end_pc.clone());
                 }
             } else if range_end >= handler_end {
                 handlers[i] =
-                    Self::from_handler(handler.clone(), handler.start_pc.clone(), start.clone());
+                    Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
             } else {
                 handlers.insert(
                     i + 1,
-                    Self::from_handler(handler.clone(), end.clone(), handler.end_pc.clone()),
+                    Self::from_handler(&handler, end.clone(), handler.end_pc.clone()),
                 );
                 handlers[i] =
-                    Self::from_handler(handler.clone(), handler.start_pc.clone(), start.clone());
+                    Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
             }
         }
 
@@ -119,5 +119,19 @@ mod test {
         assert_eq!(Label::new(), handler.handler_pc.unwrap());
         assert_eq!(123, handler.catch_type);
         assert_eq!("123", handler.catch_type_descriptor);
+    }
+    
+    #[test]
+    fn test_copy_handler() {
+        let handler = Handler::new(
+            Label::new().into(),
+            Label::new().into(),
+            Label::new().into(),
+            123,
+            String::from("123"),
+        );
+        let copied_handler = Handler::from_handler(&handler, Label::new().into(), Label::new().into());
+        
+        assert_eq!(handler, copied_handler);
     }
 }
