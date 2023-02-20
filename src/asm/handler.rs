@@ -188,18 +188,15 @@ mod test {
         let mut handlers = vec![new_handler(10, 20)];
 
         Handler::remove_range(&mut handlers, &new_label(0).into(), &new_label(15).into()).unwrap();
-
-        let handler = handlers.first();
-
-        assert!(handler.is_some());
-
+        
+        assert_eq!(1, handlers.len());
         let Handler {
             start_pc,
             end_pc,
             handler_pc: _,
             catch_type: _,
             catch_type_descriptor: _,
-        } = handler.unwrap();
+        } = &handlers[0];
         
         assert!(start_pc.is_some());
         
@@ -222,20 +219,14 @@ mod test {
 
         assert_eq!(2, handlers.len());
         
-        let mut handlers = VecDeque::from(handlers);
-        
         // Assert first handler
-        let handler = handlers.pop_front();
-
-        assert!(handler.is_some());
-
         let Handler {
             start_pc,
             end_pc,
             handler_pc: _,
             catch_type: _,
             catch_type_descriptor: _,
-        } = handler.unwrap();
+        } = &handlers[0];
 
         assert!(start_pc.is_some());
 
@@ -250,17 +241,13 @@ mod test {
         assert_eq!(13, end_pc.bytecode_offset);
 
         // Assert second handler
-        let handler = handlers.pop_front();
-
-        assert!(handler.is_some());
-
         let Handler {
             start_pc,
             end_pc,
             handler_pc: _,
             catch_type: _,
             catch_type_descriptor: _,
-        } = handler.unwrap();
+        } = &handlers[1];
 
         assert!(start_pc.is_some());
 
@@ -273,5 +260,34 @@ mod test {
         let end_pc = end_pc.as_ref().unwrap();
 
         assert_eq!(20, end_pc.bytecode_offset);
+    }
+    
+    #[test]
+    fn test_remove_range_remove_end() {
+        let mut handlers = vec![new_handler(10, 20)];
+        
+        Handler::remove_range(&mut handlers, &new_label(15).into(), &new_label(30).into()).unwrap();
+        
+        assert_eq!(1, handlers.len());
+
+        let Handler {
+            start_pc,
+            end_pc,
+            handler_pc: _,
+            catch_type: _,
+            catch_type_descriptor: _,
+        } = &handlers[0];
+        
+        assert!(start_pc.is_some());
+        
+        let start_pc = start_pc.as_ref().unwrap();
+        
+        assert_eq!(10, start_pc.bytecode_offset);
+        
+        assert!(end_pc.is_some());
+        
+        let end_pc = end_pc.as_ref().unwrap();
+        
+        assert_eq!(15, end_pc.bytecode_offset);
     }
 }
