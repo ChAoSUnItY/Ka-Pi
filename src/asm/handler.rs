@@ -78,7 +78,7 @@ impl Handler {
 
             if range_start <= handler_start {
                 if range_end >= handler_end {
-                    handlers.swap(i, handlers_len - 1);
+                    handlers.swap(i, handlers_len - discarded_count - 1);
                     discarded_count += 1;
                 } else {
                     handlers[i] = Self::from_handler(&handler, end.clone(), handler.end_pc.clone());
