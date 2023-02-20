@@ -15,6 +15,7 @@ keywords = ["jvm", "jvm-bytecode", "bytecode"]
 jni = { version = "0.21.0", features = ["invocation"] }
 unicode-segmentation = "1.10.1"
 lazy_static = "1.4.0"
+rstest = "0.16.0"
 
 [features]
 reflection = []
