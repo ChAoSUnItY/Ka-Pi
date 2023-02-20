@@ -47,11 +47,27 @@ impl Handler {
         )
     }
 
-    pub(crate) fn remove_range(
+    pub(crate) fn remove_range<'start, 'end, L1, L2>(
         handlers: &mut Vec<Self>,
-        start: &Option<Label>,
-        end: &Option<Label>,
-    ) -> KapiResult<()> {
+        start: L1,
+        end: L2,
+    ) -> KapiResult<()>
+    where
+        L1: Into<&'start Option<Label>>,
+        L2: Into<&'end Option<Label>>,
+    {
+        let start = start.into();
+        let end = end.into();
+        let range_start = start
+            .as_ref()
+            .ok_or_else(|| KapiError::StateError("Label's start pc must not be None"))?
+            .bytecode_offset;
+        let range_end = if let Some(end_label) = end.as_ref() {
+            end_label.bytecode_offset
+        } else {
+            i32::MAX
+        };
+
         let handlers_len = handlers.len();
         let mut discarded_count = 0;
 
@@ -67,15 +83,6 @@ impl Handler {
                 .as_ref()
                 .ok_or_else(|| KapiError::StateError("Handler end pc must not be None"))?
                 .bytecode_offset;
-            let range_start = start
-                .as_ref()
-                .ok_or_else(|| KapiError::StateError("Label's start pc must not be None"))?
-                .bytecode_offset;
-            let range_end = if let Some(end_label) = end.as_ref() {
-                end_label.bytecode_offset
-            } else {
-                i32::MAX
-            };
 
             if range_start >= handler_end || range_end <= handler_start {
                 continue;
@@ -179,5 +186,36 @@ mod test {
         Handler::remove_range(&mut handlers, &start_pc.into(), &end_pc.into()).unwrap();
 
         assert_eq!(expected_handlers, handlers);
+    }
+
+    #[test]
+    fn test_remove_range_remove_start() {
+        let mut handlers = vec![new_handler(10, 20)];
+
+        Handler::remove_range(&mut handlers, &new_label(0).into(), &new_label(15).into()).unwrap();
+
+        let handler = handlers.first();
+
+        assert!(handler.is_some());
+
+        let Handler {
+            start_pc,
+            end_pc,
+            handler_pc: _,
+            catch_type: _,
+            catch_type_descriptor: _,
+        } = handler.unwrap();
+        
+        assert!(start_pc.is_some());
+        
+        let start_pc = start_pc.as_ref().unwrap();
+
+        assert_eq!(15, start_pc.bytecode_offset);
+        
+        assert!(end_pc.is_some());
+        
+        let end_pc = end_pc.as_ref().unwrap();
+        
+        assert_eq!(20, end_pc.bytecode_offset);
     }
 }
