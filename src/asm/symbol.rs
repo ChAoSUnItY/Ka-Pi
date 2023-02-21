@@ -78,6 +78,13 @@ pub(crate) trait Symbol {
     fn data(&self) -> i64;
     fn info(&self) -> i32;
 
-    fn new(index: usize, tag: u8, owner: String, name: String, value: String, data: i64, info: i32) -> Self;
+    fn new(
+        index: usize,
+        tag: u8,
+        owner: String,
+        name: String,
+        value: String,
+        data: i64,
+        info: i32,
+    ) -> Self;
 }
-

@@ -10,8 +10,7 @@ pub struct Handle {
 }
 
 impl Handle {
-    pub const fn new(tag: u8, owner: String, name: String, descriptor: String) -> Self
-    {
+    pub const fn new(tag: u8, owner: String, name: String, descriptor: String) -> Self {
         Self {
             tag,
             owner,
