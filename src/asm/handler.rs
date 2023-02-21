@@ -214,7 +214,7 @@ mod test {
         let end_pc = end_pc.as_ref().unwrap();
 
         assert_eq!(20, end_pc.bytecode_offset);
-        
+
         assert!(next_handler.is_none());
 
         Ok(())
@@ -248,7 +248,7 @@ mod test {
         let end_pc = end_pc.as_ref().unwrap();
 
         assert_eq!(13, end_pc.bytecode_offset);
-        
+
         assert!(next_handler.is_some());
 
         // Assert second handler
@@ -272,9 +272,9 @@ mod test {
         let end_pc = end_pc.as_ref().unwrap();
 
         assert_eq!(20, end_pc.bytecode_offset);
-        
+
         assert!(next_handler.is_none());
-        
+
         Ok(())
     }
 
@@ -291,7 +291,7 @@ mod test {
             handler_pc: _,
             catch_type: _,
             catch_type_descriptor: _,
-            next_handler
+            next_handler,
         } = &handler.unwrap();
 
         assert!(start_pc.is_some());
@@ -305,9 +305,9 @@ mod test {
         let end_pc = end_pc.as_ref().unwrap();
 
         assert_eq!(15, end_pc.bytecode_offset);
-        
+
         assert!(next_handler.is_none());
-        
+
         Ok(())
     }
 }
