@@ -153,7 +153,7 @@ impl TypePath {
         }
     }
 
-    pub fn put<'a>(type_path: Option<&TypePath>, output: &'a mut impl ByteVec<'a>) {
+    pub fn put(type_path: Option<&TypePath>, output: &mut impl ByteVec) {
         if let Some(type_path) = type_path {
             let len = (type_path.type_path_container[type_path.type_path_offset] * 2 + 1) as usize;
             output.put_u8s(
@@ -409,9 +409,9 @@ impl TypeRef {
         Self::new((sort << 24) | arg_index)
     }
 
-    pub(crate) fn put_target<'a>(
+    pub(crate) fn put_target(
         target_type_and_info: i32,
-        output: &'a mut impl ByteVec<'a>,
+        output: &mut impl ByteVec,
     ) -> KapiResult<()> {
         match target_type_and_info {
             CLASS_TYPE_PARAMETER | METHOD_TYPE_PARAMETER | METHOD_FORMAL_PARAMETER => {
@@ -436,9 +436,8 @@ impl TypeRef {
             | NEW
             | CONSTRUCTOR_REFERENCE
             | METHOD_REFERENCE => {
-                output
-                    .put((target_type_and_info >> 24) as i8)
-                    .put(((target_type_and_info & 0xFFFF00) >> 8) as i16);
+                output.put((target_type_and_info >> 24) as i8);
+                output.put(((target_type_and_info & 0xFFFF00) >> 8) as i16);
             }
             _ => {
                 return Err(KapiError::ArgError(String::from(

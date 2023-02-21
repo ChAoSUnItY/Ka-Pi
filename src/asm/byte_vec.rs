@@ -1,38 +1,39 @@
 use crate::error::{KapiError, KapiResult};
 
-pub trait ByteVec<'a>: FromIterator<u8> + From<Vec<u8>> {
+pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
     fn len(&self) -> usize;
 
-    fn put_u8(&'a mut self, u8: u8) -> &'a mut Self;
-    fn put_u8s(&'a mut self, u8s: &[u8]) -> &'a mut Self;
-    
-    fn put<N, const SIZE: usize>(&'a mut self, num: N) -> &'a mut Self where N: Copy + ByteConv<SIZE> {
+    fn put_u8(&mut self, u8: u8);
+    fn put_u8s(&mut self, u8s: &[u8]);
+
+    fn put<N, const SIZE: usize>(&mut self, num: N)
+    where
+        N: Copy + ByteConv<SIZE>,
+    {
         self.put_u8s(&num.ne_bytes())
     }
 
-    fn put_utf8<S>(&'a mut self, string: S) -> KapiResult<&'a mut Self>
+    fn put_utf8<S>(&mut self, string: S) -> KapiResult<()>
     where
         S: Into<String>;
 }
 
 pub(crate) type ByteVecImpl = Vec<u8>;
 
-impl<'a> ByteVec<'a> for ByteVecImpl {
+impl ByteVec for ByteVecImpl {
     fn len(&self) -> usize {
         self.len()
     }
 
-    fn put_u8(&'a mut self, u8: u8) -> &'a mut Self {
-        self.push(u8);
-        self
+    fn put_u8(&mut self, u8: u8) {
+        self.push(u8)
     }
 
-    fn put_u8s(&'a mut self, u8s: &[u8]) -> &'a mut Self {
-        self.extend_from_slice(u8s);
-        self
+    fn put_u8s(&mut self, u8s: &[u8]) {
+        self.extend_from_slice(u8s)
     }
 
-    fn put_utf8<S>(&'a mut self, string: S) -> KapiResult<&'a mut Self>
+    fn put_utf8<S>(&mut self, string: S) -> KapiResult<()>
     where
         S: Into<String>,
     {
@@ -46,7 +47,7 @@ impl<'a> ByteVec<'a> for ByteVecImpl {
         self.put_u8s(&(s.len() as u16).to_ne_bytes()); // put length of string (bytes len)
         self.put_u8s(s.as_bytes()); // put actual byte content
 
-        Ok(self)
+        Ok(())
     }
 }
 

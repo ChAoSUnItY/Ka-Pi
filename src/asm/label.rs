@@ -99,9 +99,9 @@ impl Label {
 
     // TODO: accept
 
-    pub(crate) fn put<'a>(
+    pub(crate) fn put(
         &mut self,
-        code: &'a mut impl ByteVec<'a>,
+        code: &mut impl ByteVec,
         source_inst_bytecode_offset: i32,
         wide_reference: bool,
     ) {
