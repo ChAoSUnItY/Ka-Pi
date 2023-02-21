@@ -9,6 +9,7 @@ pub(crate) struct Handler {
     handler_pc: Option<Label>,
     catch_type: i32,
     catch_type_descriptor: String,
+    next_handler: Option<Box<Handler>>,
 }
 
 impl Handler {
@@ -30,89 +31,81 @@ impl Handler {
             handler_pc: handler_pc.into(),
             catch_type,
             catch_type_descriptor,
+            next_handler: None,
         }
     }
 
-    pub(crate) fn from_handler<L1, L2>(handler: &Self, start_pc: L1, end_pc: L2) -> Self
-    where
-        L1: Into<Option<Label>>,
-        L2: Into<Option<Label>>,
-    {
-        Self::new(
-            start_pc,
-            end_pc,
+    pub(crate) fn start_pc(&self) -> Option<i32> {
+        self.start_pc.as_ref().map(|label| label.bytecode_offset)
+    }
+
+    pub(crate) fn end_pc(&self) -> Option<i32> {
+        self.end_pc.as_ref().map(|label| label.bytecode_offset)
+    }
+
+    pub(crate) fn from_handler(
+        handler: &Self,
+        start_pc: &Option<Label>,
+        end_pc: &Option<Label>,
+    ) -> Self {
+        let mut new_handler = Self::new(
+            start_pc.clone(),
+            end_pc.clone(),
             handler.handler_pc.clone(),
             handler.catch_type,
             handler.catch_type_descriptor.clone(),
-        )
+        );
+        new_handler.next_handler = handler.next_handler.clone();
+        new_handler
     }
 
-    pub(crate) fn remove_range<'start, 'end, L1, L2>(
-        handlers: &mut Vec<Self>,
-        start: L1,
-        end: L2,
-    ) -> KapiResult<()>
-    where
-        L1: Into<&'start Option<Label>>,
-        L2: Into<&'end Option<Label>>,
-    {
-        let start = start.into();
-        let end = end.into();
-        let range_start = start
-            .as_ref()
-            .ok_or_else(|| KapiError::StateError("Label's start pc must not be None"))?
-            .bytecode_offset;
-        let range_end = if let Some(end_label) = end.as_ref() {
-            end_label.bytecode_offset
-        } else {
-            i32::MAX
-        };
-
-        for i in (0..handlers.len()).rev() {
-            let handler = handlers[i].clone();
-            let handler_start = handler
-                .start_pc
-                .as_ref()
-                .ok_or_else(|| KapiError::StateError("Handler start pc must not be None"))?
-                .bytecode_offset;
-            let handler_end = handler
-                .end_pc
-                .as_ref()
-                .ok_or_else(|| KapiError::StateError("Handler end pc must not be None"))?
-                .bytecode_offset;
-
-            if range_start >= handler_end || range_end <= handler_start {
-                continue;
-            }
-
-            if range_start <= handler_start {
-                if range_end >= handler_end {
-                    handlers.remove(i);
-                } else {
-                    handlers[i] = Self::from_handler(&handler, end.clone(), handler.end_pc.clone());
-                }
-            } else if range_end >= handler_end {
-                handlers[i] = Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
-            } else {
-                handlers.insert(
-                    i + 1,
-                    Self::from_handler(&handler, end.clone(), handler.end_pc.clone()),
-                );
-                handlers[i] = Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
-            }
+    pub(crate) fn remove_range(
+        &mut self,
+        start: &Option<Label>,
+        end: &Option<Label>,
+    ) -> KapiResult<Option<Handler>> {
+        if let Some(next_handler) = &mut self.next_handler {
+            self.next_handler = next_handler.remove_range(start, end)?.map(Box::new);
         }
 
-        Ok(())
+        let range_start = start
+            .as_ref()
+            .ok_or(KapiError::StateError("Start label cannot be None"))?
+            .bytecode_offset;
+        let range_end = end
+            .as_ref()
+            .map_or_else(|| i32::MAX, |label| label.bytecode_offset);
+        let handler_start = self
+            .start_pc()
+            .ok_or(KapiError::StateError("Handler start label cannot be None"))?;
+        let handler_end = self
+            .end_pc()
+            .ok_or(KapiError::StateError("Handler end label cannot be None"))?;
+
+        if range_start >= handler_end || range_end <= handler_start {
+            Ok(Some(self.clone()))
+        } else if range_start <= handler_start {
+            if range_end >= handler_end {
+                Ok(self.next_handler.clone().map(|handler| *handler))
+            } else {
+                Ok(Some(Self::from_handler(&self, &end, &self.end_pc)))
+            }
+        } else if range_end >= handler_end {
+            Ok(Some(Self::from_handler(&self, &self.start_pc, start)))
+        } else {
+            self.next_handler = Some(Box::new(Self::from_handler(&self, &end, &self.end_pc)));
+            Ok(Some(Self::from_handler(&self, &self.start_pc, start)))
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use std::collections::VecDeque;
     use rstest::rstest;
 
     use crate::asm::handler::Handler;
     use crate::asm::label::Label;
+    use crate::error::KapiResult;
 
     fn new_handler(start_pc: i32, end_pc: i32) -> Handler {
         Handler::new(
@@ -156,40 +149,48 @@ mod test {
             123,
             String::from("123"),
         );
-        let copied_handler = Handler::from_handler(&handler, Label::default(), Label::default());
+        let copied_handler =
+            Handler::from_handler(&handler, &Label::default().into(), &Label::default().into());
 
         assert_eq!(handler, copied_handler);
     }
 
     #[rstest]
-    #[case(new_label(0), new_label(10), vec![], vec![])]
-    #[case(new_label(0), new_label(10), vec![new_handler(10, 20)], vec![new_handler(10, 20)])]
-    #[case(new_label(20), new_label(30), vec![new_handler(10, 20)], vec![new_handler(10, 20)])]
-    #[case(new_label(30), None, vec![new_handler(10, 20)], vec![new_handler(10, 20)])]
-    #[case(new_label(0), new_label(30), vec![new_handler(10, 20)], vec![])]
+    #[case(
+        new_label(0),
+        new_label(10),
+        new_handler(10, 20),
+        Some(new_handler(10, 20))
+    )]
+    #[case(
+        new_label(20),
+        new_label(30),
+        new_handler(10, 20),
+        Some(new_handler(10, 20))
+    )]
+    #[case(new_label(30), None, new_handler(10, 20), Some(new_handler(10, 20)))]
+    #[case(new_label(0), new_label(30), new_handler(10, 20), None)]
     fn test_remove_range_remove_all_or_nothing<L1, L2>(
         #[case] start_pc: L1,
         #[case] end_pc: L2,
-        #[case] input_handlers: Vec<Handler>,
-        #[case] expected_handlers: Vec<Handler>,
-    ) where
+        #[case] mut input_handler: Handler,
+        #[case] expected_handler: Option<Handler>,
+    ) -> KapiResult<()>
+    where
         L1: Into<Option<Label>>,
         L2: Into<Option<Label>>,
     {
-        let mut handlers = input_handlers.to_owned();
+        let handler = input_handler.remove_range(&start_pc.into(), &end_pc.into())?;
 
-        Handler::remove_range(&mut handlers, &start_pc.into(), &end_pc.into()).unwrap();
+        assert_eq!(expected_handler, handler);
 
-        assert_eq!(expected_handlers, handlers);
+        Ok(())
     }
 
     #[test]
-    fn test_remove_range_remove_start() {
-        let mut handlers = vec![new_handler(10, 20)];
-
-        Handler::remove_range(&mut handlers, &new_label(0).into(), &new_label(15).into()).unwrap();
-
-        let handler = handlers.first();
+    fn test_remove_range_remove_start() -> KapiResult<()> {
+        let handler =
+            new_handler(10, 20).remove_range(&new_label(0).into(), &new_label(15).into())?;
 
         assert!(handler.is_some());
 
@@ -199,43 +200,42 @@ mod test {
             handler_pc: _,
             catch_type: _,
             catch_type_descriptor: _,
-        } = handler.unwrap();
-        
+            next_handler,
+        } = &handler.unwrap();
+
         assert!(start_pc.is_some());
-        
+
         let start_pc = start_pc.as_ref().unwrap();
 
         assert_eq!(15, start_pc.bytecode_offset);
-        
+
         assert!(end_pc.is_some());
-        
+
         let end_pc = end_pc.as_ref().unwrap();
-        
+
         assert_eq!(20, end_pc.bytecode_offset);
+
+        assert!(next_handler.is_none());
+
+        Ok(())
     }
-    
+
     #[test]
-    fn test_remove_range_remove_middle() {
-        let mut handlers = vec![new_handler(10, 20)];
-
-        Handler::remove_range(&mut handlers, &new_label(13).into(), &new_label(17).into()).unwrap();
-
-        assert_eq!(2, handlers.len());
-        
-        let mut handlers = VecDeque::from(handlers);
-        
-        // Assert first handler
-        let handler = handlers.pop_front();
+    fn test_remove_range_remove_middle() -> KapiResult<()> {
+        let handler =
+            new_handler(10, 20).remove_range(&new_label(13).into(), &new_label(17).into())?;
 
         assert!(handler.is_some());
 
+        // Assert first handler
         let Handler {
             start_pc,
             end_pc,
             handler_pc: _,
             catch_type: _,
             catch_type_descriptor: _,
-        } = handler.unwrap();
+            next_handler,
+        } = &handler.unwrap();
 
         assert!(start_pc.is_some());
 
@@ -249,18 +249,17 @@ mod test {
 
         assert_eq!(13, end_pc.bytecode_offset);
 
+        assert!(next_handler.is_some());
+
         // Assert second handler
-        let handler = handlers.pop_front();
-
-        assert!(handler.is_some());
-
         let Handler {
             start_pc,
             end_pc,
             handler_pc: _,
             catch_type: _,
             catch_type_descriptor: _,
-        } = handler.unwrap();
+            next_handler,
+        } = next_handler.as_ref().unwrap().as_ref();
 
         assert!(start_pc.is_some());
 
@@ -273,5 +272,42 @@ mod test {
         let end_pc = end_pc.as_ref().unwrap();
 
         assert_eq!(20, end_pc.bytecode_offset);
+
+        assert!(next_handler.is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_remove_range_remove_end() -> KapiResult<()> {
+        let handler =
+            new_handler(10, 20).remove_range(&new_label(15).into(), &new_label(30).into())?;
+
+        assert!(handler.is_some());
+
+        let Handler {
+            start_pc,
+            end_pc,
+            handler_pc: _,
+            catch_type: _,
+            catch_type_descriptor: _,
+            next_handler,
+        } = &handler.unwrap();
+
+        assert!(start_pc.is_some());
+
+        let start_pc = start_pc.as_ref().unwrap();
+
+        assert_eq!(10, start_pc.bytecode_offset);
+
+        assert!(end_pc.is_some());
+
+        let end_pc = end_pc.as_ref().unwrap();
+
+        assert_eq!(15, end_pc.bytecode_offset);
+
+        assert!(next_handler.is_none());
+
+        Ok(())
     }
 }

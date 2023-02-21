@@ -1,17 +1,11 @@
 use std::rc::Rc;
 
+use crate::error::KapiResult;
 use crate::{
-    asm::{
-        byte_vec::ByteVec,
-        constants,
-        edge::Edge,
-        frame::Frame,
-        opcodes,
-    },
+    asm::{byte_vec::ByteVec, constants, edge::Edge, frame::Frame, opcodes},
     error::KapiError,
     utils::{replace, Rev},
 };
-use crate::error::KapiResult;
 
 pub(crate) const FLAG_DEBUG_ONLY: u8 = 0b00000001;
 pub(crate) const FLAG_JUMP_TARGET: u8 = 0b00000010;
@@ -71,7 +65,9 @@ impl Label {
 
     pub fn get_offset(&self) -> KapiResult<i32> {
         if self.flags & FLAG_RESOLVED == 0 {
-            Err(KapiError::StateError("Label offset position has not been resolved yet"))
+            Err(KapiError::StateError(
+                "Label offset position has not been resolved yet",
+            ))
         } else {
             Ok(self.bytecode_offset)
         }

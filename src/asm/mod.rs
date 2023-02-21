@@ -1,5 +1,14 @@
 pub use handle::Handle;
 
+mod attribute;
+pub mod byte_vec;
+#[allow(unused)]
+mod constants;
+mod edge;
+mod frame;
+mod handle;
+mod handler;
+mod label;
 /// The JVM opcodes, access flags and array type codes. This interface does not define all the JVM
 /// opcodes because some opcodes are automatically handled. For example, the xLOAD and xSTORE opcodes
 /// are automatically replaced by xLOAD_n and xSTORE_n opcodes when possible. The xLOAD_n and
@@ -10,14 +19,5 @@ pub use handle::Handle;
 /// **Author** Eric Bruneton<br/>
 /// **Author** Eugene Kuleshov<br/>
 pub mod opcodes;
-pub mod byte_vec;
-#[allow(unused)]
-mod constants;
-mod edge;
-mod frame;
-mod label;
 mod symbol;
 pub mod types;
-mod attribute;
-mod handle;
-mod handler;

@@ -19,9 +19,9 @@ use jni::strings::{JNIString, JavaStr};
 use jni::sys::jsize;
 use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIVersion, JavaVM};
 
-use crate::reflection::class::{Class, RefClass};
-use crate::error::{IntoKapiResult, KapiResult};
 use crate::asm::types::canonical_to_descriptor;
+use crate::error::{IntoKapiResult, KapiResult};
+use crate::reflection::class::{Class, RefClass};
 
 pub type RefPseudoVM<'a> = Rc<RefCell<PseudoVM<'a>>>;
 
