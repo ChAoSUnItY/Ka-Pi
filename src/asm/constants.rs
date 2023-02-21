@@ -144,5 +144,5 @@ pub(crate) const ASM_GOTO_W: u8 = 220;
 pub struct ConstantDynamic {
     name: String,
     descriptor: String,
-    
+
 }

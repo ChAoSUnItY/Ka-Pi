@@ -1,14 +1,14 @@
-use std::collections::HashMap;
 use std::{rc::Rc, str::FromStr};
+use std::collections::HashMap;
 
 use lazy_static::lazy_static;
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::error::KapiResult;
 use crate::{
     asm::byte_vec::{ByteVec, ByteVecImpl},
     error::KapiError,
 };
+use crate::error::KapiResult;
 
 lazy_static! {
     static ref PRIMITIVE_TYPE_2_DESC: HashMap<&'static str, &'static str> = HashMap::from([
@@ -30,15 +30,15 @@ lazy_static! {
 /// `java.lang.String` -> `Ljava/lang/String;`<br/>
 /// `int[]` -> `[I`
 pub(crate) fn canonical_to_internal<S>(canonical: S) -> String
-where
-    S: Into<String>,
+    where
+        S: Into<String>,
 {
     canonical_to_descriptor(canonical).replace(".", "/")
 }
 
 pub(crate) fn canonical_to_descriptor<S>(canonical: S) -> String
-where
-    S: Into<String>,
+    where
+        S: Into<String>,
 {
     // array type preprocess
     let canonical_name = canonical.into();
@@ -154,8 +154,8 @@ impl TypePath {
     }
 
     pub fn put<BV>(type_path: Option<&TypePath>, output: &mut BV)
-    where
-        BV: ByteVec,
+        where
+            BV: ByteVec,
     {
         if let Some(type_path) = type_path {
             let len = (type_path.type_path_container[type_path.type_path_offset] * 2 + 1) as usize;
@@ -409,8 +409,8 @@ impl TypeRef {
     }
 
     pub(crate) fn put_target<BV>(target_type_and_info: i32, output: &mut BV) -> KapiResult<()>
-    where
-        BV: ByteVec,
+        where
+            BV: ByteVec,
     {
         match target_type_and_info {
             CLASS_TYPE_PARAMETER | METHOD_TYPE_PARAMETER | METHOD_FORMAL_PARAMETER => {
@@ -487,11 +487,11 @@ impl TypeRef {
 mod test {
     use std::str::FromStr;
 
-    use crate::asm::types::{self, canonical_to_internal, TypePath, THROWS};
+    use crate::asm::types::{self, canonical_to_internal, THROWS, TypePath};
 
     use super::{
-        TypeRef, CAST, CLASS_EXTENDS, CLASS_TYPE_PARAMETER, EXCEPTION_PARAMETER, FIELD,
-        METHOD_FORMAL_PARAMETER,
+        CAST, CLASS_EXTENDS, CLASS_TYPE_PARAMETER, EXCEPTION_PARAMETER, FIELD, METHOD_FORMAL_PARAMETER,
+        TypeRef,
     };
 
     #[test]

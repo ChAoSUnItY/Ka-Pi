@@ -12,16 +12,16 @@ use std::fmt::Formatter;
 use std::rc::Rc;
 use std::sync::{Arc, Once};
 
+use jni::{AttachGuard, InitArgsBuilder, JavaVM, JNIVersion, objects::JClass};
 use jni::objects::{
     AsJArrayRaw, AutoLocal, GlobalRef, JObject, JObjectArray, JString, JValue, JValueOwned,
 };
-use jni::strings::{JNIString, JavaStr};
+use jni::strings::{JavaStr, JNIString};
 use jni::sys::jsize;
-use jni::{objects::JClass, AttachGuard, InitArgsBuilder, JNIVersion, JavaVM};
 
-use crate::reflection::class::{Class, RefClass};
-use crate::error::{IntoKapiResult, KapiResult};
 use crate::asm::types::canonical_to_descriptor;
+use crate::error::{IntoKapiResult, KapiResult};
+use crate::reflection::class::{Class, RefClass};
 
 pub type RefPseudoVM<'a> = Rc<RefCell<PseudoVM<'a>>>;
 
@@ -80,8 +80,8 @@ impl<'a> PseudoVM<'a> {
     }
 
     fn get_cached_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> Option<RefClass<'a>>
-    where
-        S: Into<String>,
+        where
+            S: Into<String>,
     {
         vm.borrow_mut()
             .class_cache
@@ -90,8 +90,8 @@ impl<'a> PseudoVM<'a> {
     }
 
     fn cache_class<S>(vm: RefPseudoVM<'a>, class_name: S, class_ref: RefClass<'a>) -> RefClass<'a>
-    where
-        S: Into<String>,
+        where
+            S: Into<String>,
     {
         vm.borrow_mut()
             .class_cache
@@ -100,8 +100,8 @@ impl<'a> PseudoVM<'a> {
     }
 
     fn get_or_init_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> KapiResult<RefClass<'a>>
-    where
-        S: Into<String>,
+        where
+            S: Into<String>,
     {
         let class_name = class_name.into();
 
@@ -116,15 +116,15 @@ impl<'a> PseudoVM<'a> {
     }
 
     pub fn find_class<S>(vm: RefPseudoVM<'a>, name: S) -> KapiResult<JClass<'a>>
-    where
-        S: Into<JNIString>,
+        where
+            S: Into<JNIString>,
     {
         vm.borrow_mut().attach_guard.find_class(name).into_kapi()
     }
 
     pub fn get_class<S>(vm: RefPseudoVM<'a>, class_name: S) -> KapiResult<RefClass<'a>>
-    where
-        S: Into<String>,
+        where
+            S: Into<String>,
     {
         let class_clazz = Self::find_class(vm.clone(), "java/lang/Class")?;
         let class_name = class_name.into();
@@ -136,7 +136,7 @@ impl<'a> PseudoVM<'a> {
             "(Ljava/lang/String;)Ljava/lang/Class;",
             &[(&descriptor).into()],
         )?
-        .l()?;
+            .l()?;
 
         Self::delete_local_ref(vm.clone(), class_clazz)?;
         Self::delete_local_ref(vm.clone(), descriptor)?;
@@ -170,8 +170,8 @@ impl<'a> PseudoVM<'a> {
     }
 
     pub fn auto_local<O>(vm: RefPseudoVM<'a>, obj: O) -> AutoLocal<'a, O>
-    where
-        O: Into<JObject<'a>>,
+        where
+            O: Into<JObject<'a>>,
     {
         vm.borrow().attach_guard.auto_local(obj)
     }
@@ -194,9 +194,9 @@ impl<'a> PseudoVM<'a> {
         sig: S2,
         args: &[JValue],
     ) -> KapiResult<JValueOwned<'a>>
-    where
-        S1: Into<String>,
-        S2: Into<String>,
+        where
+            S1: Into<String>,
+            S2: Into<String>,
     {
         vm.borrow_mut()
             .attach_guard
@@ -211,10 +211,10 @@ impl<'a> PseudoVM<'a> {
         sig: S2,
         args: &[JValue],
     ) -> KapiResult<JValueOwned<'a>>
-    where
-        O: AsRef<JObject<'local_ref>>,
-        S1: Into<String>,
-        S2: Into<String>,
+        where
+            O: AsRef<JObject<'local_ref>>,
+            S1: Into<String>,
+            S2: Into<String>,
     {
         vm.borrow_mut()
             .attach_guard
@@ -223,8 +223,8 @@ impl<'a> PseudoVM<'a> {
     }
 
     pub fn new_global_ref<'other_local, O>(vm: RefPseudoVM<'a>, object: O) -> KapiResult<GlobalRef>
-    where
-        O: AsRef<JObject<'other_local>>,
+        where
+            O: AsRef<JObject<'other_local>>,
     {
         vm.borrow().attach_guard.new_global_ref(object).into_kapi()
     }
@@ -233,8 +233,8 @@ impl<'a> PseudoVM<'a> {
         vm: RefPseudoVM<'a>,
         global_ref: O,
     ) -> KapiResult<JObject<'a>>
-    where
-        O: AsRef<JObject<'other_local>>,
+        where
+            O: AsRef<JObject<'other_local>>,
     {
         vm.borrow()
             .attach_guard
@@ -243,8 +243,8 @@ impl<'a> PseudoVM<'a> {
     }
 
     pub fn delete_local_ref<'other_local, O>(vm: RefPseudoVM<'a>, object: O) -> KapiResult<()>
-    where
-        O: Into<JObject<'other_local>>,
+        where
+            O: Into<JObject<'other_local>>,
     {
         vm.borrow()
             .attach_guard
@@ -253,8 +253,8 @@ impl<'a> PseudoVM<'a> {
     }
 
     pub fn new_string<S>(vm: RefPseudoVM<'a>, string: S) -> KapiResult<JString<'a>>
-    where
-        S: Into<JNIString>,
+        where
+            S: Into<JNIString>,
     {
         vm.borrow()
             .attach_guard
@@ -289,8 +289,8 @@ impl<'a> PseudoVM<'a> {
         array: &'array impl AsRef<JObjectArray<'other_local>>,
         element_mapper: F,
     ) -> KapiResult<Vec<T>>
-    where
-        F: Fn(&JObject<'a>) -> KapiResult<T>,
+        where
+            F: Fn(&JObject<'a>) -> KapiResult<T>,
     {
         let array = array.as_ref();
         let len = Self::get_array_length(vm.clone(), array)?;

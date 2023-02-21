@@ -4,8 +4,8 @@ use std::rc::Rc;
 
 use jni::objects::{GlobalRef, JObjectArray};
 
-use crate::reflection::class::LazyClassMember::{Failed, Initialized, Uninitialized};
 use crate::error::{KapiError, KapiResult};
+use crate::reflection::class::LazyClassMember::{Failed, Initialized, Uninitialized};
 use crate::reflection::jvm::{PseudoVM, RefPseudoVM};
 
 pub type RefClass<'a> = Rc<RefCell<Class<'a>>>;
@@ -33,7 +33,7 @@ pub trait ObjectEq<'a> {
             "(Ljava/lang/Object;)Z",
             &[(&other_obj).into()],
         )
-        .map_or(false, |value| value.z().unwrap_or(false));
+            .map_or(false, |value| value.z().unwrap_or(false));
 
         let _ = PseudoVM::delete_local_ref(self.vm(), self_obj);
         let _ = PseudoVM::delete_local_ref(self.vm(), other_obj);
@@ -55,16 +55,16 @@ enum LazyClassMember<T> {
 }
 
 impl<T> LazyClassMember<T>
-where
-    T: Eq + PartialEq,
+    where
+        T: Eq + PartialEq,
 {
     const UNINITIALIZED_ERROR: KapiError =
         KapiError::StateError("Member hasn't been initialized yet.");
 
     fn get_or_init<F, TR>(&mut self, initializer: F) -> KapiResult<&T>
-    where
-        F: FnOnce() -> KapiResult<TR>,
-        TR: Into<T>,
+        where
+            F: FnOnce() -> KapiResult<TR>,
+            TR: Into<T>,
     {
         match self {
             Initialized(value) => Ok(value),
@@ -161,7 +161,7 @@ impl<'a> Class<'a> {
                 "()[Ljava/lang/reflect/Method;",
                 &[],
             )?
-            .l()?;
+                .l()?;
             let methods = PseudoVM::map_obj_array(
                 self.vm.clone(),
                 Into::<&JObjectArray<'a>>::into(&methods_obj),
@@ -232,14 +232,14 @@ impl<'a> Method<'a> {
             return_type: Uninitialized,
         }
     }
-    
+
     pub fn name(&mut self) -> KapiResult<&String> {
         self.name.get_or_init(|| {
             let name_obj = PseudoVM::call_method(self.vm.clone(), &self.method, "getName", "()Ljava/lang/String;", &[])?.l()?;
             let name = PseudoVM::get_string(self.vm.clone(), (&name_obj).into())?;
-            
+
             PseudoVM::delete_local_ref(self.vm.clone(), name_obj)?;
-            
+
             Ok(name)
         })
     }
@@ -337,23 +337,23 @@ mod test {
     #[test]
     fn test_method_name() {
         let vm = PseudoVM::init_vm().unwrap();
-    
+
         let string_class = PseudoVM::get_class(vm.clone(), "java.lang.String");
-        
+
         assert!(string_class.is_ok());
-        
+
         let string_class = string_class.unwrap();
         let mut string_class = string_class.borrow_mut();
         let methods = string_class.declared_methods();
-        
+
         assert!(methods.is_ok());
-        
+
         let methods = methods.unwrap();
-    
+
         for method_rfc in methods.iter() {
             let mut method = method_rfc.borrow_mut();
             let name = method.name();
-            
+
             assert!(name.is_ok());
         }
     }
