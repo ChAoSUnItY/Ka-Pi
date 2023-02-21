@@ -38,13 +38,13 @@ impl ByteVec for ByteVecImpl {
         S: Into<String>,
     {
         let s = string.into();
-        let len = s.chars().map(|c| c.len_utf8()).sum::<usize>();
+        let len = s.chars().map(char::len_utf8).sum::<usize>();
 
         if len > 65535 {
             return Err(KapiError::Utf8Error("UTF8 string too large"));
         }
-
-        self.put_u8s(&(s.len() as u16).to_ne_bytes()); // put length of string (bytes len)
+        
+        self.put(s.len() as u16); // put length of string (bytes len)
         self.put_u8s(s.as_bytes()); // put actual byte content
 
         Ok(())
