@@ -2,7 +2,6 @@ pub use handle::Handle;
 
 mod attribute;
 pub mod byte_vec;
-#[allow(unused)]
 mod constants;
 mod edge;
 mod frame;
