@@ -99,9 +99,9 @@ impl Label {
 
     // TODO: accept
 
-    pub(crate) fn put(
+    pub(crate) fn put<'a>(
         &mut self,
-        code: &mut impl ByteVec,
+        code: &'a mut impl ByteVec<'a>,
         source_inst_bytecode_offset: i32,
         wide_reference: bool,
     ) {
@@ -112,20 +112,20 @@ impl Label {
                     FORWARD_REFERENCE_TYPE_WIDE as u32,
                     code.len() as u32,
                 );
-                code.put_int(-1);
+                code.put(-1);
             } else {
                 self.add_foward_reference(
                     source_inst_bytecode_offset,
                     FORWARD_REFERENCE_TYPE_SHORT as u32,
                     code.len() as u32,
                 );
-                code.put_int(-1);
+                code.put(-1);
             }
         } else {
             if wide_reference {
-                code.put_int(self.bytecode_offset - source_inst_bytecode_offset);
+                code.put(self.bytecode_offset - source_inst_bytecode_offset);
             } else {
-                code.put_short((self.bytecode_offset - source_inst_bytecode_offset) as i16);
+                code.put((self.bytecode_offset - source_inst_bytecode_offset) as i16);
             }
         }
     }

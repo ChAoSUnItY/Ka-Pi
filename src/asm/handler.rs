@@ -1,3 +1,4 @@
+use crate::asm::byte_vec::ByteVec;
 use crate::error::{KapiError, KapiResult};
 
 use super::label::Label;
@@ -41,6 +42,10 @@ impl Handler {
 
     pub(crate) fn end_pc(&self) -> Option<i32> {
         self.end_pc.as_ref().map(|label| label.bytecode_offset)
+    }
+    
+    pub(crate) fn handler_pc(&self) -> Option<i32> {
+        self.handler_pc.as_ref().map(|label| label.bytecode_offset)
     }
 
     pub(crate) fn from_handler(
@@ -96,6 +101,30 @@ impl Handler {
             self.next_handler = Some(Box::new(Self::from_handler(&self, &end, &self.end_pc)));
             Ok(Some(Self::from_handler(&self, &self.start_pc, start)))
         }
+    }
+    
+    pub(crate) fn exception_table_len(&self) -> usize {
+        let mut len = 1;
+        let mut next_handler = &self.next_handler;
+        while let Some(handler) = next_handler {
+            next_handler = &handler.next_handler;
+            len += 1;
+        }
+        len
+    }
+    
+    pub(crate) fn exception_table_size(&self) -> usize {
+        2 + 8 * self.exception_table_len()
+    }
+    
+    pub(crate) fn put<'a>(&self, output: &'a mut impl ByteVec<'a>) -> KapiResult<&'a mut impl ByteVec<'a>> {
+        Ok(output.put_u8s(&self.exception_table_len().to_ne_bytes()[..2]))
+    }
+    
+    fn write_bytes<'a>(&self, output: &'a mut impl ByteVec<'a>) -> KapiResult<()> {
+        output.put(self.start_pc().ok_or(KapiError::StateError(""))?);
+        
+        Ok(())
     }
 }
 

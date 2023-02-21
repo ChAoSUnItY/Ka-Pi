@@ -1,65 +1,38 @@
 use crate::error::{KapiError, KapiResult};
 
-pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
+pub trait ByteVec<'a>: FromIterator<u8> + From<Vec<u8>> {
     fn len(&self) -> usize;
 
-    fn put_u8(&mut self, u8: u8);
-    fn put_u8s(&mut self, u8s: &[u8]);
+    fn put_u8(&'a mut self, u8: u8) -> &'a mut Self;
+    fn put_u8s(&'a mut self, u8s: &[u8]) -> &'a mut Self;
+    
+    fn put<N, const SIZE: usize>(&'a mut self, num: N) -> &'a mut Self where N: Copy + ByteConv<SIZE> {
+        self.put_u8s(&num.ne_bytes())
+    }
 
-    fn put_byte(&mut self, byte: i8);
-    fn put_bytes(&mut self, bytes: &[i8]);
-
-    fn put_short(&mut self, short: i16);
-    fn put_shorts(&mut self, shorts: &[i16]);
-
-    fn put_int(&mut self, int: i32);
-    fn put_ints(&mut self, ints: &[i32]);
-
-    fn put_utf8<S>(&mut self, string: S) -> KapiResult<()>
+    fn put_utf8<S>(&'a mut self, string: S) -> KapiResult<&'a mut Self>
     where
         S: Into<String>;
 }
 
 pub(crate) type ByteVecImpl = Vec<u8>;
 
-impl ByteVec for ByteVecImpl {
+impl<'a> ByteVec<'a> for ByteVecImpl {
     fn len(&self) -> usize {
         self.len()
     }
 
-    fn put_u8(&mut self, u8: u8) {
+    fn put_u8(&'a mut self, u8: u8) -> &'a mut Self {
         self.push(u8);
+        self
     }
 
-    fn put_u8s(&mut self, u8s: &[u8]) {
+    fn put_u8s(&'a mut self, u8s: &[u8]) -> &'a mut Self {
         self.extend_from_slice(u8s);
+        self
     }
 
-    fn put_byte(&mut self, byte: i8) {
-        self.put_u8s(&byte.to_ne_bytes());
-    }
-
-    fn put_bytes(&mut self, bytes: &[i8]) {
-        self.append(&mut bytes.iter().flat_map(|&b| b.to_ne_bytes()).collect());
-    }
-
-    fn put_short(&mut self, short: i16) {
-        self.put_u8s(&short.to_ne_bytes());
-    }
-
-    fn put_shorts(&mut self, shorts: &[i16]) {
-        self.append(&mut shorts.iter().flat_map(|&s| s.to_ne_bytes()).collect());
-    }
-
-    fn put_int(&mut self, int: i32) {
-        self.put_u8s(&int.to_ne_bytes());
-    }
-
-    fn put_ints(&mut self, ints: &[i32]) {
-        self.append(&mut ints.iter().flat_map(|&i| i.to_ne_bytes()).collect());
-    }
-
-    fn put_utf8<S>(&mut self, string: S) -> KapiResult<()>
+    fn put_utf8<S>(&'a mut self, string: S) -> KapiResult<&'a mut Self>
     where
         S: Into<String>,
     {
@@ -73,6 +46,34 @@ impl ByteVec for ByteVecImpl {
         self.put_u8s(&(s.len() as u16).to_ne_bytes()); // put length of string (bytes len)
         self.put_u8s(s.as_bytes()); // put actual byte content
 
-        Ok(())
+        Ok(self)
     }
 }
+
+macro_rules! impl_byteconv {
+    ($size:literal, $id:ident) => {
+        impl ByteConv<$size> for $id {
+            fn ne_bytes(&self) -> [u8; $size] {
+                self.to_ne_bytes()
+            }
+        }
+    };
+}
+
+/// A common trait to allow to-bytes-operations for numeric datas such as i32, f32, or u32.
+pub trait ByteConv<const SIZE: usize> {
+    fn ne_bytes(&self) -> [u8; SIZE];
+}
+
+impl_byteconv!(1, i8);
+impl_byteconv!(2, i16);
+impl_byteconv!(4, i32);
+impl_byteconv!(8, i64);
+impl_byteconv!(16, i128);
+impl_byteconv!(8, isize);
+impl_byteconv!(1, u8);
+impl_byteconv!(2, u16);
+impl_byteconv!(4, u32);
+impl_byteconv!(8, u64);
+impl_byteconv!(16, u128);
+impl_byteconv!(8, usize);

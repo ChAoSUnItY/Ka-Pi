@@ -153,10 +153,7 @@ impl TypePath {
         }
     }
 
-    pub fn put<BV>(type_path: Option<&TypePath>, output: &mut BV)
-    where
-        BV: ByteVec,
-    {
+    pub fn put<'a>(type_path: Option<&TypePath>, output: &'a mut impl ByteVec<'a>) {
         if let Some(type_path) = type_path {
             let len = (type_path.type_path_container[type_path.type_path_offset] * 2 + 1) as usize;
             output.put_u8s(
@@ -197,9 +194,15 @@ impl FromStr for TypePath {
 
         while let Some(c) = chars.next() {
             match c {
-                '[' => output.put_u8s(&[ARRAY_ELEMENT, 0]),
-                '.' => output.put_u8s(&[INNER_TYPE, 0]),
-                '*' => output.put_u8s(&[WILDCARD_BOUND, 0]),
+                '[' => {
+                    output.put_u8s(&[ARRAY_ELEMENT, 0]);
+                }
+                '.' => {
+                    output.put_u8s(&[INNER_TYPE, 0]);
+                }
+                '*' => {
+                    output.put_u8s(&[WILDCARD_BOUND, 0]);
+                }
                 _ if c.is_ascii_digit() => {
                     let mut type_arg = c as u8 - 48;
 
@@ -406,22 +409,24 @@ impl TypeRef {
         Self::new((sort << 24) | arg_index)
     }
 
-    pub(crate) fn put_target<BV>(target_type_and_info: i32, output: &mut BV) -> KapiResult<()>
-    where
-        BV: ByteVec,
-    {
+    pub(crate) fn put_target<'a>(
+        target_type_and_info: i32,
+        output: &'a mut impl ByteVec<'a>,
+    ) -> KapiResult<()> {
         match target_type_and_info {
             CLASS_TYPE_PARAMETER | METHOD_TYPE_PARAMETER | METHOD_FORMAL_PARAMETER => {
-                output.put_short((target_type_and_info >> 16) as i16)
+                output.put((target_type_and_info >> 16) as i16);
             }
             FIELD | METHOD_RETURN | METHOD_RECEIVER => {
-                output.put_short((target_type_and_info >> 16) as i16)
+                output.put((target_type_and_info >> 16) as i16);
             }
             CAST
             | CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT
             | METHOD_INVOCATION_TYPE_ARGUMENT
             | CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT
-            | METHOD_REFERENCE_TYPE_ARGUMENT => output.put_short(target_type_and_info as i16),
+            | METHOD_REFERENCE_TYPE_ARGUMENT => {
+                output.put(target_type_and_info as i16);
+            }
             CLASS_EXTENDS
             | CLASS_TYPE_PARAMETER_BOUND
             | METHOD_TYPE_PARAMETER_BOUND
@@ -431,8 +436,9 @@ impl TypeRef {
             | NEW
             | CONSTRUCTOR_REFERENCE
             | METHOD_REFERENCE => {
-                output.put_byte((target_type_and_info >> 24) as i8);
-                output.put_short(((target_type_and_info & 0xFFFF00) >> 8) as i16);
+                output
+                    .put((target_type_and_info >> 24) as i8)
+                    .put(((target_type_and_info & 0xFFFF00) >> 8) as i16);
             }
             _ => {
                 return Err(KapiError::ArgError(String::from(
