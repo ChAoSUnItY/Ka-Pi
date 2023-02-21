@@ -119,6 +119,13 @@ impl Handler {
 
     pub(crate) fn put(&self, output: &mut impl ByteVec) -> KapiResult<()> {
         output.put_u8s(&self.exception_table_len().to_ne_bytes()[..2]);
+        self.write_bytes(output)?;
+        let mut next_handler = &self.next_handler;
+        
+        while let Some(handler) = next_handler {
+            handler.write_bytes(output)?;
+            next_handler = &handler.next_handler;
+        }
 
         Ok(())
     }
