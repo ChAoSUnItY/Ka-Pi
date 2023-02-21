@@ -95,64 +95,6 @@ impl Handler {
             Ok(Some(Self::from_handler(&self, &self.start_pc, start)))
         }
     }
-
-    // pub(crate) fn remove_range<'start, 'end, L1, L2>(
-    //     handlers: &mut Vec<Self>,
-    //     start: L1,
-    //     end: L2,
-    // ) -> KapiResult<()>
-    // where
-    //     L1: Into<&'start Option<Label>>,
-    //     L2: Into<&'end Option<Label>>,
-    // {
-    //     let start = start.into();
-    //     let end = end.into();
-    //     let range_start = start
-    //         .as_ref()
-    //         .ok_or_else(|| KapiError::StateError("Label's start pc must not be None"))?
-    //         .bytecode_offset;
-    //     let range_end = if let Some(end_label) = end.as_ref() {
-    //         end_label.bytecode_offset
-    //     } else {
-    //         i32::MAX
-    //     };
-    //
-    //     for i in (0..handlers.len()).rev() {
-    //         let handler = handlers[i].clone();
-    //         let handler_start = handler
-    //             .start_pc
-    //             .as_ref()
-    //             .ok_or_else(|| KapiError::StateError("Handler start pc must not be None"))?
-    //             .bytecode_offset;
-    //         let handler_end = handler
-    //             .end_pc
-    //             .as_ref()
-    //             .ok_or_else(|| KapiError::StateError("Handler end pc must not be None"))?
-    //             .bytecode_offset;
-    //
-    //         if range_start >= handler_end || range_end <= handler_start {
-    //             continue;
-    //         }
-    //
-    //         if range_start <= handler_start {
-    //             if range_end >= handler_end {
-    //                 handlers.remove(i);
-    //             } else {
-    //                 handlers[i] = Self::from_handler(&handler, end.clone(), handler.end_pc.clone());
-    //             }
-    //         } else if range_end >= handler_end {
-    //             handlers[i] = Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
-    //         } else {
-    //             handlers.insert(
-    //                 i + 1,
-    //                 Self::from_handler(&handler, end.clone(), handler.end_pc.clone()),
-    //             );
-    //             handlers[i] = Self::from_handler(&handler, handler.start_pc.clone(), start.clone());
-    //         }
-    //     }
-    //
-    //     Ok(())
-    // }
 }
 
 // #[cfg(test)]
