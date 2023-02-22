@@ -5,6 +5,7 @@ use std::any::Any;
 use std::fmt::{Debug, Formatter};
 
 use crate::asm::{opcodes, Handle};
+use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
 
 pub(crate) const CONSTANT_VALUE: &'static str = "ConstantValue";
@@ -146,7 +147,7 @@ pub(crate) const ASM_IFNONNULL: u8 = opcodes::IFNONNULL + ASM_IFNULL_OPCODE_DELT
 pub(crate) const ASM_GOTO_W: u8 = 220;
 
 macro_rules! impl_constant_object {
-    ($target:ident) => {
+    ($target:path) => {
         impl ConstantObject for $target {
             fn as_any(&self) -> &dyn Any {
                 self
@@ -176,7 +177,14 @@ impl PartialEq for dyn ConstantObject + '_ {
 
 impl Eq for dyn ConstantObject + '_ {}
 
+impl_constant_object!(i32);
+impl_constant_object!(i64);
+impl_constant_object!(f32);
+impl_constant_object!(f64);
 impl_constant_object!(String);
+impl_constant_object!(Handle);
+impl_constant_object!(Type);
+impl_constant_object!(Box<ConstantDynamic>);
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct ConstantDynamic {
