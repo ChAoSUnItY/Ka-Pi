@@ -110,6 +110,7 @@ const INTERNAL: u8 = 12;
 /// The descriptors of the primitive types.
 const PRIMITIVE_DESCRIPTORS: &'static str = "VZCBSIFJD";
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Type {
     sort: u8,
     value_buffer: String,
