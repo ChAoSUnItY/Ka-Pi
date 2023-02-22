@@ -7,6 +7,11 @@ use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
 use crate::utils::PushReturn;
 
+pub const SKIP_CODE: u8 = 1;
+pub const SKIP_DEBUG: u8 = 2;
+pub const SKIP_FRAMES: u8 = 4;
+pub const EXPAND_FRAMES: u8 = 8;
+
 pub(crate) const EXPAND_ASM_INSNS: u8 = 256u16 as u8;
 
 pub trait Reader {
