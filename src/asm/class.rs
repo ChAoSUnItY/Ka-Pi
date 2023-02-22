@@ -142,6 +142,8 @@ pub trait Reader {
                 handler.to_owned(),
                 bootstrap_method_arguments,
             ));
+            
+            self.put_constant_dynamic(constant_dynamic.clone(), entry_index);
 
             Ok(constant_dynamic)
         }
