@@ -131,7 +131,10 @@ impl Handler {
     }
 
     fn write_bytes(&self, output: &mut impl ByteVec) -> KapiResult<()> {
-        output.put(self.start_pc().ok_or(KapiError::StateError(""))?);
+        output.put(self.start_pc().ok_or(KapiError::StateError("Handler start label must not be None"))? as u16);
+        output.put(self.end_pc().ok_or(KapiError::StateError("Handler end label must not be None"))? as u16);
+        output.put(self.handler_pc().ok_or(KapiError::StateError("Handler handler label must not be None"))? as u16);
+        output.put(self.catch_type as u16);
 
         Ok(())
     }
@@ -140,10 +143,11 @@ impl Handler {
 #[cfg(test)]
 mod test {
     use rstest::rstest;
+    use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 
     use crate::asm::handler::Handler;
     use crate::asm::label::Label;
-    use crate::error::KapiResult;
+    use crate::error::{KapiError, KapiResult};
 
     fn new_handler(start_pc: i32, end_pc: i32) -> Handler {
         Handler::new(
@@ -346,6 +350,44 @@ mod test {
 
         assert!(next_handler.is_none());
 
+        Ok(())
+    }
+    
+    #[test]
+    fn test_exception_table_len() {
+        let handler = new_handler(10, 20);
+        
+        assert_eq!(1, handler.exception_table_len());
+
+
+    }
+    
+    #[test]
+    fn test_exception_table_size() -> KapiResult<()> {
+        let handler = new_handler(10, 20).remove_range(&new_label(13).into(), &new_label(17).into())?;
+        
+        assert!(handler.is_some());
+        
+        let handler = handler.unwrap();
+        
+        assert_eq!(18, handler.exception_table_size());
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_put() -> KapiResult<()> {
+        let mut output = ByteVecImpl::new();
+        let handler = new_handler(10, 20).remove_range(&new_label(13).into(), &new_label(17).into())?;
+
+        assert!(handler.is_some());
+        
+        let handler = handler.unwrap();
+        
+        handler.put(&mut output)?;
+        
+        assert_eq!(18, output.len());
+        
         Ok(())
     }
 }
