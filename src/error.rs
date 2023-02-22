@@ -2,6 +2,7 @@ use std::{
     error::Error,
     fmt::{Debug, Display},
 };
+use std::fmt::write;
 
 use jni::errors::Error as JniError;
 
@@ -29,6 +30,7 @@ pub enum KapiError {
     TypeError(&'static str),
     ArgError(String),
     ClassResolveError(&'static str),
+    ClassParseError(String),
     JNIError(String),
 }
 
@@ -40,6 +42,7 @@ impl Display for KapiError {
             TypeError(cause) => write!(f, "{}", cause),
             ArgError(cause) => write!(f, "{}", cause),
             ClassResolveError(cause) => write!(f, "{}", cause),
+            ClassParseError(cause) => write!(f, "{}", cause),
             JNIError(cause) => write!(f, "{}", cause),
         }
     }
