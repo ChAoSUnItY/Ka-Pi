@@ -127,6 +127,18 @@ impl Type {
             value_end,
         }
     }
+    
+    pub fn object_type_from_string<S>(string: S) -> Self where S: Into<String> {
+        let string = string.into();
+        let len = string.len();
+        Self::new(if string.starts_with("[") { ARRAY } else { INTERNAL }, string, 0, len)
+    }
+    
+    pub fn method_type_from_string<S>(string: S) -> Self where S: Into<String> {
+        let string = string.into();
+        let len = string.len();
+        Self::new(METHOD, string, 0, len)
+    }
 }
 
 /// A type path step that steps into the element type of an array type. See {@link #getStep}.
