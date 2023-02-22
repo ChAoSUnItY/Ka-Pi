@@ -37,6 +37,17 @@ impl Rev<4> for i32 {
     }
 }
 
+pub(crate) trait PushReturn<T> {
+    fn push_return(&mut self, item: T) -> &T;
+}
+
+impl<T> PushReturn<T> for Vec<T> {
+    fn push_return(&mut self, item: T) -> &T {
+        self.push(item);
+        self.last().unwrap()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::replace;
