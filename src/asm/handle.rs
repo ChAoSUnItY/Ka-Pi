@@ -1,6 +1,6 @@
 use super::opcodes;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Handle {
     tag: u8,
     owner: String,
