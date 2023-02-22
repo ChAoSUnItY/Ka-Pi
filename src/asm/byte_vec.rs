@@ -43,7 +43,7 @@ impl ByteVec for ByteVecImpl {
         if len > 65535 {
             return Err(KapiError::Utf8Error("UTF8 string too large"));
         }
-        
+
         self.put(s.len() as u16); // put length of string (bytes len)
         self.put_u8s(s.as_bytes()); // put actual byte content
 
