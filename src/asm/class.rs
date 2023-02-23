@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use crate::asm::constants::{ConstantDynamic, ConstantObject};
 use crate::asm::types::Type;
-use crate::asm::{opcodes, symbol, Handle, constants};
+use crate::asm::{constants, opcodes, symbol, Handle};
 use crate::error::{KapiError, KapiResult};
 use crate::utils::PushReturn;
 
@@ -37,7 +37,7 @@ pub trait Reader {
 
     fn first_attr_offset(&self) -> usize {
         let mut current_offset = self.header() + 8 + self.read_u16(self.header() + 6) as usize * 2;
-        
+
         // This loop skips both fields and methods on 1st iteration and 2nd iteration
         for _ in 0..2 {
             let mut member_count = self.read_u16(current_offset) as usize;
@@ -54,13 +54,13 @@ pub trait Reader {
                 }
             }
         }
-        
+
         current_offset + 2
     }
-    
+
     fn read_bootstrap_methods_attr(&mut self) -> KapiResult<Vec<usize>> {
         let mut current_attr_offset = self.first_attr_offset();
-        
+
         for _ in 0..self.read_u16(current_attr_offset - 2) {
             let attr_name = self.read_utf8(current_attr_offset)?;
             let attr_len = self.read_u32(current_attr_offset + 2) as usize;
@@ -77,10 +77,12 @@ pub trait Reader {
             }
             current_attr_offset += attr_len;
         }
-        
-        Err(KapiError::ClassParseError(format!("Expected at least 1 bootstrap method attribute but got nothing")))
+
+        Err(KapiError::ClassParseError(format!(
+            "Expected at least 1 bootstrap method attribute but got nothing"
+        )))
     }
-    
+
     fn slice_rev<const SIZE: usize>(&self, offset: usize) -> [u8; SIZE] {
         let mut bytes = [0u8; SIZE];
         bytes.clone_from((&self.bytes()[offset..offset + SIZE]).try_into().unwrap());
@@ -102,7 +104,7 @@ pub trait Reader {
     fn read_u16(&self, offset: usize) -> u16 {
         u16::from_ne_bytes(self.slice_rev(offset))
     }
-    
+
     #[inline]
     fn read_u32(&self, offset: usize) -> u32 {
         u32::from_ne_bytes(self.slice_rev(offset))
@@ -278,14 +280,22 @@ pub struct ClassReader {
 }
 
 impl ClassReader {
-    pub(crate) fn new_reader(
-        class_file_buffer: Vec<u8>,
+    pub fn new_reader_from_raw(bytes: &[u8]) -> KapiResult<Self> {
+        Self::new_reader(bytes, 0)
+    }
+
+    pub fn new_reader(class_file_buffer: &[u8], class_file_offset: usize) -> KapiResult<Self> {
+        Self::init_reader(class_file_buffer, class_file_offset, true)
+    }
+
+    pub(crate) fn init_reader(
+        class_file_buffer: &[u8],
         class_file_offset: usize,
         check_version: bool,
     ) -> KapiResult<Self> {
         let mut reader = Self::default();
 
-        reader.class_file_buffer = class_file_buffer;
+        reader.class_file_buffer = class_file_buffer.to_vec();
         reader.parse_from_bytes(class_file_offset, check_version)?;
 
         Ok(reader)
@@ -348,7 +358,7 @@ impl ClassReader {
                     current_max_string_len = max(current_max_string_len, info_size);
                 }
                 symbol::CONSTANT_METHOD_HANDLE_TAG => info_size = 4,
-                symbol::CONSTANT_STRING_TAG 
+                symbol::CONSTANT_STRING_TAG
                 | symbol::CONSTANT_CLASS_TAG
                 | symbol::CONSTANT_METHOD_TYPE_TAG
                 | symbol::CONSTANT_PACKAGE_TAG
@@ -360,17 +370,17 @@ impl ClassReader {
                     )))
                 }
             }
-            
+
             current_constant_pool_info_offset += info_size;
         }
 
         self.max_string_len = current_max_string_len;
         self.header = current_constant_pool_info_offset;
-        
+
         if has_constant_dynamic {
             self.constant_dynamic_values = Vec::with_capacity(constant_pool_count);
         }
-        
+
         if has_bootstrap_method {
             self.bootstrap_method_offsets = self.read_bootstrap_methods_attr()?;
         }
