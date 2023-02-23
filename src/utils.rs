@@ -1,5 +1,4 @@
 use std::ops::IndexMut;
-use crate::asm::class::Visitor;
 
 pub(crate) trait Replacable<T>: IndexMut<usize, Output = T> {}
 
