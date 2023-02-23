@@ -1,4 +1,5 @@
 use std::ops::IndexMut;
+use crate::asm::class::Visitor;
 
 pub(crate) trait Replacable<T>: IndexMut<usize, Output = T> {}
 
@@ -37,14 +38,13 @@ impl Rev<4> for i32 {
     }
 }
 
-pub(crate) trait PushReturn<T> {
-    fn push_return(&mut self, item: T) -> &T;
+trait Delegated<T> where T: Delegated<T> {
+    fn delegated(&self) -> &T;
 }
 
-impl<T> PushReturn<T> for Vec<T> {
-    fn push_return(&mut self, item: T) -> &T {
-        self.push(item);
-        self.last().unwrap()
+impl<V> Delegated<V> for V where V: Visitor {
+    fn delegated(&self) -> &V {
+        self
     }
 }
 
