@@ -52,16 +52,14 @@ pub trait Reader {
 
         // This loop skips both fields and methods on 1st iteration and 2nd iteration
         for _ in 0..2 {
-            let mut member_count = self.read_u16(current_offset) as usize;
+            let member_count = self.read_u16(current_offset) as usize;
             current_offset += 2;
 
-            while member_count > 0 {
-                member_count -= 1;
-                let mut attr_count = self.read_u16(current_offset + 6) as usize;
+            for _ in 0..member_count {
+                let attr_count = self.read_u16(current_offset + 6) as usize;
                 current_offset += 8;
 
-                while attr_count > 0 {
-                    attr_count -= 1;
+                for _ in 0..attr_count {
                     current_offset += 6 + self.read_u32(current_offset + 2) as usize;
                 }
             }
@@ -78,10 +76,9 @@ pub trait Reader {
             let attr_len = self.read_u32(current_attr_offset + 2) as usize;
             current_attr_offset += 6;
             if constants::BOOTSTRAP_METHODS == &*attr_name {
-                let mut bootstrap_methods_len = self.read_u16(current_attr_offset) as usize;
+                let bootstrap_methods_len = self.read_u16(current_attr_offset) as usize;
                 let mut result = Vec::with_capacity(bootstrap_methods_len);
-                while bootstrap_methods_len > 0 {
-                    bootstrap_methods_len -= 1;
+                for _ in 0..bootstrap_methods_len {
                     result.push(current_attr_offset);
                     current_attr_offset += 4 + self.read_u16(current_attr_offset + 2) as usize * 2;
                 }
@@ -448,10 +445,9 @@ impl Reader for ClassReader {
 
     fn interfaces(&mut self) -> KapiResult<Vec<Rc<String>>> {
         let mut current_offset = self.header + 6;
-        let mut interfaces_len = self.read_u16(current_offset) as usize;
+        let interfaces_len = self.read_u16(current_offset) as usize;
         let mut interfaces = Vec::with_capacity(interfaces_len);
-        while interfaces_len > 0 {
-            interfaces_len -= 1;
+        for _ in 0..interfaces_len {
             current_offset += 2;
             interfaces.push(self.read_class(current_offset)?);
         }
