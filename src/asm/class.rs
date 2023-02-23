@@ -36,33 +36,27 @@ pub trait ClassVisitor {
     ) {
     }
     fn visit_source(&mut self, source: String, debug: String) {}
-    fn visit_module<MV>(&mut self, name: String, access: u32, version: String) -> Option<MV>
-    where
-        MV: ModuleVisitor,
+    fn visit_module(&mut self, name: String, access: u32, version: String) -> Option<Box<dyn ModuleVisitor>>
     {
         None
     }
     fn visit_nest_host(&mut self, nest_host: String) {}
     fn visit_outer_class(&mut self, owner: String, name: String, descriptor: String) {}
-    fn visit_annotation<AV>(&mut self, descriptor: String, visible: bool) -> Option<AV>
-    where
-        AV: AnnotationVisitor,
+    fn visit_annotation(&mut self, descriptor: String, visible: bool) -> Option<Box<dyn AnnotationVisitor>>
     {
         None
     }
-    fn visit_type_annotation<AV>(
+    fn visit_type_annotation(
         &mut self,
         type_ref: i32,
         type_path: &TypePath,
         descriptor: String,
         visible: bool,
-    ) -> Option<AV>
-    where
-        AV: AnnotationVisitor,
+    ) -> Option<Box<dyn AnnotationVisitor>>
     {
         None
     }
-    fn visit_attribute(&mut self, attribute: &impl Attribute) {}
+    fn visit_attribute(&mut self, attribute: Box<dyn Attribute>) {}
     fn visit_nest_member(&mut self, nest_member: String) {}
     fn visit_permitted_sub_class(&mut self, permitted_sub_class: String) {}
     fn visit_inner_class(
@@ -73,42 +67,36 @@ pub trait ClassVisitor {
         access: u32,
     ) {
     }
-    fn visit_component_record<RV>(
+    fn visit_component_record(
         &mut self,
         name: String,
         descriptor: String,
         signature: String,
-    ) -> Option<RV>
-    where
-        RV: RecordVisitor,
+    ) -> Option<Box<dyn RecordVisitor>>
     {
         None
     }
-    fn visit_method<MV>(
+    fn visit_method(
         &mut self,
         name: String,
         descriptor: String,
         signature: String,
         exceptions: &[String],
-    ) -> Option<MV>
-    where
-        MV: MethodVisitor,
+    ) -> Option<Box<dyn MethodVisitor>>
     {
         None
     }
-    fn visit_field<CV, FV>(
+    fn visit_field(
         &mut self,
         name: String,
         descriptor: String,
         signature: String,
-        value: &CV,
-    ) -> Option<FV>
-    where
-        CV: ConstantValue,
-        FV: FieldVisitor,
+        value: Box<dyn ConstantValue>,
+    ) -> Option<Box<dyn FieldVisitor>>
     {
         None
     }
+    fn visit_end(self) where Self: Sized {}
 }
 
 pub trait ClassReader {
