@@ -26,3 +26,4 @@ pub mod field;
 pub mod method;
 pub mod annotation;
 pub mod signature;
+pub mod module;
