@@ -5,11 +5,11 @@ use crate::asm::label::Label;
 pub trait Attribute {
     fn r#type(&self) -> &String;
 
-    fn is_unknown() -> bool {
+    fn is_unknown(&self) -> bool {
         true
     }
 
-    fn is_code_attribute() -> bool {
+    fn is_code_attribute(&self) -> bool {
         false
     }
 
