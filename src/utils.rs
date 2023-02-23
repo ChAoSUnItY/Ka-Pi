@@ -38,16 +38,6 @@ impl Rev<4> for i32 {
     }
 }
 
-trait Delegated<T> where T: Delegated<T> {
-    fn delegated(&self) -> &T;
-}
-
-impl<V> Delegated<V> for V where V: Visitor {
-    fn delegated(&self) -> &V {
-        self
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::replace;
