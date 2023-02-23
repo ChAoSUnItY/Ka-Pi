@@ -21,3 +21,6 @@ mod label;
 pub mod opcodes;
 mod symbol;
 pub mod types;
+pub mod record;
+pub mod field;
+pub mod method;
