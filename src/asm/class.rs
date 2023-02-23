@@ -22,7 +22,7 @@ pub trait Reader {
     #[inline]
     fn header(&self) -> usize;
     #[inline]
-    fn constant_pool_info_offsets(&self) -> &Vec<usize>;
+    fn cp_info_offsets(&self) -> &Vec<usize>;
     #[inline]
     fn constant_utf8_values(&self) -> &Vec<Rc<String>>;
     #[inline]
@@ -34,6 +34,8 @@ pub trait Reader {
     fn put_utf8(&mut self, utf8_string: Rc<String>, entry_index: usize);
     #[inline]
     fn put_constant_dynamic(&mut self, constant_dynamic: Rc<ConstantDynamic>, entry_index: usize);
+    
+    // 
 
     fn first_attr_offset(&self) -> usize {
         let mut current_offset = self.header() + 8 + self.read_u16(self.header() + 6) as usize * 2;
@@ -146,7 +148,7 @@ pub trait Reader {
         if let Some(entry) = self.constant_utf8_values().get(entry_index) {
             Ok(entry.clone())
         } else {
-            let info_offset = self.constant_pool_info_offsets()[entry_index];
+            let info_offset = self.cp_info_offsets()[entry_index];
             let len = self.read_u16(info_offset) as usize;
             let string = Rc::new(self.read_utf8_from_bytes(info_offset + 2, len)?);
 
@@ -165,7 +167,7 @@ pub trait Reader {
 
     #[inline]
     fn read_stringish(&mut self, offset: usize) -> KapiResult<Rc<String>> {
-        self.read_utf8(self.constant_pool_info_offsets()[self.read_u16(offset) as usize])
+        self.read_utf8(self.cp_info_offsets()[self.read_u16(offset) as usize])
     }
 
     #[inline]
@@ -189,9 +191,9 @@ pub trait Reader {
         if let Some(constant_dynamic) = constant_dynamic {
             Ok(constant_dynamic.clone())
         } else {
-            let info_offset = self.constant_pool_info_offsets()[entry_index];
+            let info_offset = self.cp_info_offsets()[entry_index];
             let name_and_type_info_offset =
-                self.constant_pool_info_offsets()[self.read_u16(info_offset + 2) as usize];
+                self.cp_info_offsets()[self.read_u16(info_offset + 2) as usize];
             let name = self.read_utf8(name_and_type_info_offset)?;
             let descriptor = self.read_utf8(name_and_type_info_offset + 2)?;
             let mut bootstrap_method_offset =
@@ -225,7 +227,7 @@ pub trait Reader {
     }
 
     fn read_const(&mut self, entry_index: usize) -> KapiResult<Box<dyn ConstantObject>> {
-        let info_offset = self.constant_pool_info_offsets()[entry_index];
+        let info_offset = self.cp_info_offsets()[entry_index];
 
         match self.bytes()[info_offset - 1] {
             symbol::CONSTANT_INTEGER_TAG => Ok(Box::new(self.read_i32(info_offset))),
@@ -242,9 +244,9 @@ pub trait Reader {
             symbol::CONSTANT_METHOD_HANDLE_TAG => {
                 let reference_kind = self.read_u8(info_offset);
                 let reference_info_offset =
-                    self.constant_pool_info_offsets()[self.read_u16(info_offset + 1) as usize];
+                    self.cp_info_offsets()[self.read_u16(info_offset + 1) as usize];
                 let name_and_type_info_offset =
-                    self.constant_pool_info_offsets()[self.read_u16(info_offset + 2) as usize];
+                    self.cp_info_offsets()[self.read_u16(info_offset + 2) as usize];
                 let owner = self.read_class(reference_info_offset)?;
                 let descriptor = self.read_class(name_and_type_info_offset)?;
                 let is_interface = self.bytes()[reference_info_offset - 1]
@@ -272,7 +274,7 @@ pub trait Writer {}
 pub struct ClassReader {
     header: usize,
     class_file_buffer: Vec<u8>,
-    constant_pool_info_offsets: Vec<usize>,
+    cp_info_offsets: Vec<usize>,
     constant_utf8_values: Vec<Rc<String>>,
     constant_dynamic_values: Vec<Rc<ConstantDynamic>>,
     bootstrap_method_offsets: Vec<usize>,
@@ -317,20 +319,20 @@ impl ClassReader {
             }
         }
 
-        let constant_pool_count = self.read_u16(class_file_offset + 8) as usize;
-        self.constant_pool_info_offsets = Vec::with_capacity(constant_pool_count);
-        self.constant_utf8_values = Vec::with_capacity(constant_pool_count);
+        let cp_count = self.read_u16(class_file_offset + 8) as usize;
+        self.cp_info_offsets = Vec::with_capacity(cp_count);
+        self.constant_utf8_values = Vec::with_capacity(cp_count);
 
-        let mut current_constant_pool_info_index = 1;
-        let mut current_constant_pool_info_offset = class_file_offset + 10;
+        let mut current_cp_info_index = 1;
+        let mut current_cp_info_offset = class_file_offset + 10;
         let mut current_max_string_len = 0;
         let mut has_bootstrap_method = false;
         let mut has_constant_dynamic = false;
 
-        while current_constant_pool_info_index < constant_pool_count {
-            self.constant_pool_info_offsets
-                .push(current_constant_pool_info_offset + 1);
-            let info_tag = self.class_file_buffer[current_constant_pool_info_offset];
+        while current_cp_info_index < cp_count {
+            self.cp_info_offsets
+                .push(current_cp_info_offset + 1);
+            let info_tag = self.class_file_buffer[current_cp_info_offset];
             let info_size: usize;
 
             match info_tag {
@@ -351,10 +353,10 @@ impl ClassReader {
                 }
                 symbol::CONSTANT_LONG_TAG | symbol::CONSTANT_DOUBLE_TAG => {
                     info_size = 9;
-                    current_constant_pool_info_index += 1;
+                    current_cp_info_index += 1;
                 }
                 symbol::CONSTANT_UTF8_TAG => {
-                    info_size = 3 + self.read_u16(current_constant_pool_info_offset + 1) as usize;
+                    info_size = 3 + self.read_u16(current_cp_info_offset + 1) as usize;
                     current_max_string_len = max(current_max_string_len, info_size);
                 }
                 symbol::CONSTANT_METHOD_HANDLE_TAG => info_size = 4,
@@ -371,14 +373,14 @@ impl ClassReader {
                 }
             }
 
-            current_constant_pool_info_offset += info_size;
+            current_cp_info_offset += info_size;
         }
 
         self.max_string_len = current_max_string_len;
-        self.header = current_constant_pool_info_offset;
+        self.header = current_cp_info_offset;
 
         if has_constant_dynamic {
-            self.constant_dynamic_values = Vec::with_capacity(constant_pool_count);
+            self.constant_dynamic_values = Vec::with_capacity(cp_count);
         }
 
         if has_bootstrap_method {
@@ -401,8 +403,8 @@ impl Reader for ClassReader {
     }
 
     #[inline]
-    fn constant_pool_info_offsets(&self) -> &Vec<usize> {
-        &self.constant_pool_info_offsets
+    fn cp_info_offsets(&self) -> &Vec<usize> {
+        &self.cp_info_offsets
     }
 
     #[inline]
