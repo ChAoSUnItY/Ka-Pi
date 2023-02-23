@@ -17,25 +17,35 @@ pub const EXPAND_FRAMES: u8 = 8;
 pub(crate) const EXPAND_ASM_INSNS: u8 = 256u16 as u8;
 
 pub trait Reader {
-    #[inline]
-    fn bytes(&self) -> &Vec<u8>;
-    #[inline]
-    fn header(&self) -> usize;
-    #[inline]
-    fn cp_info_offsets(&self) -> &Vec<usize>;
-    #[inline]
-    fn constant_utf8_values(&self) -> &Vec<Rc<String>>;
-    #[inline]
-    fn constant_dynamic_values(&self) -> &Vec<Rc<ConstantDynamic>>;
-    #[inline]
-    fn bootstrap_method_offsets(&self) -> &Vec<usize>;
-
-    #[inline]
-    fn put_utf8(&mut self, utf8_string: Rc<String>, entry_index: usize);
-    #[inline]
-    fn put_constant_dynamic(&mut self, constant_dynamic: Rc<ConstantDynamic>, entry_index: usize);
+    // Internal field accessors
     
-    // 
+    fn bytes(&self) -> &Vec<u8>;
+    fn header(&self) -> usize;
+    fn cp_info_offsets(&self) -> &Vec<usize>;
+    fn constant_utf8_values(&self) -> &Vec<Rc<String>>;
+    fn constant_dynamic_values(&self) -> &Vec<Rc<ConstantDynamic>>;
+    fn bootstrap_method_offsets(&self) -> &Vec<usize>;
+    
+    // JVM bytecode class file accessors
+    
+    fn access(&self) -> usize;
+    fn class_name(&mut self) -> KapiResult<Rc<String>>;
+    fn super_name(&mut self) -> KapiResult<Rc<String>>;
+    fn interfaces(&mut self) -> KapiResult<Vec<Rc<String>>>;
+    
+    // Internal field accessors (based on default impl)
+    // These functions might remove after full implementation of ClassReader is done.
+    
+    fn cp_info_count(&self) -> usize;
+    fn max_string_len(&self) -> usize;
+    
+    // Internal field mutators
+    
+    fn put_utf8(&mut self, utf8_string: Rc<String>, entry_index: usize);
+    fn put_constant_dynamic(&mut self, constant_dynamic: Rc<ConstantDynamic>, entry_index: usize);
+
+    // Internal utility functions
+    // These functions are not overrideable due to the specialized nature of JVM bytecode spec.
 
     fn first_attr_offset(&self) -> usize {
         let mut current_offset = self.header() + 8 + self.read_u16(self.header() + 6) as usize * 2;
@@ -330,8 +340,7 @@ impl ClassReader {
         let mut has_constant_dynamic = false;
 
         while current_cp_info_index < cp_count {
-            self.cp_info_offsets
-                .push(current_cp_info_offset + 1);
+            self.cp_info_offsets.push(current_cp_info_offset + 1);
             let info_tag = self.class_file_buffer[current_cp_info_offset];
             let info_size: usize;
 
@@ -420,6 +429,43 @@ impl Reader for ClassReader {
     #[inline]
     fn bootstrap_method_offsets(&self) -> &Vec<usize> {
         &self.bootstrap_method_offsets
+    }
+
+    #[inline]
+    fn access(&self) -> usize {
+        self.read_u16(self.header) as usize
+    }
+
+    #[inline]
+    fn class_name(&mut self) -> KapiResult<Rc<String>> {
+        self.read_class(self.header + 2)
+    }
+
+    #[inline]
+    fn super_name(&mut self) -> KapiResult<Rc<String>> {
+        self.read_class(self.header + 4)
+    }
+
+    fn interfaces(&mut self) -> KapiResult<Vec<Rc<String>>> {
+        let mut current_offset = self.header + 6;
+        let mut interfaces_len = self.read_u16(current_offset) as usize;
+        let mut interfaces = Vec::with_capacity(interfaces_len);
+        while interfaces_len > 0 {
+            interfaces_len -= 1;
+            current_offset += 2;
+            interfaces.push(self.read_class(current_offset)?);
+        }
+        Ok(interfaces)
+    }
+
+    #[inline]
+    fn cp_info_count(&self) -> usize {
+        self.cp_info_offsets.len()
+    }
+
+    #[inline]
+    fn max_string_len(&self) -> usize {
+        self.max_string_len
     }
 
     #[inline]
