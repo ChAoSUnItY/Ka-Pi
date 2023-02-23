@@ -3,13 +3,15 @@ use std::fs::read;
 use std::mem;
 use std::rc::Rc;
 
+use crate::asm::annotation::AnnotationVisitor;
 use crate::asm::attribute::Attribute;
 use crate::asm::constants::{ConstantDynamic, ConstantObject};
+use crate::asm::field::FieldVisitor;
+use crate::asm::method::MethodVisitor;
+use crate::asm::module::ModuleVisitor;
 use crate::asm::record::RecordVisitor;
 use crate::asm::types::{Type, TypePath};
 use crate::asm::{constants, opcodes, symbol, Handle};
-use crate::asm::field::FieldVisitor;
-use crate::asm::method::MethodVisitor;
 use crate::error::{KapiError, KapiResult};
 
 pub const SKIP_CODE: u8 = 1;
@@ -34,17 +36,31 @@ pub trait ClassVisitor {
     ) {
     }
     fn visit_source(&mut self, source: String, debug: String) {}
-    fn visit_module(&mut self, name: String, access: u32, version: String) {}
+    fn visit_module<MV>(&mut self, name: String, access: u32, version: String) -> Option<MV>
+    where
+        MV: ModuleVisitor,
+    {
+        None
+    }
     fn visit_nest_host(&mut self, nest_host: String) {}
     fn visit_outer_class(&mut self, owner: String, name: String, descriptor: String) {}
-    fn visit_annotation(&mut self, descriptor: String, visible: bool) {}
-    fn visit_type_annotation(
+    fn visit_annotation<AV>(&mut self, descriptor: String, visible: bool) -> Option<AV>
+    where
+        AV: AnnotationVisitor,
+    {
+        None
+    }
+    fn visit_type_annotation<AV>(
         &mut self,
         type_ref: i32,
         type_path: &TypePath,
         descriptor: String,
         visible: bool,
-    ) {
+    ) -> Option<AV>
+    where
+        AV: AnnotationVisitor,
+    {
+        None
     }
     fn visit_attribute(&mut self, attribute: &impl Attribute) {}
     fn visit_nest_member(&mut self, nest_member: String) {}
@@ -85,7 +101,7 @@ pub trait ClassVisitor {
         name: String,
         descriptor: String,
         signature: String,
-        value: &CV
+        value: &CV,
     ) -> Option<FV>
     where
         CV: ConstantValue,
