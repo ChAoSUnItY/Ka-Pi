@@ -1,3 +1,1 @@
-pub trait FieldVisitor {
-    
-}
+pub trait FieldVisitor {}

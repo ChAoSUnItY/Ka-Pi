@@ -3,9 +3,13 @@ use std::fs::read;
 use std::mem;
 use std::rc::Rc;
 
+use crate::asm::attribute::Attribute;
 use crate::asm::constants::{ConstantDynamic, ConstantObject};
-use crate::asm::types::Type;
-use crate::asm::{constants, Handle, opcodes, symbol};
+use crate::asm::record::RecordVisitor;
+use crate::asm::types::{Type, TypePath};
+use crate::asm::{constants, opcodes, symbol, Handle};
+use crate::asm::field::FieldVisitor;
+use crate::asm::method::MethodVisitor;
 use crate::error::{KapiError, KapiResult};
 
 pub const SKIP_CODE: u8 = 1;
@@ -15,35 +19,107 @@ pub const EXPAND_FRAMES: u8 = 8;
 
 pub(crate) const EXPAND_ASM_INSNS: u8 = 256u16 as u8;
 
-pub trait Visitor {
-    fn visit(&self);
+pub trait ConstantValue {}
+
+#[allow(unused_variables)]
+pub trait ClassVisitor {
+    fn visit(
+        &mut self,
+        version: u32,
+        access: u32,
+        class_name: String,
+        signature: String,
+        super_name: String,
+        interfaces: &[String],
+    ) {
+    }
+    fn visit_source(&mut self, source: String, debug: String) {}
+    fn visit_module(&mut self, name: String, access: u32, version: String) {}
+    fn visit_nest_host(&mut self, nest_host: String) {}
+    fn visit_outer_class(&mut self, owner: String, name: String, descriptor: String) {}
+    fn visit_annotation(&mut self, descriptor: String, visible: bool) {}
+    fn visit_type_annotation(
+        &mut self,
+        type_ref: i32,
+        type_path: &TypePath,
+        descriptor: String,
+        visible: bool,
+    ) {
+    }
+    fn visit_attribute(&mut self, attribute: &impl Attribute) {}
+    fn visit_nest_member(&mut self, nest_member: String) {}
+    fn visit_permitted_sub_class(&mut self, permitted_sub_class: String) {}
+    fn visit_inner_class(
+        &mut self,
+        name: String,
+        outer_name: String,
+        inner_name: String,
+        access: u32,
+    ) {
+    }
+    fn visit_component_record<RV>(
+        &mut self,
+        name: String,
+        descriptor: String,
+        signature: String,
+    ) -> Option<RV>
+    where
+        RV: RecordVisitor,
+    {
+        None
+    }
+    fn visit_method<MV>(
+        &mut self,
+        name: String,
+        descriptor: String,
+        signature: String,
+        exceptions: &[String],
+    ) -> Option<MV>
+    where
+        MV: MethodVisitor,
+    {
+        None
+    }
+    fn visit_field<CV, FV>(
+        &mut self,
+        name: String,
+        descriptor: String,
+        signature: String,
+        value: &CV
+    ) -> Option<FV>
+    where
+        CV: ConstantValue,
+        FV: FieldVisitor,
+    {
+        None
+    }
 }
 
-pub trait Reader {
+pub trait ClassReader {
     // Internal field accessors
-    
+
     fn bytes(&self) -> &Vec<u8>;
     fn header(&self) -> usize;
     fn cp_info_offsets(&self) -> &Vec<usize>;
     fn constant_utf8_values(&self) -> &Vec<Rc<String>>;
     fn constant_dynamic_values(&self) -> &Vec<Rc<ConstantDynamic>>;
     fn bootstrap_method_offsets(&self) -> &Vec<usize>;
-    
+
     // JVM bytecode class file accessors
-    
+
     fn access(&self) -> usize;
     fn class_name(&mut self) -> KapiResult<Rc<String>>;
     fn super_name(&mut self) -> KapiResult<Rc<String>>;
     fn interfaces(&mut self) -> KapiResult<Vec<Rc<String>>>;
-    
+
     // Internal field accessors (based on default impl)
     // These functions might remove after full implementation of ClassReader is done.
-    
+
     fn cp_info_count(&self) -> usize;
     fn max_string_len(&self) -> usize;
-    
+
     // Internal field mutators
-    
+
     fn put_utf8(&mut self, utf8_string: Rc<String>, entry_index: usize);
     fn put_constant_dynamic(&mut self, constant_dynamic: Rc<ConstantDynamic>, entry_index: usize);
 
@@ -281,7 +357,7 @@ pub trait Reader {
 pub trait Writer {}
 
 #[derive(Debug, Default)]
-pub struct ClassReader {
+pub struct ClassReaderImpl {
     header: usize,
     class_file_buffer: Vec<u8>,
     cp_info_offsets: Vec<usize>,
@@ -291,7 +367,7 @@ pub struct ClassReader {
     max_string_len: usize,
 }
 
-impl ClassReader {
+impl ClassReaderImpl {
     pub fn new_reader_from_raw(bytes: &[u8]) -> KapiResult<Self> {
         Self::new_reader(bytes, 0)
     }
@@ -400,7 +476,7 @@ impl ClassReader {
     }
 }
 
-impl Reader for ClassReader {
+impl ClassReader for ClassReaderImpl {
     #[inline]
     fn bytes(&self) -> &Vec<u8> {
         &self.class_file_buffer
