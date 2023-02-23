@@ -1,9 +1,11 @@
+use std::cmp::max;
+use std::fs::read;
 use std::mem;
 use std::rc::Rc;
 
 use crate::asm::constants::{ConstantDynamic, ConstantObject};
-use crate::asm::{symbol, Handle};
 use crate::asm::types::Type;
+use crate::asm::{opcodes, symbol, Handle, constants};
 use crate::error::{KapiError, KapiResult};
 use crate::utils::PushReturn;
 
@@ -33,6 +35,52 @@ pub trait Reader {
     #[inline]
     fn put_constant_dynamic(&mut self, constant_dynamic: Rc<ConstantDynamic>, entry_index: usize);
 
+    fn first_attr_offset(&self) -> usize {
+        let mut current_offset = self.header() + 8 + self.read_u16(self.header() + 6) as usize * 2;
+        
+        // This loop skips both fields and methods on 1st iteration and 2nd iteration
+        for _ in 0..2 {
+            let mut member_count = self.read_u16(current_offset) as usize;
+            current_offset += 2;
+
+            while member_count > 0 {
+                member_count -= 1;
+                let mut attr_count = self.read_u16(current_offset + 6) as usize;
+                current_offset += 8;
+
+                while attr_count > 0 {
+                    attr_count -= 1;
+                    current_offset += 6 + self.read_u32(current_offset + 2) as usize;
+                }
+            }
+        }
+        
+        current_offset + 2
+    }
+    
+    fn read_bootstrap_methods_attr(&mut self) -> KapiResult<Vec<usize>> {
+        let mut current_attr_offset = self.first_attr_offset();
+        
+        for _ in 0..self.read_u16(current_attr_offset - 2) {
+            let attr_name = self.read_utf8(current_attr_offset)?;
+            let attr_len = self.read_u32(current_attr_offset + 2) as usize;
+            current_attr_offset += 6;
+            if constants::BOOTSTRAP_METHODS == &*attr_name {
+                let mut bootstrap_methods_len = self.read_u16(current_attr_offset) as usize;
+                let mut result = Vec::with_capacity(bootstrap_methods_len);
+                while bootstrap_methods_len > 0 {
+                    bootstrap_methods_len -= 1;
+                    result.push(current_attr_offset);
+                    current_attr_offset += 4 + self.read_u16(current_attr_offset + 2) as usize * 2;
+                }
+                return Ok(result);
+            }
+            current_attr_offset += attr_len;
+        }
+        
+        Err(KapiError::ClassParseError(format!("Expected at least 1 bootstrap method attribute but got nothing")))
+    }
+    
     fn slice_rev<const SIZE: usize>(&self, offset: usize) -> [u8; SIZE] {
         let mut bytes = [0u8; SIZE];
         bytes.clone_from((&self.bytes()[offset..offset + SIZE]).try_into().unwrap());
@@ -53,6 +101,11 @@ pub trait Reader {
     #[inline]
     fn read_u16(&self, offset: usize) -> u16 {
         u16::from_ne_bytes(self.slice_rev(offset))
+    }
+    
+    #[inline]
+    fn read_u32(&self, offset: usize) -> u32 {
+        u32::from_ne_bytes(self.slice_rev(offset))
     }
 
     #[inline]
@@ -142,8 +195,7 @@ pub trait Reader {
             let mut bootstrap_method_offset =
                 self.bootstrap_method_offsets()[self.read_u16(info_offset) as usize];
             let handler_entry_index = self.read_u16(bootstrap_method_offset) as usize;
-            let handler = self
-                .read_const(handler_entry_index)?;
+            let handler = self.read_const(handler_entry_index)?;
             let handler = handler
                 .as_any()
                 .downcast_ref::<Handle>()
@@ -163,7 +215,7 @@ pub trait Reader {
                 handler.to_owned(),
                 bootstrap_method_arguments,
             ));
-            
+
             self.put_constant_dynamic(constant_dynamic.clone(), entry_index);
 
             Ok(constant_dynamic)
@@ -178,19 +230,31 @@ pub trait Reader {
             symbol::CONSTANT_LONG_TAG => Ok(Box::new(self.read_i64(info_offset))),
             symbol::CONSTANT_FLOAT_TAG => Ok(Box::new(self.read_f32(info_offset))),
             symbol::CONSTANT_DOUBLE_TAG => Ok(Box::new(self.read_f64(info_offset))),
-            symbol::CONSTANT_CLASS_TAG => Ok(Box::new(Type::object_type_from_string(self.read_utf8(info_offset)?.to_string()))),
+            symbol::CONSTANT_CLASS_TAG => Ok(Box::new(Type::object_type_from_string(
+                self.read_utf8(info_offset)?.to_string(),
+            ))),
             symbol::CONSTANT_STRING_TAG => Ok(Box::new(self.read_utf8(info_offset)?)),
-            symbol::CONSTANT_METHOD_TYPE_TAG => Ok(Box::new(Type::method_type_from_string(self.read_utf8(info_offset)?.to_string()))),
+            symbol::CONSTANT_METHOD_TYPE_TAG => Ok(Box::new(Type::method_type_from_string(
+                self.read_utf8(info_offset)?.to_string(),
+            ))),
             symbol::CONSTANT_METHOD_HANDLE_TAG => {
                 let reference_kind = self.read_u8(info_offset);
-                let reference_info_offset = self.constant_pool_info_offsets()[self.read_u16(info_offset + 1) as usize];
-                let name_and_type_info_offset = self.constant_pool_info_offsets()[self.read_u16(info_offset + 2) as usize];
+                let reference_info_offset =
+                    self.constant_pool_info_offsets()[self.read_u16(info_offset + 1) as usize];
+                let name_and_type_info_offset =
+                    self.constant_pool_info_offsets()[self.read_u16(info_offset + 2) as usize];
                 let owner = self.read_class(reference_info_offset)?;
                 let descriptor = self.read_class(name_and_type_info_offset)?;
-                let is_interface = self.bytes()[reference_info_offset - 1] == symbol::CONSTANT_INTERFACE_METHODREF_TAG;
-                
-                Ok(Box::new(Handle::new(reference_kind, owner.to_string(), descriptor.to_string(), is_interface.to_string())))
-            },
+                let is_interface = self.bytes()[reference_info_offset - 1]
+                    == symbol::CONSTANT_INTERFACE_METHODREF_TAG;
+
+                Ok(Box::new(Handle::new(
+                    reference_kind,
+                    owner.to_string(),
+                    descriptor.to_string(),
+                    is_interface.to_string(),
+                )))
+            }
             symbol::CONSTANT_DYNAMIC_TAG => Ok(Box::from(self.read_constant_dynamic(info_offset)?)),
             _ => Err(KapiError::ArgError(format!(
                 "Illegal constant object at constant pool index {}",
@@ -218,12 +282,100 @@ impl ClassReader {
         class_file_buffer: Vec<u8>,
         class_file_offset: usize,
         check_version: bool,
-    ) -> Self {
+    ) -> KapiResult<Self> {
         let mut reader = Self::default();
 
         reader.class_file_buffer = class_file_buffer;
+        reader.parse_from_bytes(class_file_offset, check_version)?;
 
-        reader
+        Ok(reader)
+    }
+
+    fn parse_from_bytes(
+        &mut self,
+        class_file_offset: usize,
+        check_version: bool,
+    ) -> KapiResult<()> {
+        if check_version {
+            let version = self.read_u16(class_file_offset + 6) as u32;
+
+            if version > opcodes::V21 {
+                return Err(KapiError::ClassParseError(format!(
+                    "Unsupported class file major version {}",
+                    version
+                )));
+            }
+        }
+
+        let constant_pool_count = self.read_u16(class_file_offset + 8) as usize;
+        self.constant_pool_info_offsets = Vec::with_capacity(constant_pool_count);
+        self.constant_utf8_values = Vec::with_capacity(constant_pool_count);
+
+        let mut current_constant_pool_info_index = 1;
+        let mut current_constant_pool_info_offset = class_file_offset + 10;
+        let mut current_max_string_len = 0;
+        let mut has_bootstrap_method = false;
+        let mut has_constant_dynamic = false;
+
+        while current_constant_pool_info_index < constant_pool_count {
+            self.constant_pool_info_offsets
+                .push(current_constant_pool_info_offset + 1);
+            let info_tag = self.class_file_buffer[current_constant_pool_info_offset];
+            let info_size: usize;
+
+            match info_tag {
+                symbol::CONSTANT_FIELDREF_TAG
+                | symbol::CONSTANT_METHODREF_TAG
+                | symbol::CONSTANT_INTERFACE_METHODREF_TAG
+                | symbol::CONSTANT_INTEGER_TAG
+                | symbol::CONSTANT_FLOAT_TAG
+                | symbol::CONSTANT_NAME_AND_TYPE_TAG => info_size = 5,
+                symbol::CONSTANT_DYNAMIC_TAG => {
+                    info_size = 5;
+                    has_bootstrap_method = true;
+                    has_constant_dynamic = true;
+                }
+                symbol::CONSTANT_INVOKE_DYNAMIC_TAG => {
+                    info_size = 5;
+                    has_bootstrap_method = true;
+                }
+                symbol::CONSTANT_LONG_TAG | symbol::CONSTANT_DOUBLE_TAG => {
+                    info_size = 9;
+                    current_constant_pool_info_index += 1;
+                }
+                symbol::CONSTANT_UTF8_TAG => {
+                    info_size = 3 + self.read_u16(current_constant_pool_info_offset + 1) as usize;
+                    current_max_string_len = max(current_max_string_len, info_size);
+                }
+                symbol::CONSTANT_METHOD_HANDLE_TAG => info_size = 4,
+                symbol::CONSTANT_STRING_TAG 
+                | symbol::CONSTANT_CLASS_TAG
+                | symbol::CONSTANT_METHOD_TYPE_TAG
+                | symbol::CONSTANT_PACKAGE_TAG
+                | symbol::CONSTANT_MODULE_TAG => info_size = 3,
+                _ => {
+                    return Err(KapiError::ClassParseError(format!(
+                        "Illegal constant pool tag {}",
+                        info_tag
+                    )))
+                }
+            }
+            
+            current_constant_pool_info_offset += info_size;
+        }
+
+        self.max_string_len = current_max_string_len;
+        self.header = current_constant_pool_info_offset;
+        
+        if has_constant_dynamic {
+            self.constant_dynamic_values = Vec::with_capacity(constant_pool_count);
+        }
+        
+        if has_bootstrap_method {
+            self.bootstrap_method_offsets = self.read_bootstrap_methods_attr()?;
+        }
+
+        Ok(())
     }
 }
 
