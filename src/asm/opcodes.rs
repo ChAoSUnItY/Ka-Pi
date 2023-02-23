@@ -1,6 +1,7 @@
 use crate::asm::frame;
 
-/// ASM API versions.
+// ASM API versions.
+// These APIs are unused at this moments.
 
 pub const ASM4: u32 = 4 << 16 | 0 << 8;
 pub const ASM5: u32 = 5 << 16 | 0 << 8;
