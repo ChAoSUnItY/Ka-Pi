@@ -24,3 +24,5 @@ pub mod types;
 pub mod record;
 pub mod field;
 pub mod method;
+pub mod annotation;
+pub mod signature;
