@@ -88,9 +88,3 @@ impl<'a> Default for SignatureWriter<'a> {
         Self { builder: Either::Left(String::new()) }
     }
 }
-
-fn sig(sig: Box<dyn SignatureVisitor>) {}
-
-fn sih() {
-    let sv = SignatureWriter::default();
-}
