@@ -116,18 +116,101 @@ pub trait SignatureVisitor {
 
 pub trait SignatureReader {
     fn signautre(&self) -> &String;
-    fn accept(&self, mut visitor: Box<dyn SignatureVisitor>) {}
-    fn accept_type(&self, mut visitor: Box<dyn SignatureVisitor>) {}
+    fn accept(&self, mut visitor: Box<dyn SignatureVisitor>) -> KapiResult<()> {
+        accept(self, visitor)
+    }
+    fn accept_type(&self, mut visitor: Box<dyn SignatureVisitor>) -> KapiResult<()> {
+        parse_type(self, 0, &mut visitor).map(|_| ())
+    }
 }
 
-pub fn parse_type<'original>(
-    signature: &String,
+pub fn accept<'original, SR>(_self: &SR, mut visitor: Box<dyn SignatureVisitor>) -> KapiResult<()>
+where
+    SR: SignatureReader + ?Sized,
+{
+    let signature = _self.signautre().chars().collect::<Vec<_>>();
+    let len = signature.len();
+    let mut offset: usize;
+    let mut char: &char;
+
+    if signature.first().map_or(false, |c| *c == '>') {
+        offset = 2;
+        loop {
+            let class_bound_start_offset = signature
+                .iter()
+                .skip(offset)
+                .position(|c| *c == ':')
+                .ok_or(KapiError::StateError(
+                    "Expected class bound in signature but got nothing",
+                ))?;
+            visitor.visit_formal_type_parameter(
+                signature[offset - 1..class_bound_start_offset]
+                    .into_iter()
+                    .collect(),
+            );
+
+            offset = class_bound_start_offset + 1;
+            char = signature
+                .get(offset)
+                .ok_or(KapiError::StateError("Expected character but got nothing"))?;
+
+            if *char == 'L' || *char == '[' || *char == 'T' {
+                offset = parse_type_chars(&signature, offset, &mut visitor)?;
+            }
+
+            while *char == ':' {
+                char = signature
+                    .get(offset)
+                    .ok_or(KapiError::StateError("Expected character but got nothing"))?;
+                offset += 1;
+                offset = parse_type_chars(&signature, offset, &mut visitor.visit_interface())?;
+            }
+
+            if *char == '>' {
+                break;
+            }
+        }
+    } else {
+        offset = 0;
+    }
+
+    if signature.get(offset).map_or(false, |c| *c == '(') {
+        offset += 1;
+        while signature.get(offset).map_or(false, |c| *c == ')') {
+            offset = parse_type_chars(&signature, offset, &mut visitor.visit_parameter_type())?;
+        }
+        offset = parse_type_chars(&signature, offset + 1, &mut visitor.visit_return_type())?;
+        while offset < len {
+            offset = parse_type_chars(&signature, offset + 1, &mut visitor.visit_exception_type())?;
+        }
+    } else {
+        offset = parse_type_chars(&signature, offset, &mut visitor.visit_super_type())?;
+        while offset < len {
+            offset = parse_type_chars(&signature, offset, &mut visitor.visit_interface())?;
+        }
+    }
+
+    Ok(())
+}
+
+pub fn parse_type<'original, SR>(
+    _self: &SR,
     start_offset: usize,
-    mut visitor: Box<dyn SignatureVisitor + 'original>,
+    visitor: &mut Box<dyn SignatureVisitor + 'original>,
+) -> KapiResult<usize>
+where
+    SR: SignatureReader + ?Sized,
+{
+    parse_type_chars(&_self.signautre().chars().collect(), start_offset, visitor)
+}
+
+fn parse_type_chars<'original>(
+    signature: &Vec<char>,
+    start_offset: usize,
+    visitor: &mut Box<dyn SignatureVisitor + 'original>,
 ) -> KapiResult<usize> {
-    let mut chars = signature.chars().collect::<Vec<_>>();
     let mut offset = start_offset;
-    let char = chars.get(offset).ok_or(KapiError::ArgError(format!(
+    let char = signature.get(offset).ok_or(KapiError::ArgError(format!(
         "Unable to get character from given offset {}",
         start_offset
     )))?;
@@ -138,10 +221,10 @@ pub fn parse_type<'original>(
             visitor.visit_base_type(*char);
             Ok(offset)
         }
-        '[' => parse_type(signature, offset, visitor.visit_array_type()),
+        '[' => parse_type_chars(signature, offset, &mut visitor.visit_array_type()),
         'T' => {
             let mut name_len = 0;
-            let name_segment = chars
+            let name_segment = signature
                 .iter()
                 .skip(offset)
                 .take_while(|c| {
@@ -159,7 +242,7 @@ pub fn parse_type<'original>(
             let mut inner = false;
 
             loop {
-                let char = chars.get(offset).ok_or(KapiError::StateError(
+                let char = signature.get(offset).ok_or(KapiError::StateError(
                     "Expected character after object descriptor prefix `L` but got nothing",
                 ))?;
                 offset += 1;
@@ -167,7 +250,7 @@ pub fn parse_type<'original>(
                 match char {
                     '.' | ';' => {
                         if !visited {
-                            let name = chars[start..offset - 1].into_iter().collect();
+                            let name = signature[start..offset - 1].into_iter().collect();
 
                             if inner {
                                 visitor.visit_inner_class_type(name);
@@ -186,7 +269,7 @@ pub fn parse_type<'original>(
                         inner = true;
                     }
                     '<' => {
-                        let name = chars[start..offset - 1].into_iter().collect();
+                        let name = signature[start..offset - 1].into_iter().collect();
 
                         if inner {
                             visitor.visit_inner_class_type(name);
@@ -203,17 +286,18 @@ pub fn parse_type<'original>(
                                     visitor.visit_type_argument();
                                 }
                                 '+' | '-' => {
-                                    offset = parse_type(
+                                    offset = parse_type_chars(
                                         signature,
                                         offset + 1,
-                                        visitor.visit_type_argument_wildcard(char.try_into()?),
+                                        &mut visitor.visit_type_argument_wildcard(char.try_into()?),
                                     )?;
                                 }
                                 _ => {
-                                    offset = parse_type(
+                                    offset = parse_type_chars(
                                         signature,
                                         offset,
-                                        visitor.visit_type_argument_wildcard(Wildcard::INSTANCEOF),
+                                        &mut visitor
+                                            .visit_type_argument_wildcard(Wildcard::INSTANCEOF),
                                     )?;
                                 }
                             }
