@@ -316,6 +316,16 @@ fn parse_type_chars<'original>(
     }
 }
 
+pub struct SignatureReaderImpl {
+    signature: String
+}
+
+impl SignatureReader for SignatureReaderImpl {
+    fn signautre(&self) -> &String {
+        &self.signature
+    }
+}
+
 #[derive(Debug)]
 pub struct SignatureWriterImpl<'original> {
     builder: Either<String, &'original mut String>,
