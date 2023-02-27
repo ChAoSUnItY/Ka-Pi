@@ -94,7 +94,7 @@ pub trait SignatureVisitor {
         &mut self,
         wild_card: Wildcard,
     ) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl::from_visitor(self))
+        self.boxed()
     }
     fn visit_end(&mut self) {}
 }
