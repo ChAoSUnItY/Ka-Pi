@@ -317,7 +317,7 @@ pub struct SignatureWriterImpl<'original> {
     builder: Either<String, &'original mut String>,
     has_formal: bool,
     has_parameter: bool,
-    argument_stack: usize,
+    argument_stack: u16,
 }
 
 impl<'original> SignatureWriterImpl<'original> {
@@ -331,17 +331,6 @@ impl<'original> SignatureWriterImpl<'original> {
             has_parameter: false,
             argument_stack: 1,
         }
-    }
-
-    fn with_stack(&'original mut self) -> Box<Self> {
-        let argument_stack = self.argument_stack;
-
-        Box::new(Self {
-            builder: Either::Right(self.builder()),
-            has_formal: false,
-            has_parameter: false,
-            argument_stack,
-        })
     }
 
     // Utility functions
@@ -362,11 +351,11 @@ impl<'original> SignatureWriterImpl<'original> {
     }
 
     fn end_arguments(&mut self) {
-        if (self.argument_stack & 1) == 1 {
+        if self.argument_stack == 1 {
             self.push('>');
         }
 
-        self.argument_stack >>= 1;
+        self.argument_stack -= 1;
     }
 }
 
@@ -439,12 +428,12 @@ impl<'original> SignatureVisitor for SignatureWriterImpl<'original> {
         self.end_formals();
         self.push('.');
         self.push_str(name);
-        self.argument_stack <<= 1;
+        self.argument_stack += 1;
     }
 
     fn visit_type_argument(&mut self) {
-        if (self.argument_stack & 1) == 0 {
-            self.argument_stack |= 1;
+        if self.argument_stack == 0 {
+            self.argument_stack += 1;
             self.push('<');
         }
         self.push('*');
@@ -454,8 +443,8 @@ impl<'original> SignatureVisitor for SignatureWriterImpl<'original> {
         &mut self,
         wild_card: Wildcard,
     ) -> Box<dyn SignatureVisitor + '_> {
-        if (self.argument_stack & 1) == 0 {
-            self.argument_stack |= 1;
+        if self.argument_stack == 0 {
+            self.argument_stack += 1;
             self.push('<');
         }
 
@@ -463,11 +452,7 @@ impl<'original> SignatureVisitor for SignatureWriterImpl<'original> {
             self.push(wild_card.into());
         }
         
-        if (self.argument_stack & (1 << 31)) == 0 {
-            self.boxed()
-        } else {
-            self.boxed() // FIXME: Fix all boxed to inherit stack size
-        }
+        self.boxed()
     }
 
     fn visit_end(&mut self) {
