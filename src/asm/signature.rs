@@ -9,7 +9,7 @@ const EXTENDS: char = '+';
 const SUPER: char = '-';
 const INSTANCEOF: char = '=';
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Wildcard {
     EXTENDS = EXTENDS as u8,
@@ -56,62 +56,47 @@ impl TryFrom<&char> for Wildcard {
 }
 
 pub trait SignatureVisitor {
+    fn boxed<'original>(&'original mut self) -> Box<dyn SignatureVisitor + '_> {
+        Box::new(SignatureWriterImpl::from_visitor(self))
+    }
     fn builder(&mut self) -> &mut String;
-    fn visit_formal_type_parameter(&mut self, name: String) {}
+    fn visit_formal_type_parameter(&mut self, name: &String) {}
     fn visit_class_bound(&mut self) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl {
-            builder: either::Right(self.builder()),
-        })
+        self.boxed()
     }
     fn visit_interface_bound(&mut self) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl {
-            builder: either::Right(self.builder()),
-        })
+        self.boxed()
     }
-    fn visit_super_type(&mut self) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl {
-            builder: either::Right(self.builder()),
-        })
+    fn visit_super_class(&mut self) -> Box<dyn SignatureVisitor + '_> {
+        self.boxed()
     }
     fn visit_interface(&mut self) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl {
-            builder: either::Right(self.builder()),
-        })
+        self.boxed()
     }
     fn visit_parameter_type(&mut self) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl {
-            builder: either::Right(self.builder()),
-        })
+        self.boxed()
     }
     fn visit_return_type(&mut self) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl {
-            builder: either::Right(self.builder()),
-        })
+        self.boxed()
     }
     fn visit_exception_type(&mut self) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl {
-            builder: either::Right(self.builder()),
-        })
+        self.boxed()
     }
     fn visit_base_type(&mut self, descriptor: char) {}
-    fn visit_type_variable(&mut self, name: String) {}
+    fn visit_type_variable(&mut self, name: &String) {}
     fn visit_array_type(&mut self) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl {
-            builder: either::Right(self.builder()),
-        })
+        self.boxed()
     }
-    fn visit_class_type(&mut self, name: String) {}
-    fn visit_inner_class_type(&mut self, name: String) {}
+    fn visit_class_type(&mut self, name: &String) {}
+    fn visit_inner_class_type(&mut self, name: &String) {}
     fn visit_type_argument(&mut self) {}
     fn visit_type_argument_wildcard(
         &mut self,
         wild_card: Wildcard,
     ) -> Box<dyn SignatureVisitor + '_> {
-        Box::new(SignatureWriterImpl {
-            builder: either::Right(self.builder()),
-        })
+        Box::new(SignatureWriterImpl::from_visitor(self))
     }
-    fn visit_end(&self) {}
+    fn visit_end(&mut self) {}
 }
 
 pub trait SignatureReader {
@@ -144,7 +129,7 @@ where
                     "Expected class bound in signature but got nothing",
                 ))?;
             visitor.visit_formal_type_parameter(
-                signature[offset - 1..class_bound_start_offset]
+                &signature[offset - 1..class_bound_start_offset]
                     .into_iter()
                     .collect(),
             );
@@ -184,7 +169,7 @@ where
             offset = parse_type_chars(&signature, offset + 1, &mut visitor.visit_exception_type())?;
         }
     } else {
-        offset = parse_type_chars(&signature, offset, &mut visitor.visit_super_type())?;
+        offset = parse_type_chars(&signature, offset, &mut visitor.visit_super_class())?;
         while offset < len {
             offset = parse_type_chars(&signature, offset, &mut visitor.visit_interface())?;
         }
@@ -193,22 +178,23 @@ where
     Ok(())
 }
 
-pub fn parse_type<'original, SR>(
+pub fn parse_type<'original, SR, SV>(
     _self: &SR,
     start_offset: usize,
-    visitor: &mut Box<dyn SignatureVisitor + 'original>,
+    visitor: &mut Box<SV>,
 ) -> KapiResult<usize>
 where
     SR: SignatureReader + ?Sized,
+    SV: SignatureVisitor + 'original + ?Sized
 {
     parse_type_chars(&_self.signautre().chars().collect(), start_offset, visitor)
 }
 
-fn parse_type_chars<'original>(
+fn parse_type_chars<'original, SV>(
     signature: &Vec<char>,
     start_offset: usize,
-    visitor: &mut Box<dyn SignatureVisitor + 'original>,
-) -> KapiResult<usize> {
+    visitor: &mut Box<SV>,
+) -> KapiResult<usize> where SV: SignatureVisitor + 'original + ?Sized {
     let mut offset = start_offset;
     let char = signature.get(offset).ok_or(KapiError::ArgError(format!(
         "Unable to get character from given offset {}",
@@ -233,7 +219,7 @@ fn parse_type_chars<'original>(
                 })
                 .collect::<String>();
             let end_offset = offset + name_len;
-            visitor.visit_type_variable(name_segment);
+            visitor.visit_type_variable(&name_segment);
             Ok(end_offset + 1)
         }
         'L' => {
@@ -250,7 +236,7 @@ fn parse_type_chars<'original>(
                 match char {
                     '.' | ';' => {
                         if !visited {
-                            let name = signature[start..offset - 1].into_iter().collect();
+                            let name = &signature[start..offset - 1].into_iter().collect();
 
                             if inner {
                                 visitor.visit_inner_class_type(name);
@@ -269,7 +255,7 @@ fn parse_type_chars<'original>(
                         inner = true;
                     }
                     '<' => {
-                        let name = signature[start..offset - 1].into_iter().collect();
+                        let name = &signature[start..offset - 1].into_iter().collect();
 
                         if inner {
                             visitor.visit_inner_class_type(name);
@@ -317,7 +303,7 @@ fn parse_type_chars<'original>(
 }
 
 pub struct SignatureReaderImpl {
-    signature: String
+    signature: String,
 }
 
 impl SignatureReader for SignatureReaderImpl {
@@ -329,6 +315,59 @@ impl SignatureReader for SignatureReaderImpl {
 #[derive(Debug)]
 pub struct SignatureWriterImpl<'original> {
     builder: Either<String, &'original mut String>,
+    has_formal: bool,
+    has_parameter: bool,
+    argument_stack: usize,
+}
+
+impl<'original> SignatureWriterImpl<'original> {
+    pub fn from_visitor<SV>(visitor: &'original mut SV) -> Self
+    where
+        SV: SignatureVisitor + ?Sized + 'original,
+    {
+        Self {
+            builder: Either::Right(visitor.builder()),
+            has_formal: false,
+            has_parameter: false,
+            argument_stack: 1,
+        }
+    }
+
+    fn with_stack(&'original mut self) -> Box<Self> {
+        let argument_stack = self.argument_stack;
+
+        Box::new(Self {
+            builder: Either::Right(self.builder()),
+            has_formal: false,
+            has_parameter: false,
+            argument_stack,
+        })
+    }
+
+    // Utility functions
+
+    fn push(&mut self, char: char) {
+        self.builder().push(char);
+    }
+
+    fn push_str(&mut self, str: &str) {
+        self.builder().push_str(str);
+    }
+
+    fn end_formals(&mut self) {
+        if self.has_formal {
+            self.has_formal = false;
+            self.push('>');
+        }
+    }
+
+    fn end_arguments(&mut self) {
+        if (self.argument_stack & 1) == 1 {
+            self.push('>');
+        }
+
+        self.argument_stack >>= 1;
+    }
 }
 
 impl<'original> SignatureVisitor for SignatureWriterImpl<'original> {
@@ -338,12 +377,112 @@ impl<'original> SignatureVisitor for SignatureWriterImpl<'original> {
             Either::Right(ref_builder) => ref_builder,
         }
     }
+
+    fn visit_formal_type_parameter(&mut self, name: &String) {
+        if !self.has_formal {
+            self.has_formal = true;
+            self.push('<');
+        }
+        self.push_str(name);
+        self.push(':');
+    }
+
+    fn visit_interface_bound(&mut self) -> Box<dyn SignatureVisitor + '_> {
+        self.push(':');
+        self.boxed()
+    }
+
+    fn visit_super_class(&mut self) -> Box<dyn SignatureVisitor + '_> {
+        self.end_formals();
+        self.boxed()
+    }
+
+    fn visit_parameter_type(&mut self) -> Box<dyn SignatureVisitor + '_> {
+        self.end_formals();
+        if !self.has_parameter {
+            self.has_parameter = true;
+            self.push('(');
+        }
+        self.boxed()
+    }
+
+    fn visit_return_type(&mut self) -> Box<dyn SignatureVisitor + '_> {
+        self.end_formals();
+        if !self.has_parameter {
+            self.push('(');
+        }
+        self.push(')');
+        self.boxed()
+    }
+
+    fn visit_exception_type(&mut self) -> Box<dyn SignatureVisitor + '_> {
+        self.push('^');
+        self.boxed()
+    }
+
+    fn visit_base_type(&mut self, descriptor: char) {
+        self.push(descriptor)
+    }
+
+    fn visit_type_variable(&mut self, name: &String) {
+        self.push('T');
+        self.push_str(name);
+        self.push(';');
+    }
+
+    fn visit_array_type(&mut self) -> Box<dyn SignatureVisitor + '_> {
+        self.push('[');
+        self.boxed()
+    }
+
+    fn visit_inner_class_type(&mut self, name: &String) {
+        self.end_formals();
+        self.push('.');
+        self.push_str(name);
+        self.argument_stack <<= 1;
+    }
+
+    fn visit_type_argument(&mut self) {
+        if (self.argument_stack & 1) == 0 {
+            self.argument_stack |= 1;
+            self.push('<');
+        }
+        self.push('*');
+    }
+
+    fn visit_type_argument_wildcard(
+        &mut self,
+        wild_card: Wildcard,
+    ) -> Box<dyn SignatureVisitor + '_> {
+        if (self.argument_stack & 1) == 0 {
+            self.argument_stack |= 1;
+            self.push('<');
+        }
+
+        if wild_card != Wildcard::INSTANCEOF {
+            self.push(wild_card.into());
+        }
+        
+        if (self.argument_stack & (1 << 31)) == 0 {
+            self.boxed()
+        } else {
+            self.boxed() // FIXME: Fix all boxed to inherit stack size
+        }
+    }
+
+    fn visit_end(&mut self) {
+        self.end_arguments();
+        self.push(';');
+    }
 }
 
-impl<'a> Default for SignatureWriterImpl<'a> {
+impl<'original> Default for SignatureWriterImpl<'original> {
     fn default() -> Self {
         Self {
-            builder: Either::Left(String::new()),
+            builder: Either::Left(String::with_capacity(20)),
+            has_formal: false,
+            has_parameter: false,
+            argument_stack: 1,
         }
     }
 }
