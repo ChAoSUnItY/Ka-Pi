@@ -161,8 +161,13 @@ where
         }
     }
 
-    // parse_type for super class
-    // parse_type* for interfaces
+    // Super class type
+    accept_class_type(&mut signature_iter, visitor.visit_super_class())?;
+    
+    // Interface class types
+    while signature_iter.peek().is_some() {
+        accept_class_type(&mut signature_iter, visitor.visit_interface())?;
+    }
 
     Ok(())
 }
