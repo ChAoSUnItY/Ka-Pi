@@ -124,6 +124,8 @@ pub trait ClassTypeVisitor {
 pub struct SignatureVisitorImpl {}
 
 impl ClassSignatureVisitor for SignatureVisitorImpl {}
+impl FieldSignatureVisitor for SignatureVisitorImpl {}
+impl MethodSignatureVisitor for SignatureVisitorImpl {}
 impl ClassFormalTypeParameterVisitor for SignatureVisitorImpl {}
 impl ClassTypeVisitor for SignatureVisitorImpl {}
 
@@ -172,6 +174,16 @@ where
     Ok(())
 }
 
+fn accept_field_visitor<CSR, FSV>(reader: &mut CSR, mut vititor: Box<FSV>) -> KapiResult<()>
+where
+    CSR: ClassSignatureReader + ?Sized,
+    FSV: FieldSignatureVisitor + ?Sized,
+{
+    let mut signature_iter = reader.signautre().chars().peekable();
+
+    accept_type(&mut signature_iter, vititor.visit_field_type())
+}
+
 fn accept_type<SI, CTV>(
     signature_iter: &mut Peekable<SI>,
     mut visitor: Box<CTV>,
@@ -197,9 +209,7 @@ where
             visitor.visit_type_variable(&type_variable);
             Ok(())
         }
-        'L' => {
-            Ok(())
-        }
+        'L' => accept_class_type(signature_iter, visitor),
         _ => Err(KapiError::ClassParseError(format!(
             "Expected primitive type, array type, class type, or type variable descriptor, but got `{}`",
             char
@@ -270,18 +280,10 @@ where
                     )))?;
 
                     match char {
-                        '*' => {
-                            visitor.visit_type_argument();
-                        }
-                        '+' => {
-                            accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::EXTENDS))?;
-                        }
-                        '-' => {
-                            accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::SUPER))?;
-                        }
-                        _ => {
-                            accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::INSTANCEOF))?;
-                        }
+                        '*' => visitor.visit_type_argument(),
+                        '+' => accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::EXTENDS))?,
+                        '-' => accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::SUPER))?,
+                        _ => accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::INSTANCEOF))?,
                     }
                 }
             }
