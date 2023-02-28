@@ -1,6 +1,7 @@
-use std::{default, str::CharIndices};
+use std::{default, iter::Peekable, str::CharIndices};
 
 use either::Either;
+use itertools::Itertools;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::error::{KapiError, KapiResult};
@@ -56,7 +57,10 @@ impl TryFrom<&char> for Wildcard {
 }
 
 pub trait ClassSignatureVisitor {
-    fn visit_formal_type_parameter(&mut self) -> Box<dyn ClassFormalTypeParameterVisitor> {
+    fn visit_formal_type_parameter(
+        &mut self,
+        name: &String,
+    ) -> Box<dyn ClassFormalTypeParameterVisitor> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_super_class(&mut self) -> Box<dyn ClassTypeVisitor> {
@@ -91,7 +95,7 @@ pub trait MethodSignatureVisitor {
 }
 
 pub trait ClassFormalTypeParameterVisitor {
-    fn visit_identifier(&mut self, name: &str) {}
+    fn visit_identifier(&mut self, name: &String) {}
     fn visit_class_bound(&mut self) -> Box<dyn ClassTypeVisitor> {
         Box::new(SignatureVisitorImpl::default())
     }
@@ -106,8 +110,9 @@ pub trait ClassTypeVisitor {
     fn visit_array_type(&mut self) -> Box<dyn ClassTypeVisitor> {
         Box::new(SignatureVisitorImpl::default())
     }
-    fn visit_class_type(&mut self, name: &str) {}
-    fn visit_inner_class_type(&mut self, name: &str) {}
+    fn visit_class_type(&mut self, name: &String) {}
+    fn visit_inner_class_type(&mut self, name: &String) {}
+    fn visit_type_variable(&mut self, name: &String) {}
     fn visit_type_argument(&mut self) {}
     fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) -> Box<dyn ClassTypeVisitor> {
         Box::new(SignatureVisitorImpl::default())
@@ -137,144 +142,150 @@ where
     CSR: ClassSignatureReader + ?Sized,
     CSV: ClassSignatureVisitor + ?Sized,
 {
-    let signature_iter = reader.signautre().chars();
+    let mut signature_iter = reader.signautre().chars().peekable();
+
+    if signature_iter.next_if(|c| *c == '<').is_some() {
+        // Formal type parameters
+        loop {
+            let formal_type_parameter = signature_iter.by_ref().take_while(|c| *c != ':').collect();
+
+            visitor.visit_formal_type_parameter(&formal_type_parameter);
+
+            if signature_iter.peek().is_none() {
+                return Err(KapiError::ClassParseError(String::from(
+                    "Attempt to parse formal type parameter in signature but parameters are not enclosed by `>`"
+                )));
+            } else if signature_iter.next_if(|c| *c == '>').is_some() {
+                break;
+            }
+        }
+    }
+
+    // parse_type for super class
+    // parse_type* for interfaces
 
     Ok(())
 }
 
-// pub fn parse_type<SR, SV>(
-//     _self: &SR,
-//     start_offset: usize,
-//     visitor: &mut Box<SV>,
-// ) -> KapiResult<usize>
-// where
-//     SR: SignatureReader + ?Sized,
-//     SV: ClassTypeVisitor + ?Sized,
-// {
-//     parse_type_chars(&_self.signautre().chars().collect(), start_offset, visitor)
-// }
+fn accept_type<SI, CTV>(
+    signature_iter: &mut Peekable<SI>,
+    mut visitor: Box<CTV>,
+) -> KapiResult<()>
+where
+    SI: Iterator<Item = char>,
+    CTV: ClassTypeVisitor + ?Sized,
+{
+    let char = signature_iter
+        .next()
+        .ok_or(KapiError::ClassParseError(String::from("Expected primitive type, array type, class type, or type variable descriptor, but got nothing")))?;
 
-// fn parse_type_chars<SV>(
-//     signature: &Vec<char>,
-//     start_offset: usize,
-//     visitor: &mut Box<SV>,
-// ) -> KapiResult<usize>
-// where
-//     SV: ClassTypeVisitor + ?Sized,
-// {
-//     let mut offset = start_offset;
-//     let char = signature.get(offset).ok_or(KapiError::ArgError(format!(
-//         "Unable to get character from given offset {}",
-//         start_offset
-//     )))?;
-//     offset += 1;
+    match char {
+        'Z' | 'C' | 'B' | 'S' | 'I' | 'F' | 'J' | 'D' | 'V' => {
+            visitor.visit_base_type(&char);
+            Ok(())
+        }
+        '[' => accept_type(signature_iter, visitor.visit_array_type()),
+        'T' => {
+            let type_variable = signature_iter
+                .take_while(|c| *c != ';')
+                .collect();
+            visitor.visit_type_variable(&type_variable);
+            Ok(())
+        }
+        'L' => {
+            Ok(())
+        }
+        _ => Err(KapiError::ClassParseError(format!(
+            "Expected primitive type, array type, class type, or type variable descriptor, but got `{}`",
+            char
+        )))
+    }
+}
 
-//     match char {
-//         'Z' | 'C' | 'B' | 'S' | 'I' | 'F' | 'J' | 'D' | 'V' => {
-//             visitor.visit_base_type(char);
-//             Ok(offset)
-//         }
-//         '[' => parse_type_chars(signature, offset, &mut visitor.visit_array_type()),
-//         'T' => {
-//             let mut name_len = 0;
-//             let name_segment = signature
-//                 .iter()
-//                 .skip(offset)
-//                 .take_while(|c| {
-//                     name_len += 1;
-//                     **c != ';'
-//                 })
-//                 .collect::<String>();
-//             let end_offset = offset + name_len;
-//             visitor.visit_type_variable(&name_segment);
-//             Ok(end_offset + 1)
-//         }
-//         'L' => {
-//             let mut start = offset;
-//             let mut visited = false;
-//             let mut inner = false;
+fn accept_class_type<SI, CTV>(
+    signature_iter: &mut Peekable<SI>,
+    mut visitor: Box<CTV>,
+) -> KapiResult<()>
+where
+    SI: Iterator<Item = char>,
+    CTV: ClassTypeVisitor + ?Sized,
+{
+    let mut visited = false;
+    let mut inner = false;
 
-//             loop {
-//                 let char = signature.get(offset).ok_or(KapiError::StateError(
-//                     "Expected character after object descriptor prefix `L` but got nothing",
-//                 ))?;
-//                 offset += 1;
+    loop {
+        let char = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
+            "Expected any character after class type or type variable descriptor prefix `L` but got nothing",
+        )))?;
+        let name = signature_iter.peeking_take_while(|c| *c != '.' || *c != ';' || *c != '<').collect();
+        let suffix = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
+            "Expected character `.` or `;` for class type, or `<` for type variable descriptor but got nothing"
+        )))?;
 
-//                 match char {
-//                     '.' | ';' => {
-//                         if !visited {
-//                             let name = &signature[start..offset - 1].into_iter().collect();
+        match suffix {
+            '.' | ';' => {
+                if !visited {
+                    if inner {
+                        visitor.visit_inner_class_type(&name);
+                    } else {
+                        visitor.visit_class_type(&name);
+                    }
+                }
 
-//                             if inner {
-//                                 visitor.visit_inner_class_type(name);
-//                             } else {
-//                                 visitor.visit_class_type(name);
-//                             }
-//                         }
+                if suffix == ';' {
+                    visitor.visit_end();
+                    break;
+                }
 
-//                         if *char == ';' {
-//                             visitor.visit_end();
-//                             break;
-//                         }
+                visited = false;
+                inner = true;
+            }
+            '<' => {
+                if !visited {
+                    if inner {
+                        visitor.visit_inner_class_type(&name);
+                    } else {
+                        visitor.visit_class_type(&name);
+                    }
+                }
 
-//                         start = offset;
-//                         visited = false;
-//                         inner = true;
-//                     }
-//                     '<' => {
-//                         let name = &signature[start..offset - 1].into_iter().collect();
+                visited = true;
 
-//                         if inner {
-//                             visitor.visit_inner_class_type(name);
-//                         } else {
-//                             visitor.visit_class_type(name);
-//                         }
+                loop {
+                    if signature_iter.peek().is_none() {
+                        return Err(KapiError::ClassParseError(String::from(
+                            "Attempt to parse type arguments in signature but arguments are not enclosed by `>`"
+                        )));
+                    } else if signature_iter.next_if(|c| *c == '>').is_some() {
+                        break;
+                    }
 
-//                         visited = true;
+                    let char = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
+                        "Expected wildcard character `*`, `+`, `-`, or any other type but got nothing"
+                    )))?;
 
-//                         while *char != '>' {
-//                             match char {
-//                                 '*' => {
-//                                     offset += 1;
-//                                     visitor.visit_type_argument();
-//                                 }
-//                                 '+' | '-' => {
-//                                     offset = parse_type_chars(
-//                                         signature,
-//                                         offset + 1,
-//                                         &mut visitor.visit_type_argument_wildcard(char.try_into()?),
-//                                     )?;
-//                                 }
-//                                 _ => {
-//                                     offset = parse_type_chars(
-//                                         signature,
-//                                         offset,
-//                                         &mut visitor
-//                                             .visit_type_argument_wildcard(Wildcard::INSTANCEOF),
-//                                     )?;
-//                                 }
-//                             }
-//                         }
-//                     }
-//                     _ => {}
-//                 }
-//             }
+                    match char {
+                        '*' => {
+                            visitor.visit_type_argument();
+                        }
+                        '+' => {
+                            accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::EXTENDS))?;
+                        }
+                        '-' => {
+                            accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::SUPER))?;
+                        }
+                        _ => {
+                            accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::INSTANCEOF))?;
+                        }
+                    }
+                }
+            }
+            _ => return Err(KapiError::ClassParseError(format!(
+                "Expected character `.` or `;` for class type, or `<` for type variable descriptor but got `{}`",
+                suffix
+            )))
+        }
+    }
 
-//             Ok(offset)
-//         }
-//         _ => Err(KapiError::ArgError(format!(
-//             "Unable to match current character {} when parsing type",
-//             start_offset
-//         ))),
-//     }
-// }
-
-// pub struct SignatureReaderImpl {
-//     signature: String,
-// }
-
-// impl SignatureReader for SignatureReaderImpl {
-//     fn signautre(&self) -> &String {
-//         &self.signature
-//     }
-// }
+    Ok(())
+}

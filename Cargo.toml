@@ -16,6 +16,7 @@ jni = { version = "0.21.0", features = ["invocation"] }
 unicode-segmentation = "1.10.1"
 lazy_static = "1.4.0"
 either = "1.8.1"
+itertools = "0.10.5"
 
 [dev-dependencies]
 rstest = "0.16.0"
