@@ -1,8 +1,8 @@
+use std::fmt::write;
 use std::{
     error::Error,
     fmt::{Debug, Display},
 };
-use std::fmt::write;
 
 use jni::errors::Error as JniError;
 

@@ -57,12 +57,7 @@ impl TryFrom<&char> for Wildcard {
 }
 
 pub trait ClassSignatureVisitor {
-    fn visit_formal_type_parameter(
-        &mut self,
-        name: &String,
-    ) -> Box<dyn ClassFormalTypeParameterVisitor> {
-        Box::new(SignatureVisitorImpl::default())
-    }
+    fn visit_formal_type_parameter(&mut self, name: &String) {}
     fn visit_super_class(&mut self) -> Box<dyn ClassTypeVisitor> {
         Box::new(SignatureVisitorImpl::default())
     }
@@ -80,9 +75,7 @@ pub trait FieldSignatureVisitor {
 }
 
 pub trait MethodSignatureVisitor {
-    fn visit_formal_type_parameter(&mut self) -> Box<dyn ClassFormalTypeParameterVisitor> {
-        Box::new(SignatureVisitorImpl::default())
-    }
+    fn visit_formal_type_parameter(&mut self, name: &String) {}
     fn visit_parameter_type(&mut self) -> Box<dyn ClassTypeVisitor> {
         Box::new(SignatureVisitorImpl::default())
     }
@@ -132,22 +125,25 @@ impl ClassTypeVisitor for SignatureVisitorImpl {}
 pub trait ClassSignatureReader {
     fn signautre(&self) -> &String;
     fn accept(&mut self, mut visitor: Box<dyn ClassSignatureVisitor>) -> KapiResult<()> {
-        accept_class_visitor(self, visitor)
+        accept_class_signature_visitor(self, visitor)
     }
     // fn accept_type(&mut self, mut visitor: Box<dyn ClassSignatureVisitor>) -> KapiResult<()> {
     //     parse_type(self, 0, &mut visitor).map(|_| ())
     // }
 }
 
-pub fn accept_class_visitor<CSR, CSV>(reader: &mut CSR, mut visitor: Box<CSV>) -> KapiResult<()>
+pub fn accept_class_signature_visitor<CSR, CSV>(
+    reader: &mut CSR,
+    mut visitor: Box<CSV>,
+) -> KapiResult<()>
 where
     CSR: ClassSignatureReader + ?Sized,
     CSV: ClassSignatureVisitor + ?Sized,
 {
     let mut signature_iter = reader.signautre().chars().peekable();
 
-    if signature_iter.next_if(|c| *c == '<').is_some() {
-        // Formal type parameters
+    // Formal type parameters
+    if signature_iter.next_if_eq(&'<').is_some() {
         loop {
             let formal_type_parameter = signature_iter.by_ref().take_while(|c| *c != ':').collect();
 
@@ -157,7 +153,7 @@ where
                 return Err(KapiError::ClassParseError(String::from(
                     "Attempt to parse formal type parameter in signature but parameters are not enclosed by `>`"
                 )));
-            } else if signature_iter.next_if(|c| *c == '>').is_some() {
+            } else if signature_iter.next_if_eq(&'>').is_some() {
                 break;
             }
         }
@@ -165,29 +161,109 @@ where
 
     // Super class type
     accept_class_type(&mut signature_iter, visitor.visit_super_class())?;
-    
+
     // Interface class types
     while signature_iter.peek().is_some() {
         accept_class_type(&mut signature_iter, visitor.visit_interface())?;
     }
 
-    Ok(())
+    // Strict check
+    if signature_iter.peek().is_some() {
+        Err(KapiError::ClassParseError(format!(
+            "Expected nothing after fully parsed but got `{}`",
+            signature_iter.collect::<String>()
+        )))
+    } else {
+        Ok(())
+    }
 }
 
-fn accept_field_visitor<CSR, FSV>(reader: &mut CSR, mut vititor: Box<FSV>) -> KapiResult<()>
+fn accept_field_signature_visitor<CSR, FSV>(
+    reader: &mut CSR,
+    mut vititor: Box<FSV>,
+) -> KapiResult<()>
 where
     CSR: ClassSignatureReader + ?Sized,
     FSV: FieldSignatureVisitor + ?Sized,
 {
     let mut signature_iter = reader.signautre().chars().peekable();
 
-    accept_type(&mut signature_iter, vititor.visit_field_type())
+    // Field type
+    accept_type(&mut signature_iter, vititor.visit_field_type())?;
+
+    // Strict check
+    if signature_iter.peek().is_some() {
+        Err(KapiError::ClassParseError(format!(
+            "Expected nothing after fully parsed but got `{}`",
+            signature_iter.collect::<String>()
+        )))
+    } else {
+        Ok(())
+    }
 }
 
-fn accept_type<SI, CTV>(
-    signature_iter: &mut Peekable<SI>,
-    mut visitor: Box<CTV>,
+fn accpet_method_signature_visitor<CSR, MSV>(
+    reader: &mut CSR,
+    mut visitor: Box<MSV>,
 ) -> KapiResult<()>
+where
+    CSR: ClassSignatureReader + ?Sized,
+    MSV: MethodSignatureVisitor + ?Sized,
+{
+    let mut signature_iter = reader.signautre().chars().peekable();
+
+    // Formal type parameters
+    if signature_iter.next_if_eq(&'<').is_some() {
+        loop {
+            let formal_type_parameter = signature_iter.by_ref().take_while(|c| *c != ':').collect();
+
+            visitor.visit_formal_type_parameter(&formal_type_parameter);
+
+            if signature_iter.peek().is_none() {
+                return Err(KapiError::ClassParseError(String::from(
+                    "Attempt to parse formal type parameter in signature but parameters are not enclosed by `>`"
+                )));
+            } else if signature_iter.next_if_eq(&'>').is_some() {
+                break;
+            }
+        }
+    }
+
+    // Parameter types
+    if signature_iter.next_if_eq(&'(').is_some() {
+        loop {
+            if signature_iter.peek().is_none() {
+                return Err(KapiError::ClassParseError(String::from(
+                    "Attempt to parse method parameter types in signature but parameters are not enclosed by `)`"
+                )));
+            } else if signature_iter.next_if_eq(&')').is_some() {
+                break;
+            }
+
+            accept_type(&mut signature_iter, visitor.visit_parameter_type())?;
+        }
+    }
+
+    // Return type
+    accept_type(&mut signature_iter, visitor.visit_return_type())?;
+
+    // Exception types (opt)
+    if signature_iter.next_if_eq(&'^').is_some() {
+        accept_type(&mut signature_iter, visitor.visit_exception_type())?;
+    }
+
+    // Strict check
+    if signature_iter.peek().is_some() {
+        Err(KapiError::ClassParseError(format!(
+            "Expected nothing after fully parsed but got `{}`",
+            signature_iter.collect::<String>()
+        )))
+    } else {
+        Ok(())
+    }
+}
+
+fn accept_type<SI, CTV>(signature_iter: &mut Peekable<SI>, mut visitor: Box<CTV>) -> KapiResult<()>
 where
     SI: Iterator<Item = char>,
     CTV: ClassTypeVisitor + ?Sized,
@@ -232,7 +308,9 @@ where
         let char = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
             "Expected any character after class type or type variable descriptor prefix `L` but got nothing",
         )))?;
-        let name = signature_iter.peeking_take_while(|c| *c != '.' || *c != ';' || *c != '<').collect();
+        let name = signature_iter
+            .peeking_take_while(|c| *c != '.' || *c != ';' || *c != '<')
+            .collect();
         let suffix = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
             "Expected character `.` or `;` for class type, or `<` for type variable descriptor but got nothing"
         )))?;

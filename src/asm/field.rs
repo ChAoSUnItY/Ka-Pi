@@ -4,8 +4,11 @@ use crate::asm::types::TypePath;
 
 #[allow(unused_variables)]
 pub trait FieldVisitor {
-    fn visit_annotation(&mut self, descriptor: String, visible: bool) -> Option<Box<dyn AnnotationVisitor>>
-    {
+    fn visit_annotation(
+        &mut self,
+        descriptor: String,
+        visible: bool,
+    ) -> Option<Box<dyn AnnotationVisitor>> {
         None
     }
     fn visit_type_annotation(
@@ -14,10 +17,13 @@ pub trait FieldVisitor {
         type_path: &TypePath,
         descriptor: String,
         visible: bool,
-    ) -> Option<Box<dyn AnnotationVisitor>>
-    {
+    ) -> Option<Box<dyn AnnotationVisitor>> {
         None
     }
     fn visit_attribute(&mut self, attribute: Box<dyn Attribute>) {}
-    fn visit_end(self) where Self: Sized {}
+    fn visit_end(self)
+    where
+        Self: Sized,
+    {
+    }
 }
