@@ -127,9 +127,6 @@ pub trait ClassSignatureReader {
     fn accept(&mut self, mut visitor: Box<dyn ClassSignatureVisitor>) -> KapiResult<()> {
         accept_class_signature_visitor(self, visitor)
     }
-    // fn accept_type(&mut self, mut visitor: Box<dyn ClassSignatureVisitor>) -> KapiResult<()> {
-    //     parse_type(self, 0, &mut visitor).map(|_| ())
-    // }
 }
 
 pub fn accept_class_signature_visitor<CSR, CSV>(
