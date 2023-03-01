@@ -372,9 +372,9 @@ where
     let mut inner = false;
 
     loop {
-        let char = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
-            "Expected any character after class type or type variable descriptor prefix `L` but got nothing",
-        )))?;
+        let _char = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
+            "Expected `L` (object descriptor prefix) but got nothing",
+        )))?; // Object descriptor prefix `L` is now supposedly consumed
         let name = signature_iter
             .take_while_ref(|c| *c != '.' && *c != ';' && *c != '<')
             .collect();
