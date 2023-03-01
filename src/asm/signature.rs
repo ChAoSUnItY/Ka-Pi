@@ -56,47 +56,50 @@ impl TryFrom<&char> for Wildcard {
     }
 }
 
-pub trait ClassSignatureVisitor {
-    fn visit_formal_type_parameter(&mut self, name: &String) -> Box<dyn ClassFormalTypeParameterVisitor> {
+pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
+    fn visit_super_class(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    fn visit_super_class(&mut self) -> Box<dyn ClassTypeVisitor> {
-        Box::new(SignatureVisitorImpl::default())
-    }
-    fn visit_interface(&mut self) -> Box<dyn ClassTypeVisitor> {
+    fn visit_interface(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_end(&mut self) {}
 }
 
 pub trait FieldSignatureVisitor {
-    fn visit_field_type(&mut self) -> Box<dyn ClassTypeVisitor> {
+    fn visit_field_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_end(&mut self) {}
 }
 
-pub trait MethodSignatureVisitor {
-    fn visit_formal_type_parameter(&mut self, name: &String) -> Box<dyn ClassFormalTypeParameterVisitor> {
+pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
+    fn visit_parameter_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    fn visit_parameter_type(&mut self) -> Box<dyn ClassTypeVisitor> {
+    fn visit_return_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    fn visit_return_type(&mut self) -> Box<dyn ClassTypeVisitor> {
-        Box::new(SignatureVisitorImpl::default())
-    }
-    fn visit_exception_type(&mut self) -> Box<dyn ClassTypeVisitor> {
+    fn visit_exception_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
 }
 
-pub trait ClassFormalTypeParameterVisitor {
-    fn visit_identifier(&mut self, name: &String) {}
-    fn visit_class_bound(&mut self) -> Box<dyn ClassTypeVisitor> {
+pub trait FormalTypeParameterVisitable {
+    fn visit_formal_type_parameter(
+        &mut self,
+        name: &String,
+    ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    fn visit_interface_bound(&mut self) -> Box<dyn ClassTypeVisitor> {
+}
+
+pub trait FormalTypeParameterVisitor {
+    fn visit_identifier(&mut self, name: &String) {}
+    fn visit_class_bound(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+        Box::new(SignatureVisitorImpl::default())
+    }
+    fn visit_interface_bound(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_end(&mut self) {}
@@ -104,14 +107,14 @@ pub trait ClassFormalTypeParameterVisitor {
 
 pub trait ClassTypeVisitor {
     fn visit_base_type(&mut self, char: &char) {}
-    fn visit_array_type(&mut self) -> Box<dyn ClassTypeVisitor> {
+    fn visit_array_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_class_type(&mut self, name: &String) {}
     fn visit_inner_class_type(&mut self, name: &String) {}
     fn visit_type_variable(&mut self, name: &String) {}
     fn visit_type_argument(&mut self) {}
-    fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) -> Box<dyn ClassTypeVisitor> {
+    fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) -> Box<dyn ClassTypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_end(&mut self) {}
@@ -123,7 +126,8 @@ pub struct SignatureVisitorImpl {}
 impl ClassSignatureVisitor for SignatureVisitorImpl {}
 impl FieldSignatureVisitor for SignatureVisitorImpl {}
 impl MethodSignatureVisitor for SignatureVisitorImpl {}
-impl ClassFormalTypeParameterVisitor for SignatureVisitorImpl {}
+impl FormalTypeParameterVisitable for SignatureVisitorImpl {}
+impl FormalTypeParameterVisitor for SignatureVisitorImpl {}
 impl ClassTypeVisitor for SignatureVisitorImpl {}
 
 pub trait SignatureReader {
@@ -138,14 +142,12 @@ pub trait ClassSignatureReader: SignatureReader {
 
 #[derive(Debug, Default)]
 pub struct ClassSignatureReaderImpl {
-    signature: String
+    signature: String,
 }
 
 impl ClassSignatureReaderImpl {
     pub const fn new(signature: String) -> Self {
-        Self {
-            signature
-        }
+        Self { signature }
     }
 }
 
@@ -164,14 +166,12 @@ pub trait MethodSignatureReader: SignatureReader {
 
 #[derive(Debug, Default)]
 pub struct MethodSignatureReaderImpl {
-    signature: String
+    signature: String,
 }
 
 impl MethodSignatureReaderImpl {
     pub const fn new(signature: String) -> Self {
-        Self {
-            signature
-        }
+        Self { signature }
     }
 }
 
@@ -190,7 +190,13 @@ pub trait FieldSignatureReader: SignatureReader {
 
 #[derive(Debug, Default)]
 pub struct FieldSignatureReaderImpl {
-    signature: String
+    signature: String,
+}
+
+impl FieldSignatureReaderImpl {
+    pub const fn new(signature: String) -> Self {
+        Self { signature }
+    }
 }
 
 impl FieldSignatureReader for FieldSignatureReaderImpl {}
@@ -211,7 +217,7 @@ where
     let mut signature_iter = reader.signature().chars().peekable();
 
     // Formal type parameters
-    accept_formal_type_parameters(&mut signature_iter, |name| visitor.visit_formal_type_parameter(name))?;
+    accept_formal_type_parameters(&mut signature_iter, &mut visitor)?;
 
     // Super class type
     accept_class_type(&mut signature_iter, visitor.visit_super_class())?;
@@ -253,7 +259,7 @@ where
     let mut signature_iter = reader.signature().chars().peekable();
 
     // Formal type parameters
-    accept_formal_type_parameters(&mut signature_iter, |name| visitor.visit_formal_type_parameter(name))?;
+    accept_formal_type_parameters(&mut signature_iter, &mut visitor)?;
 
     // Parameter types
     if signature_iter.next_if_eq(&'(').is_some() {
@@ -282,17 +288,18 @@ where
     strict_check_iter_empty(&mut signature_iter)
 }
 
-fn accept_formal_type_parameters<SI, F, CFPTV>(signature_iter: &mut Peekable<SI>, mut visitor_invoker: F)
-                                               -> KapiResult<()>
+fn accept_formal_type_parameters<SI, FTV>(
+    signature_iter: &mut Peekable<SI>,
+    formal_type_visitable: &mut Box<FTV>,
+) -> KapiResult<()>
 where
     SI: Iterator<Item = char> + Clone,
-    F: FnMut(&String) -> Box<CFPTV>,
-    CFPTV: ClassFormalTypeParameterVisitor + ?Sized,
+    FTV: FormalTypeParameterVisitable + ?Sized,
 {
     if signature_iter.next_if_eq(&'<').is_some() {
         loop {
             let formal_type_parameter = signature_iter.by_ref().take_while(|c| *c != ':').collect();
-            let mut formal_type_visitor = visitor_invoker(&formal_type_parameter);
+            let mut formal_type_visitor = formal_type_visitable.visit_formal_type_parameter(&formal_type_parameter);
 
             let char = signature_iter.peek().ok_or(KapiError::ClassParseError(String::from(
                 "Attempt to parse class bound for formal type parameter in signature but parameters are not enclosed by `>`"
@@ -300,7 +307,9 @@ where
 
             // Class bound
             match *char {
-                'L' | '[' | 'T' => accept_class_type(signature_iter, formal_type_visitor.visit_class_bound())?,
+                'L' | '[' | 'T' => {
+                    accept_class_type(signature_iter, formal_type_visitor.visit_class_bound())?
+                }
                 _ => {}
             }
 
@@ -326,7 +335,7 @@ where
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -372,9 +381,11 @@ where
     let mut inner = false;
 
     loop {
-        let _char = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
-            "Expected `L` (object descriptor prefix) but got nothing",
-        )))?; // Object descriptor prefix `L` is now supposedly consumed
+        let _char = signature_iter
+            .next()
+            .ok_or(KapiError::ClassParseError(String::from(
+                "Expected `L` (object descriptor prefix) but got nothing",
+            )))?; // Object descriptor prefix `L` is now supposedly consumed
         let name = signature_iter
             .take_while_ref(|c| *c != '.' && *c != ';' && *c != '<')
             .collect();
@@ -442,14 +453,12 @@ where
     Ok(())
 }
 
-fn strict_check_iter_empty<SI>(
-    signature_iter: &mut Peekable<SI>,
-) -> KapiResult<()>
-    where
-        SI: Iterator<Item = char>
+fn strict_check_iter_empty<SI>(signature_iter: &mut Peekable<SI>) -> KapiResult<()>
+where
+    SI: Iterator<Item = char>,
 {
     let remaining = signature_iter.collect::<String>();
-    
+
     if remaining.is_empty() {
         Ok(())
     } else {
@@ -464,16 +473,40 @@ fn strict_check_iter_empty<SI>(
 mod test {
     use rstest::rstest;
 
+    use crate::asm::signature::{ClassSignatureReader, ClassSignatureReaderImpl, ClassSignatureVisitor, ClassTypeVisitor, FieldSignatureReader, FieldSignatureReaderImpl, FormalTypeParameterVisitable, FormalTypeParameterVisitor};
     use crate::error::KapiResult;
 
-    use super::{ SignatureVisitorImpl, MethodSignatureReaderImpl, MethodSignatureReader };
+    use super::{MethodSignatureReader, MethodSignatureReaderImpl, SignatureVisitorImpl};
+
+    #[rstest]
+    #[case("<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;")]
+    fn test_class_signatures(#[case] signature: &'static str) -> KapiResult<()> {
+        let mut visitor = Box::new(SignatureVisitorImpl::default());
+        let mut reader = ClassSignatureReaderImpl::new(signature.to_string());
+
+        reader.accept(visitor)?;
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case("Ljava/lang/Object;")]
+    #[case("TT;")]
+    fn test_field_signatures(#[case] signature: &'static str) -> KapiResult<()> {
+        let mut visitor = Box::new(SignatureVisitorImpl::default());
+        let mut reader = FieldSignatureReaderImpl::new(signature.to_string());
+
+        reader.accept(visitor)?;
+
+        Ok(())
+    }
 
     #[rstest]
     #[case("<T:Ljava/lang/Object;>(Z[[Z)Ljava/lang/Object;^Ljava/lang/Exception;")]
     fn test_method_signatures(#[case] signature: &'static str) -> KapiResult<()> {
         let mut visitor = Box::new(SignatureVisitorImpl::default());
         let mut reader = MethodSignatureReaderImpl::new(signature.to_string());
-    
+
         reader.accept(visitor)?;
 
         Ok(())

@@ -19,6 +19,7 @@ either = "1.8.1"
 itertools = "0.10.5"
 
 [dev-dependencies]
+insta = "1.28.0"
 rstest = "0.16.0"
 
 [features]
