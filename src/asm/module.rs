@@ -6,5 +6,9 @@ pub trait ModuleVisitor {
     fn visit_open(&mut self, package: String, access: u32, modules: &[String]) {}
     fn visit_use(&mut self, service: String) {}
     fn visit_provide(&mut self, service: String, provides: &[String]) {}
-    fn visit_end(self) where Self: Sized {}
+    fn visit_end(self)
+    where
+        Self: Sized,
+    {
+    }
 }

@@ -28,7 +28,7 @@ pub(crate) const FORWARD_REFERENCE_HANDLE_MASK: i32 = 0x0FFFFFFF;
 pub(crate) const EMPTY_LIST: Label = Label::new();
 
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
-pub(crate) struct Label {
+pub struct Label {
     pub(crate) flags: u8,
     pub(crate) line_number: u32,
     pub(crate) other_line_numbers: Option<Vec<u32>>,

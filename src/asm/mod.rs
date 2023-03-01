@@ -1,14 +1,18 @@
 pub use handle::Handle;
 
+pub mod annotation;
 mod attribute;
 pub mod byte_vec;
 pub mod class;
 mod constants;
 mod edge;
+pub mod field;
 mod frame;
 mod handle;
 mod handler;
 mod label;
+pub mod method;
+pub mod module;
 /// The JVM opcodes, access flags and array type codes. This interface does not define all the JVM
 /// opcodes because some opcodes are automatically handled. For example, the xLOAD and xSTORE opcodes
 /// are automatically replaced by xLOAD_n and xSTORE_n opcodes when possible. The xLOAD_n and
@@ -19,11 +23,7 @@ mod label;
 /// **Author** Eric Bruneton<br/>
 /// **Author** Eugene Kuleshov<br/>
 pub mod opcodes;
+pub mod record;
+pub mod signature;
 mod symbol;
 pub mod types;
-pub mod record;
-pub mod field;
-pub mod method;
-pub mod annotation;
-pub mod signature;
-pub mod module;

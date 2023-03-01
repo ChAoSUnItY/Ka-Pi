@@ -36,14 +36,21 @@ pub trait ClassVisitor {
     ) {
     }
     fn visit_source(&mut self, source: String, debug: String) {}
-    fn visit_module(&mut self, name: String, access: u32, version: String) -> Option<Box<dyn ModuleVisitor>>
-    {
+    fn visit_module(
+        &mut self,
+        name: String,
+        access: u32,
+        version: String,
+    ) -> Option<Box<dyn ModuleVisitor>> {
         None
     }
     fn visit_nest_host(&mut self, nest_host: String) {}
     fn visit_outer_class(&mut self, owner: String, name: String, descriptor: String) {}
-    fn visit_annotation(&mut self, descriptor: String, visible: bool) -> Option<Box<dyn AnnotationVisitor>>
-    {
+    fn visit_annotation(
+        &mut self,
+        descriptor: String,
+        visible: bool,
+    ) -> Option<Box<dyn AnnotationVisitor>> {
         None
     }
     fn visit_type_annotation(
@@ -52,8 +59,7 @@ pub trait ClassVisitor {
         type_path: &TypePath,
         descriptor: String,
         visible: bool,
-    ) -> Option<Box<dyn AnnotationVisitor>>
-    {
+    ) -> Option<Box<dyn AnnotationVisitor>> {
         None
     }
     fn visit_attribute(&mut self, attribute: Box<dyn Attribute>) {}
@@ -72,8 +78,7 @@ pub trait ClassVisitor {
         name: String,
         descriptor: String,
         signature: String,
-    ) -> Option<Box<dyn RecordVisitor>>
-    {
+    ) -> Option<Box<dyn RecordVisitor>> {
         None
     }
     fn visit_method(
@@ -82,8 +87,7 @@ pub trait ClassVisitor {
         descriptor: String,
         signature: String,
         exceptions: &[String],
-    ) -> Option<Box<dyn MethodVisitor>>
-    {
+    ) -> Option<Box<dyn MethodVisitor>> {
         None
     }
     fn visit_field(
@@ -92,11 +96,14 @@ pub trait ClassVisitor {
         descriptor: String,
         signature: String,
         value: Box<dyn ConstantValue>,
-    ) -> Option<Box<dyn FieldVisitor>>
-    {
+    ) -> Option<Box<dyn FieldVisitor>> {
         None
     }
-    fn visit_end(self) where Self: Sized {}
+    fn visit_end(self)
+    where
+        Self: Sized,
+    {
+    }
 }
 
 pub trait ClassReader {
