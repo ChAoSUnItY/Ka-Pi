@@ -85,6 +85,7 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     }
 }
 
+#[allow(unused_variables)]
 pub trait FormalTypeParameterVisitable {
     fn visit_formal_type_parameter(
         &mut self,
@@ -94,6 +95,7 @@ pub trait FormalTypeParameterVisitable {
     }
 }
 
+#[allow(unused_variables)]
 pub trait FormalTypeParameterVisitor {
     fn visit_identifier(&mut self, name: &String) {}
     fn visit_class_bound(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
@@ -105,6 +107,7 @@ pub trait FormalTypeParameterVisitor {
     fn visit_end(&mut self) {}
 }
 
+#[allow(unused_variables)]
 pub trait ClassTypeVisitor {
     fn visit_base_type(&mut self, char: &char) {}
     fn visit_array_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
