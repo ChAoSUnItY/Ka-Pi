@@ -158,7 +158,7 @@ impl SignatureReader for ClassSignatureReaderImpl {
 
 pub trait MethodSignatureReader: SignatureReader {
     fn accept(&mut self, mut visitor: Box<dyn MethodSignatureVisitor>) -> KapiResult<()> {
-        accpet_method_signature_visitor(self, visitor)
+        accept_method_signature_visitor(self, visitor)
     }
 }
 
@@ -211,21 +211,7 @@ where
     let mut signature_iter = reader.signature().chars().peekable();
 
     // Formal type parameters
-    if signature_iter.next_if_eq(&'<').is_some() {
-        loop {
-            let formal_type_parameter = signature_iter.by_ref().take_while(|c| *c != ':').collect();
-
-            visitor.visit_formal_type_parameter(&formal_type_parameter);
-
-            if signature_iter.peek().is_none() {
-                return Err(KapiError::ClassParseError(String::from(
-                    "Attempt to parse formal type parameter in signature but parameters are not enclosed by `>`"
-                )));
-            } else if signature_iter.next_if_eq(&'>').is_some() {
-                break;
-            }
-        }
-    }
+    accept_formal_type_parameters(&mut signature_iter, |name| visitor.visit_formal_type_parameter(name))?;
 
     // Super class type
     accept_class_type(&mut signature_iter, visitor.visit_super_class())?;
@@ -236,14 +222,7 @@ where
     }
 
     // Strict check
-    if signature_iter.peek().is_some() {
-        Err(KapiError::ClassParseError(format!(
-            "Expected nothing after fully parsed but got `{}`",
-            signature_iter.collect::<String>()
-        )))
-    } else {
-        Ok(())
-    }
+    strict_check_iter_empty(&mut signature_iter)
 }
 
 fn accept_field_signature_visitor<FSR, FSV>(
@@ -260,17 +239,10 @@ where
     accept_type(&mut signature_iter, vititor.visit_field_type())?;
 
     // Strict check
-    if signature_iter.peek().is_some() {
-        Err(KapiError::ClassParseError(format!(
-            "Expected nothing after fully parsed but got `{}`",
-            signature_iter.collect::<String>()
-        )))
-    } else {
-        Ok(())
-    }
+    strict_check_iter_empty(&mut signature_iter)
 }
 
-fn accpet_method_signature_visitor<MSR, MSV>(
+fn accept_method_signature_visitor<MSR, MSV>(
     reader: &mut MSR,
     mut visitor: Box<MSV>,
 ) -> KapiResult<()>
@@ -281,43 +253,7 @@ where
     let mut signature_iter = reader.signature().chars().peekable();
 
     // Formal type parameters
-    if signature_iter.next_if_eq(&'<').is_some() {
-        loop {
-            let formal_type_parameter = signature_iter.by_ref().take_while(|c| *c != ':').collect();
-            let mut formal_type_visitor = visitor.visit_formal_type_parameter(&formal_type_parameter);
-
-            let char = signature_iter.peek().ok_or(KapiError::ClassParseError(String::from(
-                "Attempt to parse formal type parameter in signature but parameters are not enclosed by `>`"
-            )))?;
-
-            // Class bound
-            match *char {
-                'L' | '[' | 'T' => accept_class_type(&mut signature_iter, formal_type_visitor.visit_class_bound())?,
-                _ => {}
-            }
-
-            // Interface bounds
-            loop {
-                if signature_iter.peek().is_none() {
-                    return Err(KapiError::ClassParseError(String::from(
-                        "Attempt to parse formal type parameter in signature but parameters are not enclosed by `>`"
-                    )));
-                } else if signature_iter.next_if(|c| *c != ':').is_some() {
-                    break;
-                }
-
-                accept_class_type(&mut signature_iter, formal_type_visitor.visit_interface_bound())?;
-            }
-
-            if signature_iter.peek().is_none() {
-                return Err(KapiError::ClassParseError(String::from(
-                    "Attempt to parse formal type parameter in signature but parameters are not enclosed by `>`"
-                )));
-            } else if signature_iter.next_if_eq(&'>').is_some() {
-                break;
-            }
-        }
-    }
+    accept_formal_type_parameters(&mut signature_iter, |name| visitor.visit_formal_type_parameter(name))?;
 
     // Parameter types
     if signature_iter.next_if_eq(&'(').is_some() {
@@ -343,19 +279,60 @@ where
     }
 
     // Strict check
-    if signature_iter.peek().is_some() {
-        Err(KapiError::ClassParseError(format!(
-            "Expected nothing after fully parsed but got `{}`",
-            signature_iter.collect::<String>()
-        )))
-    } else {
-        Ok(())
+    strict_check_iter_empty(&mut signature_iter)
+}
+
+fn accept_formal_type_parameters<SI, F, CFPTV>(signature_iter: &mut Peekable<SI>, mut visitor_invoker: F)
+                                               -> KapiResult<()>
+where
+    SI: Iterator<Item = char> + Clone,
+    F: FnMut(&String) -> Box<CFPTV>,
+    CFPTV: ClassFormalTypeParameterVisitor + ?Sized,
+{
+    if signature_iter.next_if_eq(&'<').is_some() {
+        loop {
+            let formal_type_parameter = signature_iter.by_ref().take_while(|c| *c != ':').collect();
+            let mut formal_type_visitor = visitor_invoker(&formal_type_parameter);
+
+            let char = signature_iter.peek().ok_or(KapiError::ClassParseError(String::from(
+                "Attempt to parse class bound for formal type parameter in signature but parameters are not enclosed by `>`"
+            )))?;
+
+            // Class bound
+            match *char {
+                'L' | '[' | 'T' => accept_class_type(signature_iter, formal_type_visitor.visit_class_bound())?,
+                _ => {}
+            }
+
+            // Interface bounds
+            loop {
+                if signature_iter.peek().is_none() {
+                    return Err(KapiError::ClassParseError(String::from(
+                        "Attempt to parse interface bounds for formal type parameter in signature but parameters are not enclosed by `>`"
+                    )));
+                } else if signature_iter.next_if(|c| *c == ':').is_some() {
+                    accept_class_type(signature_iter, formal_type_visitor.visit_interface_bound())?;
+                } else {
+                    break;
+                }
+            }
+
+            if signature_iter.peek().is_none() {
+                return Err(KapiError::ClassParseError(String::from(
+                    "Attempt to parse class and interface bounds for formal type parameter in signature but parameters are not enclosed by `>`"
+                )));
+            } else if signature_iter.next_if_eq(&'>').is_some() {
+                break;
+            }
+        }
     }
+    
+    Ok(())
 }
 
 fn accept_type<SI, CTV>(signature_iter: &mut Peekable<SI>, mut visitor: Box<CTV>) -> KapiResult<()>
 where
-    SI: Iterator<Item = char>,
+    SI: Iterator<Item = char> + Clone,
     CTV: ClassTypeVisitor + ?Sized,
 {
     let char = signature_iter
@@ -388,7 +365,7 @@ fn accept_class_type<SI, CTV>(
     mut visitor: Box<CTV>,
 ) -> KapiResult<()>
 where
-    SI: Iterator<Item = char>,
+    SI: Iterator<Item = char> + Clone,
     CTV: ClassTypeVisitor + ?Sized,
 {
     let mut visited = false;
@@ -399,7 +376,7 @@ where
             "Expected any character after class type or type variable descriptor prefix `L` but got nothing",
         )))?;
         let name = signature_iter
-            .peeking_take_while(|c| *c != '.' || *c != ';' || *c != '<')
+            .take_while_ref(|c| *c != '.' && *c != ';' && *c != '<')
             .collect();
         let suffix = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
             "Expected character `.` or `;` for class type, or `<` for type variable descriptor but got nothing"
@@ -463,6 +440,24 @@ where
     }
 
     Ok(())
+}
+
+fn strict_check_iter_empty<SI>(
+    signature_iter: &mut Peekable<SI>,
+) -> KapiResult<()>
+    where
+        SI: Iterator<Item = char>
+{
+    let remaining = signature_iter.collect::<String>();
+    
+    if remaining.is_empty() {
+        Ok(())
+    } else {
+        Err(KapiError::ClassParseError(format!(
+            "Expected nothing after fully parsed but got `{}`",
+            remaining
+        )))
+    }
 }
 
 #[cfg(test)]
