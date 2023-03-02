@@ -83,6 +83,7 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     fn visit_exception_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+    fn visit_end(&mut self) {}
 }
 
 #[allow(unused_variables)]
@@ -228,6 +229,8 @@ where
     while signature_iter.peek().is_some() {
         accept_class_type(&mut signature_iter, visitor.visit_interface())?;
     }
+    
+    visitor.visit_end();
 
     // Strict check
     strict_check_iter_empty(&mut signature_iter)
@@ -235,7 +238,7 @@ where
 
 fn accept_field_signature_visitor<FSR, FSV>(
     reader: &mut FSR,
-    vititor: &mut Box<FSV>,
+    visitor: &mut Box<FSV>,
 ) -> KapiResult<()>
 where
     FSR: FieldSignatureReader + ?Sized,
@@ -244,8 +247,10 @@ where
     let mut signature_iter = reader.signature().chars().peekable();
 
     // Field type
-    accept_type(&mut signature_iter, vititor.visit_field_type())?;
+    accept_type(&mut signature_iter, visitor.visit_field_type())?;
 
+    visitor.visit_end();
+    
     // Strict check
     strict_check_iter_empty(&mut signature_iter)
 }
@@ -285,6 +290,8 @@ where
     if signature_iter.next_if_eq(&'^').is_some() {
         accept_type(&mut signature_iter, visitor.visit_exception_type())?;
     }
+    
+    visitor.visit_end();
 
     // Strict check
     strict_check_iter_empty(&mut signature_iter)
@@ -327,6 +334,8 @@ where
                     break;
                 }
             }
+            
+            formal_type_visitor.visit_end();
 
             if signature_iter.peek().is_none() {
                 return Err(KapiError::ClassParseError(String::from(
