@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::class::ClassReaderImpl;
@@ -287,7 +288,7 @@ where
     F: FnMut(Type),
 {
     holder: Type,
-    stack_actions: Vec<(Option<Wildcard>)>, // If option is None, then it's array wrapping, otherwise it's type argument wrapping
+    stack_actions: VecDeque<(Option<Wildcard>)>, // If option is None, then it's array wrapping, otherwise it's type argument wrapping
     post_action: F,
 }
 
@@ -298,7 +299,7 @@ where
     fn new(post_action: F) -> Self {
         Self {
             holder: Type::Unknown,
-            stack_actions: Vec::new(),
+            stack_actions: VecDeque::new(),
             post_action,
         }
     }
@@ -324,7 +325,7 @@ where
     }
 
     fn visit_array_type(&mut self) {
-        self.stack_actions.push(None);
+        self.stack_actions.push_back(None);
     }
 
     fn visit_class_type(&mut self, name: &String) {
@@ -344,13 +345,13 @@ where
     }
 
     fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) {
-        self.stack_actions.push(Some(wildcard))
+        self.stack_actions.push_back(Some(wildcard))
     }
 
     fn visit_end(&mut self) {
         let mut typ = self.holder.clone();
-
-        for wildcard in self.stack_actions.iter().rev() {
+        
+        while let Some(wildcard) = self.stack_actions.pop_back() {
             if let Some(wildcard) = wildcard {
                 typ = Self::wrap_type_argument(wildcard.clone(), typ);
             } else {
