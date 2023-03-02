@@ -2,6 +2,7 @@ use std::{default, iter::Peekable, str::CharIndices};
 
 use either::Either;
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::error::{KapiError, KapiResult};
@@ -10,7 +11,7 @@ const EXTENDS: char = '+';
 const SUPER: char = '-';
 const INSTANCEOF: char = '=';
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum Wildcard {
     EXTENDS = EXTENDS as u8,
@@ -110,16 +111,12 @@ pub trait FormalTypeParameterVisitor {
 #[allow(unused_variables)]
 pub trait TypeVisitor {
     fn visit_base_type(&mut self, char: &char) {}
-    fn visit_array_type(&mut self) -> Box<dyn TypeVisitor + '_> {
-        Box::new(SignatureVisitorImpl::default())
-    }
+    fn visit_array_type(&mut self) {}
     fn visit_class_type(&mut self, name: &String) {}
     fn visit_inner_class_type(&mut self, name: &String) {}
     fn visit_type_variable(&mut self, name: &String) {}
     fn visit_type_argument(&mut self) {}
-    fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) -> Box<dyn TypeVisitor + '_> {
-        Box::new(SignatureVisitorImpl::default())
-    }
+    fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) {}
     fn visit_end(&mut self) {}
 }
 
@@ -139,8 +136,13 @@ pub struct ClassSignatureReader {
 }
 
 impl ClassSignatureReader {
-    pub fn new<S>(signature: S) -> Self where S: Into<String> {
-        Self { signature: signature.into() }
+    pub fn new<S>(signature: S) -> Self
+    where
+        S: Into<String>,
+    {
+        Self {
+            signature: signature.into(),
+        }
     }
 
     pub fn accept(&mut self, visitor: &mut impl ClassSignatureVisitor) -> KapiResult<()> {
@@ -154,8 +156,13 @@ pub struct MethodSignatureReader {
 }
 
 impl MethodSignatureReader {
-    pub fn new<S>(signature: S) -> Self where S: Into<String> {
-        Self { signature: signature.into() }
+    pub fn new<S>(signature: S) -> Self
+    where
+        S: Into<String>,
+    {
+        Self {
+            signature: signature.into(),
+        }
     }
 
     pub fn accept(&mut self, visitor: &mut impl MethodSignatureVisitor) -> KapiResult<()> {
@@ -169,8 +176,13 @@ pub struct FieldSignatureReader {
 }
 
 impl FieldSignatureReader {
-    pub fn new<S>(signature: S) -> Self where S: Into<String> {
-        Self { signature: signature.into() }
+    pub fn new<S>(signature: S) -> Self
+    where
+        S: Into<String>,
+    {
+        Self {
+            signature: signature.into(),
+        }
     }
 
     pub fn accept(&mut self, visitor: &mut impl FieldSignatureVisitor) -> KapiResult<()> {
@@ -188,11 +200,11 @@ pub fn accept_class_signature_visitor(
     accept_formal_type_parameters(&mut signature_iter, visitor)?;
 
     // Super class type
-    accept_class_type(&mut signature_iter, visitor.visit_super_class())?;
+    accept_class_type(&mut signature_iter, &mut visitor.visit_super_class())?;
 
     // Interface class types
     while signature_iter.peek().is_some() {
-        accept_class_type(&mut signature_iter, visitor.visit_interface())?;
+        accept_class_type(&mut signature_iter, &mut visitor.visit_interface())?;
     }
 
     visitor.visit_end();
@@ -208,7 +220,7 @@ fn accept_field_signature_visitor(
     let mut signature_iter = reader.signature.chars().peekable();
 
     // Field type
-    accept_type(&mut signature_iter, visitor.visit_field_type())?;
+    accept_type(&mut signature_iter, &mut visitor.visit_field_type())?;
 
     visitor.visit_end();
 
@@ -236,16 +248,16 @@ fn accept_method_signature_visitor(
                 break;
             }
 
-            accept_type(&mut signature_iter, visitor.visit_parameter_type())?;
+            accept_type(&mut signature_iter, &mut visitor.visit_parameter_type())?;
         }
     }
 
     // Return type
-    accept_type(&mut signature_iter, visitor.visit_return_type())?;
+    accept_type(&mut signature_iter, &mut visitor.visit_return_type())?;
 
     // Exception types (opt)
     if signature_iter.next_if_eq(&'^').is_some() {
-        accept_type(&mut signature_iter, visitor.visit_exception_type())?;
+        accept_type(&mut signature_iter, &mut visitor.visit_exception_type())?;
     }
 
     visitor.visit_end();
@@ -275,7 +287,7 @@ where
             // Class bound
             match *char {
                 'L' | '[' | 'T' => {
-                    accept_class_type(signature_iter, formal_type_visitor.visit_class_bound())?
+                    accept_type(signature_iter, &mut formal_type_visitor.visit_class_bound())?
                 }
                 _ => {}
             }
@@ -287,7 +299,7 @@ where
                         "Attempt to parse interface bounds for formal type parameter in signature but parameters are not enclosed by `>`"
                     )));
                 } else if signature_iter.next_if(|c| *c == ':').is_some() {
-                    accept_class_type(signature_iter, formal_type_visitor.visit_interface_bound())?;
+                    accept_type(signature_iter, &mut formal_type_visitor.visit_interface_bound())?;
                 } else {
                     break;
                 }
@@ -308,26 +320,32 @@ where
     Ok(())
 }
 
-fn accept_type<SI, CTV>(signature_iter: &mut Peekable<SI>, mut visitor: Box<CTV>) -> KapiResult<()>
+fn accept_type<SI, CTV>(signature_iter: &mut Peekable<SI>, visitor: &mut Box<CTV>) -> KapiResult<()>
 where
     SI: Iterator<Item = char> + Clone,
     CTV: TypeVisitor + ?Sized,
 {
     let char = signature_iter
-        .next()
+        .peek()
         .ok_or(KapiError::ClassParseError(String::from("Expected primitive type, array type, class type, or type variable descriptor, but got nothing")))?;
 
     match char {
         'Z' | 'C' | 'B' | 'S' | 'I' | 'F' | 'J' | 'D' | 'V' => {
             visitor.visit_base_type(&char);
+            signature_iter.next();
             Ok(())
         }
-        '[' => accept_type(signature_iter, visitor.visit_array_type()),
+        '[' => {
+            visitor.visit_array_type();
+            signature_iter.next();
+            accept_type(signature_iter, visitor)
+        },
         'T' => {
             let type_variable = signature_iter
                 .take_while(|c| *c != ';')
                 .collect();
             visitor.visit_type_variable(&type_variable);
+            signature_iter.next();
             Ok(())
         }
         'L' => accept_class_type(signature_iter, visitor),
@@ -340,7 +358,7 @@ where
 
 fn accept_class_type<SI, CTV>(
     signature_iter: &mut Peekable<SI>,
-    mut visitor: Box<CTV>,
+    visitor: &mut Box<CTV>,
 ) -> KapiResult<()>
 where
     SI: Iterator<Item = char> + Clone,
@@ -406,9 +424,18 @@ where
 
                     match char {
                         '*' => visitor.visit_type_argument(),
-                        '+' => accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::EXTENDS))?,
-                        '-' => accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::SUPER))?,
-                        _ => accept_class_type(signature_iter, visitor.visit_type_argument_wildcard(Wildcard::INSTANCEOF))?,
+                        '+' => {
+                            visitor.visit_type_argument_wildcard(Wildcard::EXTENDS);
+                            accept_class_type(signature_iter, visitor)?;
+                        },
+                        '-' => {
+                            visitor.visit_type_argument_wildcard(Wildcard::SUPER);
+                            accept_class_type(signature_iter, visitor)?;
+                        },
+                        _ => {
+                            visitor.visit_type_argument_wildcard(Wildcard::INSTANCEOF);
+                            accept_class_type(signature_iter, visitor)?;
+                        },
                     }
                 }
             }
