@@ -57,30 +57,30 @@ impl TryFrom<&char> for Wildcard {
 }
 
 pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
-    fn visit_super_class(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_super_class(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    fn visit_interface(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_interface(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_end(&mut self) {}
 }
 
 pub trait FieldSignatureVisitor {
-    fn visit_field_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_field_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_end(&mut self) {}
 }
 
 pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
-    fn visit_parameter_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_parameter_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    fn visit_return_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_return_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    fn visit_exception_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_exception_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
 }
@@ -97,27 +97,26 @@ pub trait FormalTypeParameterVisitable {
 
 #[allow(unused_variables)]
 pub trait FormalTypeParameterVisitor {
-    fn visit_identifier(&mut self, name: &String) {}
-    fn visit_class_bound(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_class_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    fn visit_interface_bound(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_interface_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_end(&mut self) {}
 }
 
 #[allow(unused_variables)]
-pub trait ClassTypeVisitor {
+pub trait TypeVisitor {
     fn visit_base_type(&mut self, char: &char) {}
-    fn visit_array_type(&mut self) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_array_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_class_type(&mut self, name: &String) {}
     fn visit_inner_class_type(&mut self, name: &String) {}
     fn visit_type_variable(&mut self, name: &String) {}
     fn visit_type_argument(&mut self) {}
-    fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) -> Box<dyn ClassTypeVisitor + '_> {
+    fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
     fn visit_end(&mut self) {}
@@ -131,7 +130,7 @@ impl FieldSignatureVisitor for SignatureVisitorImpl {}
 impl MethodSignatureVisitor for SignatureVisitorImpl {}
 impl FormalTypeParameterVisitable for SignatureVisitorImpl {}
 impl FormalTypeParameterVisitor for SignatureVisitorImpl {}
-impl ClassTypeVisitor for SignatureVisitorImpl {}
+impl TypeVisitor for SignatureVisitorImpl {}
 
 pub trait SignatureReader {
     fn signature(&self) -> &String;
@@ -345,7 +344,7 @@ where
 fn accept_type<SI, CTV>(signature_iter: &mut Peekable<SI>, mut visitor: Box<CTV>) -> KapiResult<()>
 where
     SI: Iterator<Item = char> + Clone,
-    CTV: ClassTypeVisitor + ?Sized,
+    CTV: TypeVisitor + ?Sized,
 {
     let char = signature_iter
         .next()
@@ -378,7 +377,7 @@ fn accept_class_type<SI, CTV>(
 ) -> KapiResult<()>
 where
     SI: Iterator<Item = char> + Clone,
-    CTV: ClassTypeVisitor + ?Sized,
+    CTV: TypeVisitor + ?Sized,
 {
     let mut visited = false;
     let mut inner = false;
@@ -476,7 +475,7 @@ where
 mod test {
     use rstest::rstest;
 
-    use crate::asm::signature::{ClassSignatureReader, ClassSignatureReaderImpl, ClassSignatureVisitor, ClassTypeVisitor, FieldSignatureReader, FieldSignatureReaderImpl, FormalTypeParameterVisitable, FormalTypeParameterVisitor};
+    use crate::asm::signature::{ClassSignatureReader, ClassSignatureReaderImpl, ClassSignatureVisitor, TypeVisitor, FieldSignatureReader, FieldSignatureReaderImpl, FormalTypeParameterVisitable, FormalTypeParameterVisitor};
     use crate::error::KapiResult;
 
     use super::{MethodSignatureReader, MethodSignatureReaderImpl, SignatureVisitorImpl};
