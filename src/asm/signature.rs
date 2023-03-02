@@ -137,7 +137,7 @@ pub trait SignatureReader {
 }
 
 pub trait ClassSignatureReader: SignatureReader {
-    fn accept(&mut self, mut visitor: Box<dyn ClassSignatureVisitor>) -> KapiResult<()> {
+    fn accept(&mut self, visitor: &mut Box<dyn ClassSignatureVisitor>) -> KapiResult<()> {
         accept_class_signature_visitor(self, visitor)
     }
 }
@@ -161,7 +161,7 @@ impl SignatureReader for ClassSignatureReaderImpl {
 }
 
 pub trait MethodSignatureReader: SignatureReader {
-    fn accept(&mut self, mut visitor: Box<dyn MethodSignatureVisitor>) -> KapiResult<()> {
+    fn accept(&mut self, visitor: &mut Box<dyn MethodSignatureVisitor>) -> KapiResult<()> {
         accept_method_signature_visitor(self, visitor)
     }
 }
@@ -185,7 +185,7 @@ impl SignatureReader for MethodSignatureReaderImpl {
 }
 
 pub trait FieldSignatureReader: SignatureReader {
-    fn accept(&mut self, mut visitor: Box<dyn FieldSignatureVisitor>) -> KapiResult<()> {
+    fn accept(&mut self, visitor: &mut Box<dyn FieldSignatureVisitor>) -> KapiResult<()> {
         accept_field_signature_visitor(self, visitor)
     }
 }
@@ -210,7 +210,7 @@ impl SignatureReader for FieldSignatureReaderImpl {
 
 pub fn accept_class_signature_visitor<CSR, CSV>(
     reader: &mut CSR,
-    mut visitor: Box<CSV>,
+    visitor: &mut Box<CSV>,
 ) -> KapiResult<()>
 where
     CSR: ClassSignatureReader + ?Sized,
@@ -219,7 +219,7 @@ where
     let mut signature_iter = reader.signature().chars().peekable();
 
     // Formal type parameters
-    accept_formal_type_parameters(&mut signature_iter, &mut visitor)?;
+    accept_formal_type_parameters(&mut signature_iter, visitor)?;
 
     // Super class type
     accept_class_type(&mut signature_iter, visitor.visit_super_class())?;
@@ -235,7 +235,7 @@ where
 
 fn accept_field_signature_visitor<FSR, FSV>(
     reader: &mut FSR,
-    mut vititor: Box<FSV>,
+    vititor: &mut Box<FSV>,
 ) -> KapiResult<()>
 where
     FSR: FieldSignatureReader + ?Sized,
@@ -252,7 +252,7 @@ where
 
 fn accept_method_signature_visitor<MSR, MSV>(
     reader: &mut MSR,
-    mut visitor: Box<MSV>,
+    visitor: &mut Box<MSV>,
 ) -> KapiResult<()>
 where
     MSR: MethodSignatureReader + ?Sized,
@@ -261,7 +261,7 @@ where
     let mut signature_iter = reader.signature().chars().peekable();
 
     // Formal type parameters
-    accept_formal_type_parameters(&mut signature_iter, &mut visitor)?;
+    accept_formal_type_parameters(&mut signature_iter, visitor)?;
 
     // Parameter types
     if signature_iter.next_if_eq(&'(').is_some() {
@@ -483,10 +483,10 @@ mod test {
     #[rstest]
     #[case("<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;")]
     fn test_class_signatures(#[case] signature: &'static str) -> KapiResult<()> {
-        let mut visitor = Box::new(SignatureVisitorImpl::default());
+        let mut visitor = Box::new(SignatureVisitorImpl::default()) as _;
         let mut reader = ClassSignatureReaderImpl::new(signature.to_string());
 
-        reader.accept(visitor)?;
+        reader.accept(&mut visitor)?;
 
         Ok(())
     }
@@ -495,10 +495,10 @@ mod test {
     #[case("Ljava/lang/Object;")]
     #[case("TT;")]
     fn test_field_signatures(#[case] signature: &'static str) -> KapiResult<()> {
-        let mut visitor = Box::new(SignatureVisitorImpl::default());
+        let mut visitor = Box::new(SignatureVisitorImpl::default()) as _;
         let mut reader = FieldSignatureReaderImpl::new(signature.to_string());
 
-        reader.accept(visitor)?;
+        reader.accept(&mut visitor)?;
 
         Ok(())
     }
@@ -506,10 +506,10 @@ mod test {
     #[rstest]
     #[case("<T:Ljava/lang/Object;>(Z[[Z)Ljava/lang/Object;^Ljava/lang/Exception;")]
     fn test_method_signatures(#[case] signature: &'static str) -> KapiResult<()> {
-        let mut visitor = Box::new(SignatureVisitorImpl::default());
+        let mut visitor = Box::new(SignatureVisitorImpl::default()) as _;
         let mut reader = MethodSignatureReaderImpl::new(signature.to_string());
 
-        reader.accept(visitor)?;
+        reader.accept(&mut visitor)?;
 
         Ok(())
     }
