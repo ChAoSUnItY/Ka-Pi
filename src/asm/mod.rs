@@ -1,5 +1,7 @@
 pub use handle::Handle;
 
+pub mod node;
+
 pub mod annotation;
 mod attribute;
 pub mod byte_vec;

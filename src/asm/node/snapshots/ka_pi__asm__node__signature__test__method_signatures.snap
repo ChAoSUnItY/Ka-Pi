@@ -1,0 +1,21 @@
+---
+source: src/asm/node/signature.rs
+expression: method_signature
+---
+Method:
+  formal_type_parameters:
+    - parameter_name: T
+      class_bound:
+        Class: java/lang/Object
+      interface_bounds: []
+  parameter_types:
+    - BaseType: Boolean
+    - Array:
+        Array:
+          BaseType: Boolean
+    - TypeVariable: T
+  return_type:
+    Class: java/lang/Object
+  exception_types:
+    - Class: java/lang/Exception
+

@@ -1,0 +1,8 @@
+---
+source: src/asm/node/signature.rs
+expression: field_signature
+---
+Field:
+  field_type:
+    TypeVariable: T
+
