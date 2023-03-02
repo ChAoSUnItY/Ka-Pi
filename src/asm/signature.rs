@@ -332,6 +332,7 @@ where
     match char {
         'Z' | 'C' | 'B' | 'S' | 'I' | 'F' | 'J' | 'D' | 'V' => {
             visitor.visit_base_type(&char);
+            visitor.visit_end();
             signature_iter.next();
             Ok(())
         }
@@ -341,11 +342,12 @@ where
             accept_type(signature_iter, visitor)
         },
         'T' => {
+            signature_iter.next();
             let type_variable = signature_iter
                 .take_while(|c| *c != ';')
                 .collect();
             visitor.visit_type_variable(&type_variable);
-            signature_iter.next();
+            visitor.visit_end();
             Ok(())
         }
         'L' => accept_class_type(signature_iter, visitor),
