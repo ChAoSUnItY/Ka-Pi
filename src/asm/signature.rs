@@ -140,7 +140,7 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
 #[allow(unused_variables)]
 pub trait FormalTypeParameterVisitable {
     /// Visits generic signature's formal type parameter. This could be called by multiple times
-    /// when there's more than 1 formal type parameter declared.
+    /// when there's more than 1 formal type parameters declared.
     fn visit_formal_type_parameter(
         &mut self,
         name: &String,
