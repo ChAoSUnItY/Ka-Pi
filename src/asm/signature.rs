@@ -103,16 +103,31 @@ pub trait FieldSignatureVisitor {
     fn visit_end(&mut self) {}
 }
 
+/// A visitor to visit method generic signature. This trait requires struct also implements 
+/// [FormalTypeParameterVisitable].
+///
+/// # Implemented Examples
+///
+/// See [MethodSignatureWriter] for more info.
 pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
+    /// Visits method generic signature's parameter type. This could be called by multiple times
+    /// when there's more than 1 parameters declared.
     fn visit_parameter_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Visits method generic signature's return type. This would be only called once per method.
     fn visit_return_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+    
+    /// Visits method generic signature's exception type. This could be called by multiple times
+    /// when there's more than 1 exception types declared.
     fn visit_exception_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
