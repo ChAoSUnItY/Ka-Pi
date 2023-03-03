@@ -1,8 +1,14 @@
 use std::collections::VecDeque;
+
 use serde::{Deserialize, Serialize};
 
 use crate::asm::class::ClassReaderImpl;
-use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor, MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor, Wildcard};
+use crate::asm::signature::{
+    ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader,
+    FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
+    FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor,
+    MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor, Wildcard,
+};
 use crate::error::{KapiError, KapiResult};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -49,9 +55,9 @@ impl Signature {
         let string = string.into();
         let mut collector = FieldSignatureCollector::default();
         let mut reader = FieldSignatureReader::new(&string);
-        
+
         reader.accept(&mut collector)?;
-        
+
         collector
             .signature
             .ok_or(KapiError::ClassParseError(format!(
@@ -61,8 +67,8 @@ impl Signature {
     }
 
     pub fn method_signature_from_str<S>(string: S) -> KapiResult<Self>
-        where
-            S: Into<String>,
+    where
+        S: Into<String>,
     {
         let string = string.into();
         let mut collector = MethodSignatureCollector::default();
@@ -374,7 +380,7 @@ where
 
     fn visit_end(&mut self) {
         let mut typ = self.holder.clone();
-        
+
         while let Some(wildcard) = self.stack_actions.pop_back() {
             if let Some(wildcard) = wildcard {
                 typ = Self::wrap_type_argument(wildcard.clone(), typ);
@@ -420,9 +426,9 @@ mod test {
     #[case("<T:Ljava/lang/Object;>(Z[[ZTT;)Ljava/lang/Object;^Ljava/lang/Exception;")]
     fn test_method_signatures(#[case] signature: &'static str) -> KapiResult<()> {
         let method_signature = Signature::method_signature_from_str(signature)?;
-        
+
         assert_yaml_snapshot!(method_signature);
-        
+
         Ok(())
     }
 }

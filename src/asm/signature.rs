@@ -1,12 +1,12 @@
-use std::{default, iter::Peekable, str::CharIndices};
 use std::collections::VecDeque;
+use std::{default, iter::Peekable, str::CharIndices};
 
 use either::Either;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
-use crate::asm::field::FieldVisitor;
 
+use crate::asm::field::FieldVisitor;
 use crate::error::{KapiError, KapiResult};
 
 const EXTENDS: char = '+';
@@ -301,7 +301,10 @@ where
                         "Attempt to parse interface bounds for formal type parameter in signature but parameters are not enclosed by `>`"
                     )));
                 } else if signature_iter.next_if(|c| *c == ':').is_some() {
-                    accept_type(signature_iter, &mut formal_type_visitor.visit_interface_bound())?;
+                    accept_type(
+                        signature_iter,
+                        &mut formal_type_visitor.visit_interface_bound(),
+                    )?;
                 } else {
                     break;
                 }
@@ -496,7 +499,7 @@ impl ClassSignatureVisitor for ClassSignatureWriter {
             self.has_formal = false;
             self.signature_builder.push('>');
         }
-        
+
         Box::new(TypeWriter::new(&mut self.signature_builder))
     }
 
@@ -505,20 +508,23 @@ impl ClassSignatureVisitor for ClassSignatureWriter {
             self.has_formal = false;
             self.signature_builder.push('>');
         }
-        
+
         Box::new(TypeWriter::new(&mut self.signature_builder))
     }
 }
 
 impl FormalTypeParameterVisitable for ClassSignatureWriter {
-    fn visit_formal_type_parameter(&mut self, name: &String) -> Box<dyn FormalTypeParameterVisitor + '_> {
+    fn visit_formal_type_parameter(
+        &mut self,
+        name: &String,
+    ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         if !self.has_formal {
             self.has_formal = true;
             self.signature_builder.push('<');
         }
-        
+
         self.signature_builder.push_str(name);
-        
+
         Box::new(FormalTypeParameterWriter::new(&mut self.signature_builder))
     }
 }
@@ -577,12 +583,12 @@ impl MethodSignatureVisitor for MethodSignatureWriter {
             self.has_formal = false;
             self.signature_builder.push('>');
         }
-        
+
         if !self.has_parameters {
             self.has_parameters = true;
             self.signature_builder.push('(');
         }
-        
+
         Box::new(TypeWriter::new(&mut self.signature_builder))
     }
 
@@ -591,7 +597,7 @@ impl MethodSignatureVisitor for MethodSignatureWriter {
             self.has_formal = false;
             self.signature_builder.push('>');
         }
-        
+
         if self.has_parameters {
             self.has_parameters = false;
         } else {
@@ -605,13 +611,16 @@ impl MethodSignatureVisitor for MethodSignatureWriter {
 
     fn visit_exception_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         self.signature_builder.push('^');
-        
+
         Box::new(TypeWriter::new(&mut self.signature_builder))
     }
 }
 
 impl FormalTypeParameterVisitable for MethodSignatureWriter {
-    fn visit_formal_type_parameter(&mut self, name: &String) -> Box<dyn FormalTypeParameterVisitor + '_> {
+    fn visit_formal_type_parameter(
+        &mut self,
+        name: &String,
+    ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         if !self.has_formal {
             self.has_formal = true;
             self.signature_builder.push('<');
@@ -629,9 +638,7 @@ struct FormalTypeParameterWriter<'parent> {
 
 impl<'parent> FormalTypeParameterWriter<'parent> {
     fn new(parent_builder: &'parent mut String) -> Self {
-        Self {
-            parent_builder
-        }
+        Self { parent_builder }
     }
 }
 
@@ -654,20 +661,20 @@ struct TypeWriter<'parent> {
 impl<'parent> TypeWriter<'parent> {
     fn new(parent_builder: &'parent mut String) -> Self {
         let mut type_arg_stack = VecDeque::with_capacity(64);
-        
+
         type_arg_stack.push_back(true);
-        
+
         Self {
             parent_builder,
             type_arg_stack,
         }
     }
-    
+
     fn end_args(&mut self) {
         if self.type_arg_stack.front().map_or(false, |b| *b) {
             self.parent_builder.push('>');
         }
-        
+
         self.type_arg_stack.pop_front();
     }
 }
@@ -706,7 +713,7 @@ impl<'parent> TypeVisitor for TypeWriter<'parent> {
             self.type_arg_stack[0] = true;
             self.parent_builder.push('<');
         }
-        
+
         self.parent_builder.push('*');
     }
 
@@ -715,7 +722,7 @@ impl<'parent> TypeVisitor for TypeWriter<'parent> {
             self.type_arg_stack[0] = true;
             self.parent_builder.push('<');
         }
-        
+
         if wildcard != Wildcard::INSTANCEOF {
             self.parent_builder.push(wildcard.into());
         }
@@ -732,7 +739,12 @@ mod test {
     use insta::assert_yaml_snapshot;
     use rstest::rstest;
 
-    use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor, MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor};
+    use crate::asm::signature::{
+        ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader,
+        FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
+        FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor,
+        MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor,
+    };
     use crate::error::KapiResult;
 
     #[rstest]
@@ -768,18 +780,23 @@ mod test {
 
         Ok(())
     }
-    
+
     #[test]
     fn test_class_signature_writer() {
         let mut writer = ClassSignatureWriter::default();
-        
-        writer.visit_formal_type_parameter(&"T".to_string())
+
+        writer
+            .visit_formal_type_parameter(&"T".to_string())
             .visit_class_bound()
             .visit_class_type(&"java/lang/Object".to_string());
-        
-        writer.visit_super_class().visit_class_type(&"java/lang/Object".to_string());
-        writer.visit_interface().visit_class_type(&"java/lang/Comparable".to_string());
-        
+
+        writer
+            .visit_super_class()
+            .visit_class_type(&"java/lang/Object".to_string());
+        writer
+            .visit_interface()
+            .visit_class_type(&"java/lang/Comparable".to_string());
+
         assert_yaml_snapshot!(writer.to_string());
     }
 
@@ -787,7 +804,9 @@ mod test {
     fn test_field_signature_writer() {
         let mut writer = FieldSignatureWriter::default();
 
-        writer.visit_field_type().visit_class_type(&"java/lang/String".to_string());
+        writer
+            .visit_field_type()
+            .visit_class_type(&"java/lang/String".to_string());
 
         assert_yaml_snapshot!(writer.to_string());
     }
@@ -796,12 +815,17 @@ mod test {
     fn test_method_signature_writer() {
         let mut writer = MethodSignatureWriter::default();
 
-        writer.visit_formal_type_parameter(&"T".to_string())
+        writer
+            .visit_formal_type_parameter(&"T".to_string())
             .visit_class_bound()
             .visit_class_type(&"java/lang/Object".to_string());
 
-        writer.visit_parameter_type().visit_class_type(&"java/lang/Object".to_string());
-        writer.visit_return_type().visit_class_type(&"java/lang/String".to_string());
+        writer
+            .visit_parameter_type()
+            .visit_class_type(&"java/lang/Object".to_string());
+        writer
+            .visit_return_type()
+            .visit_class_type(&"java/lang/String".to_string());
 
         assert_yaml_snapshot!(writer.to_string());
     }
