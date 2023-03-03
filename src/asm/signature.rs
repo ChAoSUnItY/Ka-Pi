@@ -67,6 +67,10 @@ impl TryFrom<&char> for Wildcard {
 
 /// A visitor to visit class generic signature. This trait requires struct also implements 
 /// [FormalTypeParameterVisitable].
+/// 
+/// # Implemented Examples
+/// 
+/// See [ClassSignatureWriter] for more info.
 pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     /// Visits class generic signature's super class type. This would be called on every classes 
     /// expect `java.lang.Object`.
@@ -84,10 +88,18 @@ pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     fn visit_end(&mut self) {}
 }
 
+/// A visitor to visit field generic signature.
+///
+/// # Implemented Examples
+///
+/// See [FieldSignatureWriter] for more info.
 pub trait FieldSignatureVisitor {
+    /// Visits field generic signature's type.
     fn visit_field_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
@@ -106,6 +118,10 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
 
 /// A trait indicates super-trait visitor has formal type parameter section to be visited, which are
 /// [ClassSignatureVisitor] and [MethodSignatureVisitor].
+///
+/// # Implemented Examples
+///
+/// See [ClassSignatureWriter] and [MethodSignatureWriter] for more info.
 #[allow(unused_variables)]
 pub trait FormalTypeParameterVisitable {
     /// Visits generic signature's formal type parameter. This could be called by multiple times
