@@ -5,6 +5,7 @@ use either::Either;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
+use crate::asm::field::FieldVisitor;
 
 use crate::error::{KapiError, KapiResult};
 
@@ -518,6 +519,101 @@ impl FormalTypeParameterVisitable for ClassSignatureWriter {
         
         self.signature_builder.push_str(name);
         
+        Box::new(FormalTypeParameterWriter::new(&mut self.signature_builder))
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct FieldSignatureWriter {
+    signature_builder: String,
+}
+
+impl FieldSignatureWriter {
+    fn with_capacity(size: usize) -> Self {
+        Self {
+            signature_builder: String::with_capacity(size),
+        }
+    }
+}
+
+impl ToString for FieldSignatureWriter {
+    fn to_string(&self) -> String {
+        self.signature_builder.clone()
+    }
+}
+
+impl FieldSignatureVisitor for FieldSignatureWriter {
+    fn visit_field_type(&mut self) -> Box<dyn TypeVisitor + '_> {
+        Box::new(TypeWriter::new(&mut self.signature_builder))
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct MethodSignatureWriter {
+    signature_builder: String,
+    has_formal: bool,
+    has_parameters: bool,
+}
+
+impl MethodSignatureWriter {
+    fn with_capacity(size: usize) -> Self {
+        Self {
+            signature_builder: String::with_capacity(size),
+            has_formal: false,
+            has_parameters: false,
+        }
+    }
+}
+
+impl ToString for MethodSignatureWriter {
+    fn to_string(&self) -> String {
+        self.signature_builder.clone()
+    }
+}
+
+impl MethodSignatureVisitor for MethodSignatureWriter {
+    fn visit_parameter_type(&mut self) -> Box<dyn TypeVisitor + '_> {
+        if !self.has_parameters {
+            self.has_parameters = true;
+            self.signature_builder.push('(');
+        }
+        
+        Box::new(TypeWriter::new(&mut self.signature_builder))
+    }
+
+    fn visit_return_type(&mut self) -> Box<dyn TypeVisitor + '_> {
+        if self.has_formal {
+            self.has_formal = false;
+            self.signature_builder.push('>');
+        }
+        
+        if self.has_parameters {
+            self.has_parameters = false;
+        } else {
+            self.signature_builder.push('(');
+        }
+
+        self.signature_builder.push(')');
+
+        Box::new(TypeWriter::new(&mut self.signature_builder))
+    }
+
+    fn visit_exception_type(&mut self) -> Box<dyn TypeVisitor + '_> {
+        self.signature_builder.push('^');
+        
+        Box::new(TypeWriter::new(&mut self.signature_builder))
+    }
+}
+
+impl FormalTypeParameterVisitable for MethodSignatureWriter {
+    fn visit_formal_type_parameter(&mut self, name: &String) -> Box<dyn FormalTypeParameterVisitor + '_> {
+        if !self.has_formal {
+            self.has_formal = true;
+            self.signature_builder.push('<');
+        }
+
+        self.signature_builder.push_str(name);
+
         Box::new(FormalTypeParameterWriter::new(&mut self.signature_builder))
     }
 }
