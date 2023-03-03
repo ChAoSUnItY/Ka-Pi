@@ -13,7 +13,7 @@ const EXTENDS: char = '+';
 const SUPER: char = '-';
 const INSTANCEOF: char = '=';
 
-/// An enum representation for wildcard indicators, which is used in 
+/// An enum representation for wildcard indicators, which is used in
 /// [`Type::WildcardTypeArgument`](crate::asm::node::signature::Type::WildcardTypeArgument) as class
 /// type argument bound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -65,13 +65,22 @@ impl TryFrom<&char> for Wildcard {
     }
 }
 
+/// A visitor to visit class generic signature. This trait requires struct also implements 
+/// [FormalTypeParameterVisitable].
 pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
+    /// Visits class generic signature's super class type. This would be called on every classes 
+    /// expect `java.lang.Object`.
     fn visit_super_class(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Visits class generic signature's interface type. This could be called by multiple times
+    /// when there's more than 1 interfaces implemented.
     fn visit_interface(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
