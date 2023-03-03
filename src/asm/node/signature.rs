@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::class::ClassReaderImpl;
-use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FieldSignatureVisitor, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor, SignatureVisitorImpl, TypeVisitor, Wildcard};
+use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor, MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor, Wildcard};
 use crate::error::{KapiError, KapiResult};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -84,6 +84,22 @@ impl TryFrom<ClassSignatureWriter> for Signature {
 
     fn try_from(value: ClassSignatureWriter) -> KapiResult<Self> {
         Signature::class_signature_from_str(value.to_string())
+    }
+}
+
+impl TryFrom<FieldSignatureWriter> for Signature {
+    type Error = KapiError;
+
+    fn try_from(value: FieldSignatureWriter) -> KapiResult<Self> {
+        Signature::field_signature_from_str(value.to_string())
+    }
+}
+
+impl TryFrom<MethodSignatureWriter> for Signature {
+    type Error = KapiError;
+
+    fn try_from(value: MethodSignatureWriter) -> KapiResult<Self> {
+        Signature::method_signature_from_str(value.to_string())
     }
 }
 
