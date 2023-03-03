@@ -24,7 +24,7 @@ pub enum Signature {
 }
 
 impl Signature {
-    fn class_signature_from_str<S>(string: S) -> KapiResult<Self>
+    pub fn class_signature_from_str<S>(string: S) -> KapiResult<Self>
     where
         S: Into<String>,
     {
@@ -42,7 +42,7 @@ impl Signature {
             )))
     }
 
-    fn field_signature_from_str<S>(string: S) -> KapiResult<Self>
+    pub fn field_signature_from_str<S>(string: S) -> KapiResult<Self>
     where
         S: Into<String>,
     {
@@ -59,8 +59,8 @@ impl Signature {
                 string
             )))
     }
-    
-    fn method_signature_from_str<S>(string: S) -> KapiResult<Self>
+
+    pub fn method_signature_from_str<S>(string: S) -> KapiResult<Self>
         where
             S: Into<String>,
     {
