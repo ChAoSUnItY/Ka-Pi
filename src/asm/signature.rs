@@ -149,14 +149,25 @@ pub trait FormalTypeParameterVisitable {
     }
 }
 
+/// A visitor to visit formal type parameters in generic signature. 
+///
+/// # Implemented Examples
+///
+/// See [FormalTypeParameterWriter]for more info.
 #[allow(unused_variables)]
 pub trait FormalTypeParameterVisitor {
+    /// Visits class bound in formal type parameter. This would be only called up to once per parameter.
     fn visit_class_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+    
+    /// Visits interface bound in formal type parameter. This could be called by multiple times when
+    /// there's more than 1 interface bounds declared.
     fn visit_interface_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+    
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
