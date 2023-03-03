@@ -65,14 +65,14 @@ impl TryFrom<&char> for Wildcard {
     }
 }
 
-/// A visitor to visit class generic signature. This trait requires struct also implements 
+/// A visitor to visit class generic signature. This trait requires struct also implements
 /// [FormalTypeParameterVisitable].
-/// 
+///
 /// # Implemented Examples
-/// 
+///
 /// See [ClassSignatureWriter] for more info.
 pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
-    /// Visits class generic signature's super class type. This would be called on every classes 
+    /// Visits class generic signature's super class type. This would be called on every classes
     /// expect `java.lang.Object`.
     fn visit_super_class(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
@@ -103,7 +103,7 @@ pub trait FieldSignatureVisitor {
     fn visit_end(&mut self) {}
 }
 
-/// A visitor to visit method generic signature. This trait requires struct also implements 
+/// A visitor to visit method generic signature. This trait requires struct also implements
 /// [FormalTypeParameterVisitable].
 ///
 /// # Implemented Examples
@@ -120,7 +120,7 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     fn visit_return_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    
+
     /// Visits method generic signature's exception type. This could be called by multiple times
     /// when there's more than 1 exception types declared.
     fn visit_exception_type(&mut self) -> Box<dyn TypeVisitor + '_> {
@@ -149,7 +149,7 @@ pub trait FormalTypeParameterVisitable {
     }
 }
 
-/// A visitor to visit formal type parameters in generic signature. 
+/// A visitor to visit formal type parameters in generic signature.
 ///
 /// # Implemented Examples
 ///
@@ -160,13 +160,13 @@ pub trait FormalTypeParameterVisitor {
     fn visit_class_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    
+
     /// Visits interface bound in formal type parameter. This could be called by multiple times when
     /// there's more than 1 interface bounds declared.
     fn visit_interface_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-    
+
     /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
