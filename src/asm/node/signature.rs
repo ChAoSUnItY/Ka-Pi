@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::class::ClassReaderImpl;
-use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, FieldSignatureReader, FieldSignatureVisitor, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor, SignatureVisitorImpl, TypeVisitor, Wildcard};
+use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FieldSignatureVisitor, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor, SignatureVisitorImpl, TypeVisitor, Wildcard};
 use crate::error::{KapiError, KapiResult};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -76,6 +76,14 @@ impl Signature {
                 "Unable to parse method signature from `{}`",
                 string
             )))
+    }
+}
+
+impl TryFrom<ClassSignatureWriter> for Signature {
+    type Error = KapiError;
+
+    fn try_from(value: ClassSignatureWriter) -> KapiResult<Self> {
+        Signature::class_signature_from_str(value.to_string())
     }
 }
 

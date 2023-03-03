@@ -1,4 +1,5 @@
 use std::{default, iter::Peekable, str::CharIndices};
+use std::collections::VecDeque;
 
 use either::Either;
 use itertools::Itertools;
@@ -467,15 +468,170 @@ where
     }
 }
 
+#[derive(Debug, Default)]
+pub struct ClassSignatureWriter {
+    signature_builder: String,
+    has_formal: bool,
+}
+
+impl ClassSignatureWriter {
+    fn with_capacity(size: usize) -> Self {
+        Self {
+            signature_builder: String::with_capacity(size),
+            has_formal: false,
+        }
+    }
+}
+
+impl ToString for ClassSignatureWriter {
+    fn to_string(&self) -> String {
+        self.signature_builder.clone()
+    }
+}
+
+impl ClassSignatureVisitor for ClassSignatureWriter {
+    fn visit_super_class(&mut self) -> Box<dyn TypeVisitor + '_> {
+        if self.has_formal {
+            self.has_formal = false;
+            self.signature_builder.push('>');
+        }
+        
+        Box::new(TypeWriter::new(&mut self.signature_builder))
+    }
+
+    fn visit_interface(&mut self) -> Box<dyn TypeVisitor + '_> {
+        if self.has_formal {
+            self.has_formal = false;
+            self.signature_builder.push('>');
+        }
+        
+        Box::new(TypeWriter::new(&mut self.signature_builder))
+    }
+}
+
+impl FormalTypeParameterVisitable for ClassSignatureWriter {
+    fn visit_formal_type_parameter(&mut self, name: &String) -> Box<dyn FormalTypeParameterVisitor + '_> {
+        if !self.has_formal {
+            self.has_formal = true;
+            self.signature_builder.push('<');
+        }
+        
+        self.signature_builder.push_str(name);
+        
+        Box::new(FormalTypeParameterWriter::new(&mut self.signature_builder))
+    }
+}
+
+pub struct FormalTypeParameterWriter<'parent> {
+    parent_builder: &'parent mut String,
+}
+
+impl<'parent> FormalTypeParameterWriter<'parent> {
+    fn new(parent_builder: &'parent mut String) -> Self {
+        Self {
+            parent_builder
+        }
+    }
+}
+
+impl<'parent> FormalTypeParameterVisitor for FormalTypeParameterWriter<'parent> {
+    fn visit_class_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
+        Box::new(TypeWriter::new(&mut self.parent_builder))
+    }
+
+    fn visit_interface_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
+        self.parent_builder.push(':');
+        Box::new(TypeWriter::new(&mut self.parent_builder))
+    }
+}
+
+pub struct TypeWriter<'parent> {
+    parent_builder: &'parent mut String,
+    type_arg_stack: VecDeque<bool>,
+}
+
+impl<'parent> TypeWriter<'parent> {
+    fn new(parent_builder: &'parent mut String) -> Self {
+        let mut type_arg_stack = VecDeque::with_capacity(64);
+        
+        type_arg_stack.push_back(true);
+        
+        Self {
+            parent_builder,
+            type_arg_stack,
+        }
+    }
+    
+    fn end_args(&mut self) {
+        if self.type_arg_stack.front().map_or(false, |b| *b) {
+            self.parent_builder.push('>');
+        }
+        
+        self.type_arg_stack.pop_front();
+    }
+}
+
+impl<'parent> TypeVisitor for TypeWriter<'parent> {
+    fn visit_base_type(&mut self, char: &char) {
+        self.parent_builder.push(*char);
+    }
+
+    fn visit_array_type(&mut self) {
+        self.parent_builder.push('[');
+    }
+
+    fn visit_class_type(&mut self, name: &String) {
+        self.parent_builder.push('L');
+        self.parent_builder.push_str(name);
+        self.parent_builder.push(';');
+        self.type_arg_stack.push_front(false);
+    }
+
+    fn visit_inner_class_type(&mut self, name: &String) {
+        self.end_args();
+        self.parent_builder.push('.');
+        self.parent_builder.push_str(name);
+        self.type_arg_stack.push_front(false);
+    }
+
+    fn visit_type_variable(&mut self, name: &String) {
+        self.parent_builder.push('T');
+        self.parent_builder.push_str(name);
+        self.parent_builder.push(';');
+    }
+
+    fn visit_type_argument(&mut self) {
+        if self.type_arg_stack.front().map_or(false, |b| *b) {
+            self.type_arg_stack[0] = true;
+            self.parent_builder.push('<');
+        }
+        
+        self.parent_builder.push('*');
+    }
+
+    fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) {
+        if self.type_arg_stack.front().map_or(false, |b| *b) {
+            self.type_arg_stack[0] = true;
+            self.parent_builder.push('<');
+        }
+        
+        if wildcard != Wildcard::INSTANCEOF {
+            self.parent_builder.push(wildcard.into());
+        }
+    }
+
+    fn visit_end(&mut self) {
+        self.end_args();
+        self.parent_builder.push(';');
+    }
+}
+
 #[cfg(test)]
 mod test {
+    use insta::assert_yaml_snapshot;
     use rstest::rstest;
 
-    use crate::asm::signature::{
-        ClassSignatureReader, ClassSignatureVisitor, FieldSignatureReader,
-        FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader,
-        SignatureVisitorImpl, TypeVisitor,
-    };
+    use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, SignatureVisitorImpl, TypeVisitor};
     use crate::error::KapiResult;
 
     #[rstest]
@@ -510,5 +666,19 @@ mod test {
         reader.accept(&mut visitor)?;
 
         Ok(())
+    }
+    
+    #[test]
+    fn test_class_signature_writer() {
+        let mut writer = ClassSignatureWriter::default();
+        
+        writer.visit_formal_type_parameter(&"T".to_string())
+            .visit_class_bound()
+            .visit_class_type(&"java/lang/Object".to_string());
+        
+        writer.visit_super_class().visit_class_type(&"java/lang/Object".to_string());
+        writer.visit_interface().visit_class_type(&"java/lang/Comparable".to_string());
+        
+        assert_yaml_snapshot!(writer.to_string());
     }
 }
