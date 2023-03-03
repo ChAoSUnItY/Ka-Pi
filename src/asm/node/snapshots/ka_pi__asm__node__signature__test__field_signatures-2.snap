@@ -4,5 +4,5 @@ expression: field_signature
 ---
 Field:
   field_type:
-    Class: java/lang/Object
+    TypeVariable: T
 

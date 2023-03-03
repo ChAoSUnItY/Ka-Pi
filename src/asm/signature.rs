@@ -573,6 +573,11 @@ impl ToString for MethodSignatureWriter {
 
 impl MethodSignatureVisitor for MethodSignatureWriter {
     fn visit_parameter_type(&mut self) -> Box<dyn TypeVisitor + '_> {
+        if self.has_formal {
+            self.has_formal = false;
+            self.signature_builder.push('>');
+        }
+        
         if !self.has_parameters {
             self.has_parameters = true;
             self.signature_builder.push('(');
@@ -727,7 +732,7 @@ mod test {
     use insta::assert_yaml_snapshot;
     use rstest::rstest;
 
-    use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, SignatureVisitorImpl, TypeVisitor};
+    use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor, MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor};
     use crate::error::KapiResult;
 
     #[rstest]
@@ -775,6 +780,29 @@ mod test {
         writer.visit_super_class().visit_class_type(&"java/lang/Object".to_string());
         writer.visit_interface().visit_class_type(&"java/lang/Comparable".to_string());
         
+        assert_yaml_snapshot!(writer.to_string());
+    }
+
+    #[test]
+    fn test_field_signature_writer() {
+        let mut writer = FieldSignatureWriter::default();
+
+        writer.visit_field_type().visit_class_type(&"java/lang/String".to_string());
+
+        assert_yaml_snapshot!(writer.to_string());
+    }
+
+    #[test]
+    fn test_method_signature_writer() {
+        let mut writer = MethodSignatureWriter::default();
+
+        writer.visit_formal_type_parameter(&"T".to_string())
+            .visit_class_bound()
+            .visit_class_type(&"java/lang/Object".to_string());
+
+        writer.visit_parameter_type().visit_class_type(&"java/lang/Object".to_string());
+        writer.visit_return_type().visit_class_type(&"java/lang/String".to_string());
+
         assert_yaml_snapshot!(writer.to_string());
     }
 }
