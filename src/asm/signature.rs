@@ -104,8 +104,12 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     fn visit_end(&mut self) {}
 }
 
+/// A trait indicates super-trait visitor has formal type parameter section to be visited, which are
+/// [ClassSignatureVisitor] and [MethodSignatureVisitor].
 #[allow(unused_variables)]
 pub trait FormalTypeParameterVisitable {
+    /// Visits generic signature's formal type parameter. This could be called by multiple times
+    /// when there's more than 1 formal type parameter declared.
     fn visit_formal_type_parameter(
         &mut self,
         name: &String,
