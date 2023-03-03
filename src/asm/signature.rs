@@ -522,7 +522,7 @@ impl FormalTypeParameterVisitable for ClassSignatureWriter {
     }
 }
 
-pub struct FormalTypeParameterWriter<'parent> {
+struct FormalTypeParameterWriter<'parent> {
     parent_builder: &'parent mut String,
 }
 
@@ -545,7 +545,7 @@ impl<'parent> FormalTypeParameterVisitor for FormalTypeParameterWriter<'parent> 
     }
 }
 
-pub struct TypeWriter<'parent> {
+struct TypeWriter<'parent> {
     parent_builder: &'parent mut String,
     type_arg_stack: VecDeque<bool>,
 }
