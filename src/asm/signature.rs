@@ -250,7 +250,7 @@ pub fn accept_class_signature_visitor(
     strict_check_iter_empty(&mut signature_iter)
 }
 
-fn accept_field_signature_visitor(
+pub fn accept_field_signature_visitor(
     signature: impl Into<String>,
     visitor: &mut impl FieldSignatureVisitor,
 ) -> KapiResult<()> {
@@ -265,7 +265,7 @@ fn accept_field_signature_visitor(
     strict_check_iter_empty(&mut signature_iter)
 }
 
-fn accept_method_signature_visitor(
+pub fn accept_method_signature_visitor(
     signature: impl Into<String>,
     visitor: &mut impl MethodSignatureVisitor,
 ) -> KapiResult<()> {

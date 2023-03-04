@@ -3,12 +3,7 @@ use std::collections::VecDeque;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::class::ClassReaderImpl;
-use crate::asm::signature::{
-    ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader,
-    FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
-    FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor,
-    MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor, Wildcard,
-};
+use crate::asm::signature::{accept_class_signature_visitor, accept_field_signature_visitor, accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureVisitor, MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor, Wildcard};
 use crate::error::{KapiError, KapiResult};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -36,9 +31,8 @@ impl Signature {
     {
         let string = string.into();
         let mut collector = ClassSignatureCollector::default();
-        let mut reader = ClassSignatureReader::new(&string);
-
-        reader.accept(&mut collector)?;
+        
+        accept_class_signature_visitor(&string, &mut collector)?;
 
         collector
             .signature
@@ -54,9 +48,8 @@ impl Signature {
     {
         let string = string.into();
         let mut collector = FieldSignatureCollector::default();
-        let mut reader = FieldSignatureReader::new(&string);
-
-        reader.accept(&mut collector)?;
+        
+        accept_field_signature_visitor(&string, &mut collector)?;
 
         collector
             .signature
@@ -72,9 +65,8 @@ impl Signature {
     {
         let string = string.into();
         let mut collector = MethodSignatureCollector::default();
-        let mut reader = MethodSignatureReader::new(&string);
-
-        reader.accept(&mut collector)?;
+        
+        accept_method_signature_visitor(&string, &mut collector)?;
 
         collector
             .signature
