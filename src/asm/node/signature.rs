@@ -337,6 +337,7 @@ impl TryFrom<&char> for Wildcard {
     }
 }
 
+/// Data representation of base type in descriptor.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum BaseType {
