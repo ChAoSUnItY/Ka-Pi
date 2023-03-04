@@ -23,9 +23,7 @@ pub enum Signature {
         interfaces: Vec<Type>,
     },
     /// Data representation of field signature.
-    Field {
-        field_type: Type,
-    },
+    Field { field_type: Type },
     /// Data representation of method signature.
     Method {
         formal_type_parameters: Vec<FormalTypeParameter>,
