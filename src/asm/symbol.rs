@@ -88,3 +88,5 @@ pub(crate) trait Symbol {
         info: i32,
     ) -> Self;
 }
+
+pub(crate) struct SymbolTable {}
