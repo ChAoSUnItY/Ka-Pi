@@ -215,6 +215,8 @@ pub trait TypeVisitor {
     fn visit_end(&mut self) {}
 }
 
+/// Default signature visitor for internal usage only. This visitor does not have any effect on visiting
+/// signatures.
 #[derive(Debug, Default)]
 pub struct SignatureVisitorImpl {}
 
