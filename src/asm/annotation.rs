@@ -1,5 +1,6 @@
 use crate::asm::constants::ConstantObject;
 
+#[allow(unused_variables)]
 pub trait AnnotationVisitor {
     fn visit(&mut self, name: &str, value: &dyn ConstantObject) {}
     
