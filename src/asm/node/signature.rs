@@ -12,16 +12,21 @@ use crate::asm::signature::{
 };
 use crate::error::{KapiError, KapiResult};
 
+/// Data representation of signatures, including [`Class`](Signature::Class), [`Field`](Signature::Field),
+/// and [`Method`](Signature::Method).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Signature {
+    /// Data representation of class signature.
     Class {
         formal_type_parameters: Vec<FormalTypeParameter>,
         super_class: Type,
         interfaces: Vec<Type>,
     },
+    /// Data representation of field signature.
     Field {
         field_type: Type,
     },
+    /// Data representation of method signature.
     Method {
         formal_type_parameters: Vec<FormalTypeParameter>,
         parameter_types: Vec<Type>,
@@ -31,6 +36,7 @@ pub enum Signature {
 }
 
 impl Signature {
+    /// Converts signature string into [`Signature::Class`](Signature::Class).
     pub fn class_signature_from_str<S>(string: S) -> KapiResult<Self>
     where
         S: Into<String>,
@@ -48,6 +54,7 @@ impl Signature {
             )))
     }
 
+    /// Converts signature string into [`Signature::Field`](Signature::Field).
     pub fn field_signature_from_str<S>(string: S) -> KapiResult<Self>
     where
         S: Into<String>,
@@ -65,6 +72,7 @@ impl Signature {
             )))
     }
 
+    /// Converts signature string into [`Signature::Method`](Signature::Method).
     pub fn method_signature_from_str<S>(string: S) -> KapiResult<Self>
     where
         S: Into<String>,
