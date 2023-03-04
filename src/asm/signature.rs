@@ -231,7 +231,8 @@ pub fn accept_class_signature_visitor(
     signature: impl Into<String>,
     visitor: &mut impl ClassSignatureVisitor,
 ) -> KapiResult<()> {
-    let mut signature_iter = signature.into().chars().peekable();
+    let signature = signature.into();
+    let mut signature_iter = signature.chars().peekable();
 
     // Formal type parameters
     accept_formal_type_parameters(&mut signature_iter, visitor)?;
@@ -254,7 +255,8 @@ pub fn accept_field_signature_visitor(
     signature: impl Into<String>,
     visitor: &mut impl FieldSignatureVisitor,
 ) -> KapiResult<()> {
-    let mut signature_iter = signature.into().chars().peekable();
+    let signature = signature.into();
+    let mut signature_iter = signature.chars().peekable();
 
     // Field type
     accept_type(&mut signature_iter, &mut visitor.visit_field_type())?;
@@ -269,7 +271,8 @@ pub fn accept_method_signature_visitor(
     signature: impl Into<String>,
     visitor: &mut impl MethodSignatureVisitor,
 ) -> KapiResult<()> {
-    let mut signature_iter = signature.into().chars().peekable();
+    let signature = signature.into();
+    let mut signature_iter = signature.chars().peekable();
 
     // Formal type parameters
     accept_formal_type_parameters(&mut signature_iter, visitor)?;
