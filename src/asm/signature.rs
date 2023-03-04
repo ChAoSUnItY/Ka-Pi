@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::asm::field::FieldVisitor;
-use crate::asm::node::signature::{BaseType, Wildcard};
+use crate::asm::node::signature::Wildcard;
+use crate::asm::node::types::BaseType;
 use crate::error::{KapiError, KapiResult};
 
 /// A visitor to visit class generic signature. This trait requires struct also implements
