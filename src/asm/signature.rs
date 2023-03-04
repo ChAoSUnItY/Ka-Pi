@@ -153,7 +153,7 @@ pub trait FormalTypeParameterVisitable {
 ///
 /// # Implemented Examples
 ///
-/// See [FormalTypeParameterWriter]for more info.
+/// See [FormalTypeParameterWriter] for more info.
 #[allow(unused_variables)]
 pub trait FormalTypeParameterVisitor {
     /// Visits class bound in formal type parameter. This would be only called up to once per parameter.
@@ -171,15 +171,47 @@ pub trait FormalTypeParameterVisitor {
     fn visit_end(&mut self) {}
 }
 
+/// A visitor to visit types in generic signature.
+///
+/// # Implemented Examples
+///
+/// See [TypeWriter] for more info.
 #[allow(unused_variables)]
 pub trait TypeVisitor {
+    /// Visits base type in signature. This could be any type defined by 
+    /// [`BaseType`](crate::asm::node::signature::BaseType).
     fn visit_base_type(&mut self, char: &char) {}
+    
+    /// Visits array type in signature. Further type visiting is required after 
+    /// [`visit_array_type`](TypeVisitor::visit_array_type) called. For example: you can call this 
+    /// [`visit_array_type`](TypeVisitor::visit_array_type) then call 
+    /// [`visit_base_type`](TypeVisitor::visit_base_type) to construct a base type array.
     fn visit_array_type(&mut self) {}
+    
+    /// Visits class type in signature.
     fn visit_class_type(&mut self, name: &String) {}
+    
+    /// Visits inner class type in signature. Required calling [`visit_class_type`](TypeVisitor::visit_class_type)
+    /// before calling [`visit_inner_class_type`](TypeVisitor::visit_inner_class_type).
     fn visit_inner_class_type(&mut self, name: &String) {}
+    
+    /// Visits type variable in signature.
     fn visit_type_variable(&mut self, name: &String) {}
+    
+    /// Visits type argument in signature. Required calling [visit_class_type](TypeVisitor::visit_class_type)
+    /// before calling [`visit_type_argument`](TypeVisitor::visit_type_argument).
+    /// 
+    /// This function will be called when the following type is unbounded. For type argument with
+    /// wildcard, see [`visit_type_argument_wildcard`](TypeVisitor::visit_type_argument_wildcard) for 
+    /// more info.
     fn visit_type_argument(&mut self) {}
+    
+    /// Visits type type argument with wildcard indicator in signature. Required calling 
+    /// [`visit_class_type`](TypeVisitor::visit_class_type) before calling 
+    /// [`visit_type_argument`](TypeVisitor::visit_type_argument).
     fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) {}
+
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
