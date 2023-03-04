@@ -522,6 +522,9 @@ where
     }
 }
 
+/// A default implementation of class signature writer.
+/// 
+/// This is commonly used in class file generation.
 #[derive(Debug, Default)]
 pub struct ClassSignatureWriter {
     signature_builder: String,
@@ -529,7 +532,10 @@ pub struct ClassSignatureWriter {
 }
 
 impl ClassSignatureWriter {
-    fn with_capacity(size: usize) -> Self {
+    /// Reserve capacity for builder to build.
+    /// 
+    /// This is useful when mass appending is required.
+    pub fn with_capacity(size: usize) -> Self {
         Self {
             signature_builder: String::with_capacity(size),
             has_formal: false,
@@ -579,13 +585,19 @@ impl FormalTypeParameterVisitable for ClassSignatureWriter {
     }
 }
 
+/// A default implementation of field signature writer.
+///
+/// This is commonly used in class file generation.
 #[derive(Debug, Default)]
 pub struct FieldSignatureWriter {
     signature_builder: String,
 }
 
 impl FieldSignatureWriter {
-    fn with_capacity(size: usize) -> Self {
+    /// Reserve capacity for builder to build.
+    ///
+    /// This is useful when mass appending is required.
+    pub fn with_capacity(size: usize) -> Self {
         Self {
             signature_builder: String::with_capacity(size),
         }
@@ -611,8 +623,14 @@ pub struct MethodSignatureWriter {
     has_parameters: bool,
 }
 
+/// A default implementation of method signature writer.
+///
+/// This is commonly used in class file generation.
 impl MethodSignatureWriter {
-    fn with_capacity(size: usize) -> Self {
+    /// Reserve capacity for builder to build.
+    ///
+    /// This is useful when mass appending is required.
+    pub fn with_capacity(size: usize) -> Self {
         Self {
             signature_builder: String::with_capacity(size),
             has_formal: false,
