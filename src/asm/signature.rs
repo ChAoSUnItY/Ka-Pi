@@ -88,7 +88,7 @@ pub trait FormalTypeParameterVisitable {
     /// when there's more than 1 formal type parameters declared.
     fn visit_formal_type_parameter(
         &mut self,
-        name: &String,
+        name: &str,
     ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
@@ -134,14 +134,14 @@ pub trait TypeVisitor {
     fn visit_array_type(&mut self) {}
 
     /// Visits class type in signature.
-    fn visit_class_type(&mut self, name: &String) {}
+    fn visit_class_type(&mut self, name: &str) {}
 
     /// Visits inner class type in signature. Required calling [`visit_class_type`](TypeVisitor::visit_class_type)
     /// before calling [`visit_inner_class_type`](TypeVisitor::visit_inner_class_type).
-    fn visit_inner_class_type(&mut self, name: &String) {}
+    fn visit_inner_class_type(&mut self, name: &str) {}
 
     /// Visits type variable in signature.
-    fn visit_type_variable(&mut self, name: &String) {}
+    fn visit_type_variable(&mut self, name: &str) {}
 
     /// Visits type argument in signature. Required calling [visit_class_type](TypeVisitor::visit_class_type)
     /// before calling [`visit_type_argument`](TypeVisitor::visit_type_argument).
@@ -273,9 +273,12 @@ where
 {
     if signature_iter.next_if_eq(&'<').is_some() {
         loop {
-            let formal_type_parameter = signature_iter.by_ref().take_while(|c| *c != ':').collect();
+            let formal_type_parameter = &signature_iter
+                .by_ref()
+                .take_while(|c| *c != ':')
+                .collect::<String>();
             let mut formal_type_visitor =
-                formal_type_visitable.visit_formal_type_parameter(&formal_type_parameter);
+                formal_type_visitable.visit_formal_type_parameter(formal_type_parameter);
 
             let char = signature_iter.peek().ok_or(KapiError::ClassParseError(String::from(
                 "Attempt to parse class bound for formal type parameter in signature but parameters are not enclosed by `>`"
@@ -343,9 +346,9 @@ where
         },
         'T' => {
             signature_iter.next();
-            let type_variable = signature_iter
+            let type_variable = &signature_iter
                 .take_while(|c| *c != ';')
-                .collect();
+                .collect::<String>();
             visitor.visit_type_variable(&type_variable);
             visitor.visit_end();
             Ok(())
@@ -375,9 +378,9 @@ where
             .ok_or(KapiError::ClassParseError(String::from(
                 "Expected `L` (object descriptor prefix) but got nothing",
             )))?; // Object descriptor prefix `L` is now supposedly consumed
-        let name = signature_iter
+        let name = &signature_iter
             .take_while_ref(|c| *c != '.' && *c != ';' && *c != '<')
-            .collect();
+            .collect::<String>();
         let suffix = signature_iter.next().ok_or(KapiError::ClassParseError(String::from(
             "Expected character `.` or `;` for class type, or `<` for type variable descriptor but got nothing"
         )))?;
@@ -386,9 +389,9 @@ where
             '.' | ';' => {
                 if !visited {
                     if inner {
-                        visitor.visit_inner_class_type(&name);
+                        visitor.visit_inner_class_type(name);
                     } else {
-                        visitor.visit_class_type(&name);
+                        visitor.visit_class_type(name);
                     }
                 }
 
@@ -403,9 +406,9 @@ where
             '<' => {
                 if !visited {
                     if inner {
-                        visitor.visit_inner_class_type(&name);
+                        visitor.visit_inner_class_type(name);
                     } else {
-                        visitor.visit_class_type(&name);
+                        visitor.visit_class_type(name);
                     }
                 }
 
@@ -517,7 +520,7 @@ impl ClassSignatureVisitor for ClassSignatureWriter {
 impl FormalTypeParameterVisitable for ClassSignatureWriter {
     fn visit_formal_type_parameter(
         &mut self,
-        name: &String,
+        name: &str,
     ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         if !self.has_formal {
             self.has_formal = true;
@@ -632,7 +635,7 @@ impl MethodSignatureVisitor for MethodSignatureWriter {
 impl FormalTypeParameterVisitable for MethodSignatureWriter {
     fn visit_formal_type_parameter(
         &mut self,
-        name: &String,
+        name: &str,
     ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         if !self.has_formal {
             self.has_formal = true;
@@ -701,21 +704,21 @@ impl<'parent> TypeVisitor for TypeWriter<'parent> {
         self.parent_builder.push('[');
     }
 
-    fn visit_class_type(&mut self, name: &String) {
+    fn visit_class_type(&mut self, name: &str) {
         self.parent_builder.push('L');
         self.parent_builder.push_str(name);
         self.parent_builder.push(';');
         self.type_arg_stack.push_front(false);
     }
 
-    fn visit_inner_class_type(&mut self, name: &String) {
+    fn visit_inner_class_type(&mut self, name: &str) {
         self.end_args();
         self.parent_builder.push('.');
         self.parent_builder.push_str(name);
         self.type_arg_stack.push_front(false);
     }
 
-    fn visit_type_variable(&mut self, name: &String) {
+    fn visit_type_variable(&mut self, name: &str) {
         self.parent_builder.push('T');
         self.parent_builder.push_str(name);
         self.parent_builder.push(';');
@@ -799,14 +802,14 @@ mod test {
         writer
             .visit_formal_type_parameter(&"T".to_string())
             .visit_class_bound()
-            .visit_class_type(&"java/lang/Object".to_string());
+            .visit_class_type("java/lang/Object");
 
         writer
             .visit_super_class()
-            .visit_class_type(&"java/lang/Object".to_string());
+            .visit_class_type("java/lang/Object");
         writer
             .visit_interface()
-            .visit_class_type(&"java/lang/Comparable".to_string());
+            .visit_class_type("java/lang/Comparable");
 
         assert_yaml_snapshot!(writer.to_string());
     }
@@ -817,7 +820,7 @@ mod test {
 
         writer
             .visit_field_type()
-            .visit_class_type(&"java/lang/String".to_string());
+            .visit_class_type("java/lang/String");
 
         assert_yaml_snapshot!(writer.to_string());
     }
@@ -829,14 +832,14 @@ mod test {
         writer
             .visit_formal_type_parameter(&"T".to_string())
             .visit_class_bound()
-            .visit_class_type(&"java/lang/Object".to_string());
+            .visit_class_type("java/lang/Object");
 
         writer
             .visit_parameter_type()
-            .visit_class_type(&"java/lang/Object".to_string());
+            .visit_class_type("java/lang/Object");
         writer
             .visit_return_type()
-            .visit_class_type(&"java/lang/String".to_string());
+            .visit_class_type("java/lang/String");
 
         assert_yaml_snapshot!(writer.to_string());
     }

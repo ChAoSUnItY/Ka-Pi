@@ -142,7 +142,7 @@ impl ClassSignatureVisitor for ClassSignatureCollector {
 impl FormalTypeParameterVisitable for ClassSignatureCollector {
     fn visit_formal_type_parameter(
         &mut self,
-        name: &String,
+        name: &str,
     ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         Box::new(FormalTypeParameterCollector::new(
             name.to_owned(),
@@ -204,7 +204,7 @@ impl MethodSignatureVisitor for MethodSignatureCollector {
 impl FormalTypeParameterVisitable for MethodSignatureCollector {
     fn visit_formal_type_parameter(
         &mut self,
-        name: &String,
+        name: &str,
     ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         Box::new(FormalTypeParameterCollector::new(
             name.to_owned(),
@@ -428,15 +428,15 @@ where
         self.stack_actions.push_back(None);
     }
 
-    fn visit_class_type(&mut self, name: &String) {
+    fn visit_class_type(&mut self, name: &str) {
         self.holder = Type::Class(name.to_owned());
     }
 
-    fn visit_inner_class_type(&mut self, name: &String) {
+    fn visit_inner_class_type(&mut self, name: &str) {
         self.holder = Type::InnerClass(name.to_owned());
     }
 
-    fn visit_type_variable(&mut self, name: &String) {
+    fn visit_type_variable(&mut self, name: &str) {
         self.holder = Type::TypeVariable(name.to_owned());
     }
 
