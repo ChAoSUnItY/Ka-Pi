@@ -268,6 +268,7 @@ where
     }
 }
 
+/// Data representation of Type in signatures.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Type {
     BaseType(BaseType),
@@ -277,6 +278,8 @@ pub enum Type {
     TypeVariable(String),
     TypeArgument,
     WildcardTypeArgument(Wildcard, Box<Type>),
+    /// Unknown is only used in internal code for placeholder usage, you should not see it appears
+    /// in returned data structure.
     Unknown,
 }
 
