@@ -1,20 +1,30 @@
 use std::collections::VecDeque;
+
 use serde::{Deserialize, Serialize};
 
 use crate::asm::class::ClassReaderImpl;
-use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor, MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor, Wildcard};
+use crate::asm::signature::{
+    accept_class_signature_visitor, accept_field_signature_visitor,
+    accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter,
+    FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
+    FormalTypeParameterVisitor, MethodSignatureVisitor, MethodSignatureWriter,
+    SignatureVisitorImpl, TypeVisitor,
+};
 use crate::error::{KapiError, KapiResult};
 
+/// Data representation of signatures, including [`Class`](Signature::Class), [`Field`](Signature::Field),
+/// and [`Method`](Signature::Method).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Signature {
+    /// Data representation of class signature.
     Class {
         formal_type_parameters: Vec<FormalTypeParameter>,
         super_class: Type,
         interfaces: Vec<Type>,
     },
-    Field {
-        field_type: Type,
-    },
+    /// Data representation of field signature.
+    Field { field_type: Type },
+    /// Data representation of method signature.
     Method {
         formal_type_parameters: Vec<FormalTypeParameter>,
         parameter_types: Vec<Type>,
@@ -24,15 +34,15 @@ pub enum Signature {
 }
 
 impl Signature {
+    /// Converts signature string into [`Signature::Class`](Signature::Class).
     pub fn class_signature_from_str<S>(string: S) -> KapiResult<Self>
     where
         S: Into<String>,
     {
         let string = string.into();
         let mut collector = ClassSignatureCollector::default();
-        let mut reader = ClassSignatureReader::new(&string);
 
-        reader.accept(&mut collector)?;
+        accept_class_signature_visitor(&string, &mut collector)?;
 
         collector
             .signature
@@ -42,16 +52,16 @@ impl Signature {
             )))
     }
 
+    /// Converts signature string into [`Signature::Field`](Signature::Field).
     pub fn field_signature_from_str<S>(string: S) -> KapiResult<Self>
     where
         S: Into<String>,
     {
         let string = string.into();
         let mut collector = FieldSignatureCollector::default();
-        let mut reader = FieldSignatureReader::new(&string);
-        
-        reader.accept(&mut collector)?;
-        
+
+        accept_field_signature_visitor(&string, &mut collector)?;
+
         collector
             .signature
             .ok_or(KapiError::ClassParseError(format!(
@@ -60,15 +70,15 @@ impl Signature {
             )))
     }
 
+    /// Converts signature string into [`Signature::Method`](Signature::Method).
     pub fn method_signature_from_str<S>(string: S) -> KapiResult<Self>
-        where
-            S: Into<String>,
+    where
+        S: Into<String>,
     {
         let string = string.into();
         let mut collector = MethodSignatureCollector::default();
-        let mut reader = MethodSignatureReader::new(&string);
 
-        reader.accept(&mut collector)?;
+        accept_method_signature_visitor(&string, &mut collector)?;
 
         collector
             .signature
@@ -203,6 +213,7 @@ impl FormalTypeParameterVisitable for MethodSignatureCollector {
     }
 }
 
+/// Data representation of formal type parameter in signatures.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FormalTypeParameter {
     parameter_name: String,
@@ -255,6 +266,7 @@ where
     }
 }
 
+/// Data representation of Type in signatures.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Type {
     BaseType(BaseType),
@@ -264,6 +276,8 @@ pub enum Type {
     TypeVariable(String),
     TypeArgument,
     WildcardTypeArgument(Wildcard, Box<Type>),
+    /// Unknown is only used in internal code for placeholder usage, you should not see it appears
+    /// in returned data structure.
     Unknown,
 }
 
@@ -273,6 +287,55 @@ impl Default for Type {
     }
 }
 
+const EXTENDS: char = '+';
+const SUPER: char = '-';
+const INSTANCEOF: char = '=';
+
+/// An enum representation for wildcard indicators, which is used in
+/// [`Type::WildcardTypeArgument`] as class
+/// type argument bound.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum Wildcard {
+    /// Indicates type argument must extends class bound, see java's upper bounds wildcard.
+    EXTENDS = EXTENDS as u8,
+    /// Indicates type argument must super class bound, see java's lower bounds wildcard.
+    SUPER = SUPER as u8,
+    /// Indicates type argument must be instance of specified type.
+    INSTANCEOF = INSTANCEOF as u8,
+}
+
+impl Into<char> for Wildcard {
+    fn into(self) -> char {
+        self as u8 as char
+    }
+}
+
+impl TryFrom<char> for Wildcard {
+    type Error = KapiError;
+
+    fn try_from(value: char) -> KapiResult<Self> {
+        match value {
+            EXTENDS => Ok(Wildcard::EXTENDS),
+            SUPER => Ok(Wildcard::SUPER),
+            INSTANCEOF => Ok(Self::INSTANCEOF),
+            _ => Err(KapiError::ArgError(format!(
+                "Character {} cannot be converted into Wildcard",
+                value
+            ))),
+        }
+    }
+}
+
+impl TryFrom<&char> for Wildcard {
+    type Error = KapiError;
+
+    fn try_from(value: &char) -> KapiResult<Self> {
+        TryFrom::<char>::try_from(*value)
+    }
+}
+
+/// Data representation of base type in descriptor.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum BaseType {
@@ -284,6 +347,12 @@ pub enum BaseType {
     Float = 'F' as u8,
     Double = 'D' as u8,
     Void = 'V' as u8,
+}
+
+impl Into<char> for BaseType {
+    fn into(self) -> char {
+        self as u8 as char
+    }
 }
 
 impl TryFrom<char> for BaseType {
@@ -304,6 +373,14 @@ impl TryFrom<char> for BaseType {
                 value
             ))),
         }
+    }
+}
+
+impl TryFrom<&char> for BaseType {
+    type Error = KapiError;
+
+    fn try_from(value: &char) -> KapiResult<Self> {
+        TryFrom::<char>::try_from(*value)
     }
 }
 
@@ -343,9 +420,8 @@ impl<F> TypeVisitor for TypeCollector<F>
 where
     F: FnMut(Type),
 {
-    fn visit_base_type(&mut self, char: &char) {
-        self.holder = TryInto::<BaseType>::try_into(*char)
-            .map_or(Type::Unknown, |base_type| Type::BaseType(base_type));
+    fn visit_base_type(&mut self, base_type: BaseType) {
+        self.holder = Type::BaseType(base_type);
     }
 
     fn visit_array_type(&mut self) {
@@ -374,7 +450,7 @@ where
 
     fn visit_end(&mut self) {
         let mut typ = self.holder.clone();
-        
+
         while let Some(wildcard) = self.stack_actions.pop_back() {
             if let Some(wildcard) = wildcard {
                 typ = Self::wrap_type_argument(wildcard.clone(), typ);
@@ -420,9 +496,9 @@ mod test {
     #[case("<T:Ljava/lang/Object;>(Z[[ZTT;)Ljava/lang/Object;^Ljava/lang/Exception;")]
     fn test_method_signatures(#[case] signature: &'static str) -> KapiResult<()> {
         let method_signature = Signature::method_signature_from_str(signature)?;
-        
+
         assert_yaml_snapshot!(method_signature);
-        
+
         Ok(())
     }
 }

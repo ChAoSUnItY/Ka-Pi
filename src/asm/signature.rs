@@ -1,96 +1,91 @@
-use std::{default, iter::Peekable, str::CharIndices};
 use std::collections::VecDeque;
+use std::{default, iter::Peekable, str::CharIndices};
 
 use either::Either;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
-use crate::asm::field::FieldVisitor;
 
+use crate::asm::field::FieldVisitor;
+use crate::asm::node::signature::{BaseType, Wildcard};
 use crate::error::{KapiError, KapiResult};
 
-const EXTENDS: char = '+';
-const SUPER: char = '-';
-const INSTANCEOF: char = '=';
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[repr(u8)]
-pub enum Wildcard {
-    EXTENDS = EXTENDS as u8,
-    SUPER = SUPER as u8,
-    INSTANCEOF = INSTANCEOF as u8,
-}
-
-impl Into<char> for Wildcard {
-    fn into(self) -> char {
-        self as u8 as char
-    }
-}
-
-impl TryFrom<char> for Wildcard {
-    type Error = KapiError;
-
-    fn try_from(value: char) -> KapiResult<Self> {
-        match value {
-            EXTENDS => Ok(Wildcard::EXTENDS),
-            SUPER => Ok(Wildcard::SUPER),
-            INSTANCEOF => Ok(Self::INSTANCEOF),
-            _ => Err(KapiError::ArgError(format!(
-                "Character {} cannot be converted into Wildcard",
-                value
-            ))),
-        }
-    }
-}
-
-impl TryFrom<&char> for Wildcard {
-    type Error = KapiError;
-
-    fn try_from(value: &char) -> KapiResult<Self> {
-        match *value {
-            EXTENDS => Ok(Wildcard::EXTENDS),
-            SUPER => Ok(Wildcard::SUPER),
-            INSTANCEOF => Ok(Self::INSTANCEOF),
-            _ => Err(KapiError::ArgError(format!(
-                "Character {} cannot be converted into Wildcard",
-                value
-            ))),
-        }
-    }
-}
-
+/// A visitor to visit class generic signature. This trait requires struct also implements
+/// [FormalTypeParameterVisitable].
+///
+/// # Implemented Examples
+///
+/// See [ClassSignatureWriter] for more info.
 pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
+    /// Visits class generic signature's super class type. This would be called on every classes
+    /// expect `java.lang.Object`.
     fn visit_super_class(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Visits class generic signature's interface type. This could be called by multiple times
+    /// when there's more than 1 interfaces implemented.
     fn visit_interface(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
+/// A visitor to visit field generic signature.
+///
+/// # Implemented Examples
+///
+/// See [FieldSignatureWriter] for more info.
 pub trait FieldSignatureVisitor {
+    /// Visits field generic signature's type.
     fn visit_field_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
+/// A visitor to visit method generic signature. This trait requires struct also implements
+/// [FormalTypeParameterVisitable].
+///
+/// # Implemented Examples
+///
+/// See [MethodSignatureWriter] for more info.
 pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
+    /// Visits method generic signature's parameter type. This could be called by multiple times
+    /// when there's more than 1 parameters declared.
     fn visit_parameter_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Visits method generic signature's return type. This would be only called once per method.
     fn visit_return_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Visits method generic signature's exception type. This could be called by multiple times
+    /// when there's more than 1 exception types declared.
     fn visit_exception_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
+/// A trait indicates super-trait visitor has formal type parameter section to be visited, which are
+/// [ClassSignatureVisitor] and [MethodSignatureVisitor].
+///
+/// # Implemented Examples
+///
+/// See [ClassSignatureWriter] and [MethodSignatureWriter] for more info.
 #[allow(unused_variables)]
 pub trait FormalTypeParameterVisitable {
+    /// Visits generic signature's formal type parameter. This could be called by multiple times
+    /// when there's more than 1 formal type parameters declared.
     fn visit_formal_type_parameter(
         &mut self,
         name: &String,
@@ -99,29 +94,74 @@ pub trait FormalTypeParameterVisitable {
     }
 }
 
+/// A visitor to visit formal type parameters in generic signature.
+///
+/// # Implemented Examples
+///
+/// See [FormalTypeParameterWriter] for more info.
 #[allow(unused_variables)]
 pub trait FormalTypeParameterVisitor {
+    /// Visits class bound in formal type parameter. This would be only called up to once per parameter.
     fn visit_class_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Visits interface bound in formal type parameter. This could be called by multiple times when
+    /// there's more than 1 interface bounds declared.
     fn visit_interface_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
+
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
+/// A visitor to visit types in generic signature.
+///
+/// # Implemented Examples
+///
+/// See [TypeWriter] for more info.
 #[allow(unused_variables)]
 pub trait TypeVisitor {
-    fn visit_base_type(&mut self, char: &char) {}
+    /// Visits base type in signature. This could be any type defined by
+    /// [`BaseType`].
+    fn visit_base_type(&mut self, base_type: BaseType) {}
+
+    /// Visits array type in signature. Further type visiting is required after
+    /// [`visit_array_type`](TypeVisitor::visit_array_type) called. For example: you can call this
+    /// [`visit_array_type`](TypeVisitor::visit_array_type) then call
+    /// [`visit_base_type`](TypeVisitor::visit_base_type) to construct a base type array.
     fn visit_array_type(&mut self) {}
+
+    /// Visits class type in signature.
     fn visit_class_type(&mut self, name: &String) {}
+
+    /// Visits inner class type in signature. Required calling [`visit_class_type`](TypeVisitor::visit_class_type)
+    /// before calling [`visit_inner_class_type`](TypeVisitor::visit_inner_class_type).
     fn visit_inner_class_type(&mut self, name: &String) {}
+
+    /// Visits type variable in signature.
     fn visit_type_variable(&mut self, name: &String) {}
+
+    /// Visits type argument in signature. Required calling [visit_class_type](TypeVisitor::visit_class_type)
+    /// before calling [`visit_type_argument`](TypeVisitor::visit_type_argument).
+    ///
+    /// This function will be called when the following type is unbounded. For type argument with
+    /// wildcard, see [`visit_type_argument_wildcard`](TypeVisitor::visit_type_argument_wildcard) for
+    /// more info.
     fn visit_type_argument(&mut self) {}
+
+    /// Visits type type argument with wildcard indicator in signature. Required calling
+    /// [`visit_class_type`](TypeVisitor::visit_class_type) before calling
+    /// [`visit_type_argument`](TypeVisitor::visit_type_argument).
     fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) {}
+
+    /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
 }
 
+/// Default signature visitor for internal usage only. This visitor does not have any effect on visiting
+/// signatures.
 #[derive(Debug, Default)]
 pub struct SignatureVisitorImpl {}
 
@@ -132,71 +172,16 @@ impl FormalTypeParameterVisitable for SignatureVisitorImpl {}
 impl FormalTypeParameterVisitor for SignatureVisitorImpl {}
 impl TypeVisitor for SignatureVisitorImpl {}
 
-#[derive(Debug, Default)]
-pub struct ClassSignatureReader {
-    signature: String,
-}
-
-impl ClassSignatureReader {
-    pub fn new<S>(signature: S) -> Self
-    where
-        S: Into<String>,
-    {
-        Self {
-            signature: signature.into(),
-        }
-    }
-
-    pub fn accept(&mut self, visitor: &mut impl ClassSignatureVisitor) -> KapiResult<()> {
-        accept_class_signature_visitor(self, visitor)
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct MethodSignatureReader {
-    signature: String,
-}
-
-impl MethodSignatureReader {
-    pub fn new<S>(signature: S) -> Self
-    where
-        S: Into<String>,
-    {
-        Self {
-            signature: signature.into(),
-        }
-    }
-
-    pub fn accept(&mut self, visitor: &mut impl MethodSignatureVisitor) -> KapiResult<()> {
-        accept_method_signature_visitor(self, visitor)
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct FieldSignatureReader {
-    signature: String,
-}
-
-impl FieldSignatureReader {
-    pub fn new<S>(signature: S) -> Self
-    where
-        S: Into<String>,
-    {
-        Self {
-            signature: signature.into(),
-        }
-    }
-
-    pub fn accept(&mut self, visitor: &mut impl FieldSignatureVisitor) -> KapiResult<()> {
-        accept_field_signature_visitor(self, visitor)
-    }
-}
-
-pub fn accept_class_signature_visitor(
-    reader: &mut ClassSignatureReader,
+/// Accepts a [`ClassSignatureVisitor`] and visits given signature.
+pub fn accept_class_signature_visitor<S>(
+    signature: S,
     visitor: &mut impl ClassSignatureVisitor,
-) -> KapiResult<()> {
-    let mut signature_iter = reader.signature.chars().peekable();
+) -> KapiResult<()>
+where
+    S: Into<String>,
+{
+    let signature = signature.into();
+    let mut signature_iter = signature.chars().peekable();
 
     // Formal type parameters
     accept_formal_type_parameters(&mut signature_iter, visitor)?;
@@ -215,11 +200,16 @@ pub fn accept_class_signature_visitor(
     strict_check_iter_empty(&mut signature_iter)
 }
 
-fn accept_field_signature_visitor(
-    reader: &mut FieldSignatureReader,
+/// Accepts a [`FieldSignatureVisitor`] and visits given signature.
+pub fn accept_field_signature_visitor<S>(
+    signature: S,
     visitor: &mut impl FieldSignatureVisitor,
-) -> KapiResult<()> {
-    let mut signature_iter = reader.signature.chars().peekable();
+) -> KapiResult<()>
+where
+    S: Into<String>,
+{
+    let signature = signature.into();
+    let mut signature_iter = signature.chars().peekable();
 
     // Field type
     accept_type(&mut signature_iter, &mut visitor.visit_field_type())?;
@@ -230,11 +220,16 @@ fn accept_field_signature_visitor(
     strict_check_iter_empty(&mut signature_iter)
 }
 
-fn accept_method_signature_visitor(
-    reader: &mut MethodSignatureReader,
+/// Accepts a [`MethodSignatureVisitor`] and visits given signature.
+pub fn accept_method_signature_visitor<S>(
+    signature: S,
     visitor: &mut impl MethodSignatureVisitor,
-) -> KapiResult<()> {
-    let mut signature_iter = reader.signature.chars().peekable();
+) -> KapiResult<()>
+where
+    S: Into<String>,
+{
+    let signature = signature.into();
+    let mut signature_iter = signature.chars().peekable();
 
     // Formal type parameters
     accept_formal_type_parameters(&mut signature_iter, visitor)?;
@@ -301,7 +296,10 @@ where
                         "Attempt to parse interface bounds for formal type parameter in signature but parameters are not enclosed by `>`"
                     )));
                 } else if signature_iter.next_if(|c| *c == ':').is_some() {
-                    accept_type(signature_iter, &mut formal_type_visitor.visit_interface_bound())?;
+                    accept_type(
+                        signature_iter,
+                        &mut formal_type_visitor.visit_interface_bound(),
+                    )?;
                 } else {
                     break;
                 }
@@ -333,7 +331,7 @@ where
 
     match char {
         'Z' | 'C' | 'B' | 'S' | 'I' | 'F' | 'J' | 'D' | 'V' => {
-            visitor.visit_base_type(&char);
+            visitor.visit_base_type(TryFrom::try_from(char)?);
             visitor.visit_end();
             signature_iter.next();
             Ok(())
@@ -469,6 +467,9 @@ where
     }
 }
 
+/// A default implementation of class signature writer.
+///
+/// This is commonly used in class file generation.
 #[derive(Debug, Default)]
 pub struct ClassSignatureWriter {
     signature_builder: String,
@@ -476,7 +477,10 @@ pub struct ClassSignatureWriter {
 }
 
 impl ClassSignatureWriter {
-    fn with_capacity(size: usize) -> Self {
+    /// Reserve capacity for builder to build.
+    ///
+    /// This is useful when mass appending is required.
+    pub fn with_capacity(size: usize) -> Self {
         Self {
             signature_builder: String::with_capacity(size),
             has_formal: false,
@@ -496,7 +500,7 @@ impl ClassSignatureVisitor for ClassSignatureWriter {
             self.has_formal = false;
             self.signature_builder.push('>');
         }
-        
+
         Box::new(TypeWriter::new(&mut self.signature_builder))
     }
 
@@ -505,31 +509,40 @@ impl ClassSignatureVisitor for ClassSignatureWriter {
             self.has_formal = false;
             self.signature_builder.push('>');
         }
-        
+
         Box::new(TypeWriter::new(&mut self.signature_builder))
     }
 }
 
 impl FormalTypeParameterVisitable for ClassSignatureWriter {
-    fn visit_formal_type_parameter(&mut self, name: &String) -> Box<dyn FormalTypeParameterVisitor + '_> {
+    fn visit_formal_type_parameter(
+        &mut self,
+        name: &String,
+    ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         if !self.has_formal {
             self.has_formal = true;
             self.signature_builder.push('<');
         }
-        
+
         self.signature_builder.push_str(name);
-        
+
         Box::new(FormalTypeParameterWriter::new(&mut self.signature_builder))
     }
 }
 
+/// A default implementation of field signature writer.
+///
+/// This is commonly used in class file generation.
 #[derive(Debug, Default)]
 pub struct FieldSignatureWriter {
     signature_builder: String,
 }
 
 impl FieldSignatureWriter {
-    fn with_capacity(size: usize) -> Self {
+    /// Reserve capacity for builder to build.
+    ///
+    /// This is useful when mass appending is required.
+    pub fn with_capacity(size: usize) -> Self {
         Self {
             signature_builder: String::with_capacity(size),
         }
@@ -555,8 +568,14 @@ pub struct MethodSignatureWriter {
     has_parameters: bool,
 }
 
+/// A default implementation of method signature writer.
+///
+/// This is commonly used in class file generation.
 impl MethodSignatureWriter {
-    fn with_capacity(size: usize) -> Self {
+    /// Reserve capacity for builder to build.
+    ///
+    /// This is useful when mass appending is required.
+    pub fn with_capacity(size: usize) -> Self {
         Self {
             signature_builder: String::with_capacity(size),
             has_formal: false,
@@ -577,12 +596,12 @@ impl MethodSignatureVisitor for MethodSignatureWriter {
             self.has_formal = false;
             self.signature_builder.push('>');
         }
-        
+
         if !self.has_parameters {
             self.has_parameters = true;
             self.signature_builder.push('(');
         }
-        
+
         Box::new(TypeWriter::new(&mut self.signature_builder))
     }
 
@@ -591,7 +610,7 @@ impl MethodSignatureVisitor for MethodSignatureWriter {
             self.has_formal = false;
             self.signature_builder.push('>');
         }
-        
+
         if self.has_parameters {
             self.has_parameters = false;
         } else {
@@ -605,13 +624,16 @@ impl MethodSignatureVisitor for MethodSignatureWriter {
 
     fn visit_exception_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         self.signature_builder.push('^');
-        
+
         Box::new(TypeWriter::new(&mut self.signature_builder))
     }
 }
 
 impl FormalTypeParameterVisitable for MethodSignatureWriter {
-    fn visit_formal_type_parameter(&mut self, name: &String) -> Box<dyn FormalTypeParameterVisitor + '_> {
+    fn visit_formal_type_parameter(
+        &mut self,
+        name: &String,
+    ) -> Box<dyn FormalTypeParameterVisitor + '_> {
         if !self.has_formal {
             self.has_formal = true;
             self.signature_builder.push('<');
@@ -629,9 +651,7 @@ struct FormalTypeParameterWriter<'parent> {
 
 impl<'parent> FormalTypeParameterWriter<'parent> {
     fn new(parent_builder: &'parent mut String) -> Self {
-        Self {
-            parent_builder
-        }
+        Self { parent_builder }
     }
 }
 
@@ -654,27 +674,27 @@ struct TypeWriter<'parent> {
 impl<'parent> TypeWriter<'parent> {
     fn new(parent_builder: &'parent mut String) -> Self {
         let mut type_arg_stack = VecDeque::with_capacity(64);
-        
+
         type_arg_stack.push_back(true);
-        
+
         Self {
             parent_builder,
             type_arg_stack,
         }
     }
-    
+
     fn end_args(&mut self) {
         if self.type_arg_stack.front().map_or(false, |b| *b) {
             self.parent_builder.push('>');
         }
-        
+
         self.type_arg_stack.pop_front();
     }
 }
 
 impl<'parent> TypeVisitor for TypeWriter<'parent> {
-    fn visit_base_type(&mut self, char: &char) {
-        self.parent_builder.push(*char);
+    fn visit_base_type(&mut self, base_type: BaseType) {
+        self.parent_builder.push(base_type.into());
     }
 
     fn visit_array_type(&mut self) {
@@ -706,7 +726,7 @@ impl<'parent> TypeVisitor for TypeWriter<'parent> {
             self.type_arg_stack[0] = true;
             self.parent_builder.push('<');
         }
-        
+
         self.parent_builder.push('*');
     }
 
@@ -715,7 +735,7 @@ impl<'parent> TypeVisitor for TypeWriter<'parent> {
             self.type_arg_stack[0] = true;
             self.parent_builder.push('<');
         }
-        
+
         if wildcard != Wildcard::INSTANCEOF {
             self.parent_builder.push(wildcard.into());
         }
@@ -732,16 +752,21 @@ mod test {
     use insta::assert_yaml_snapshot;
     use rstest::rstest;
 
-    use crate::asm::signature::{ClassSignatureReader, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureReader, FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureReader, MethodSignatureVisitor, MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor};
+    use crate::asm::signature::{
+        accept_class_signature_visitor, accept_field_signature_visitor,
+        accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter,
+        FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
+        FormalTypeParameterVisitor, MethodSignatureVisitor, MethodSignatureWriter,
+        SignatureVisitorImpl, TypeVisitor,
+    };
     use crate::error::KapiResult;
 
     #[rstest]
     #[case("<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;")]
     fn test_class_signatures(#[case] signature: &'static str) -> KapiResult<()> {
         let mut visitor = SignatureVisitorImpl::default();
-        let mut reader = ClassSignatureReader::new(signature.to_string());
 
-        reader.accept(&mut visitor)?;
+        accept_class_signature_visitor(signature, &mut visitor)?;
 
         Ok(())
     }
@@ -751,9 +776,8 @@ mod test {
     #[case("TT;")]
     fn test_field_signatures(#[case] signature: &'static str) -> KapiResult<()> {
         let mut visitor = SignatureVisitorImpl::default();
-        let mut reader = FieldSignatureReader::new(signature.to_string());
 
-        reader.accept(&mut visitor)?;
+        accept_field_signature_visitor(signature, &mut visitor)?;
 
         Ok(())
     }
@@ -762,24 +786,28 @@ mod test {
     #[case("<T:Ljava/lang/Object;>(Z[[Z)Ljava/lang/Object;^Ljava/lang/Exception;")]
     fn test_method_signatures(#[case] signature: &'static str) -> KapiResult<()> {
         let mut visitor = SignatureVisitorImpl::default();
-        let mut reader = MethodSignatureReader::new(signature.to_string());
 
-        reader.accept(&mut visitor)?;
+        accept_method_signature_visitor(signature, &mut visitor)?;
 
         Ok(())
     }
-    
+
     #[test]
     fn test_class_signature_writer() {
         let mut writer = ClassSignatureWriter::default();
-        
-        writer.visit_formal_type_parameter(&"T".to_string())
+
+        writer
+            .visit_formal_type_parameter(&"T".to_string())
             .visit_class_bound()
             .visit_class_type(&"java/lang/Object".to_string());
-        
-        writer.visit_super_class().visit_class_type(&"java/lang/Object".to_string());
-        writer.visit_interface().visit_class_type(&"java/lang/Comparable".to_string());
-        
+
+        writer
+            .visit_super_class()
+            .visit_class_type(&"java/lang/Object".to_string());
+        writer
+            .visit_interface()
+            .visit_class_type(&"java/lang/Comparable".to_string());
+
         assert_yaml_snapshot!(writer.to_string());
     }
 
@@ -787,7 +815,9 @@ mod test {
     fn test_field_signature_writer() {
         let mut writer = FieldSignatureWriter::default();
 
-        writer.visit_field_type().visit_class_type(&"java/lang/String".to_string());
+        writer
+            .visit_field_type()
+            .visit_class_type(&"java/lang/String".to_string());
 
         assert_yaml_snapshot!(writer.to_string());
     }
@@ -796,12 +826,17 @@ mod test {
     fn test_method_signature_writer() {
         let mut writer = MethodSignatureWriter::default();
 
-        writer.visit_formal_type_parameter(&"T".to_string())
+        writer
+            .visit_formal_type_parameter(&"T".to_string())
             .visit_class_bound()
             .visit_class_type(&"java/lang/Object".to_string());
 
-        writer.visit_parameter_type().visit_class_type(&"java/lang/Object".to_string());
-        writer.visit_return_type().visit_class_type(&"java/lang/String".to_string());
+        writer
+            .visit_parameter_type()
+            .visit_class_type(&"java/lang/Object".to_string());
+        writer
+            .visit_return_type()
+            .visit_class_type(&"java/lang/String".to_string());
 
         assert_yaml_snapshot!(writer.to_string());
     }
