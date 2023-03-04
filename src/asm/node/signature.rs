@@ -215,6 +215,7 @@ impl FormalTypeParameterVisitable for MethodSignatureCollector {
     }
 }
 
+/// Data representation of formal type parameter in signatures.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FormalTypeParameter {
     parameter_name: String,
