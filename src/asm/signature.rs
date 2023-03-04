@@ -1,5 +1,5 @@
-use std::{default, iter::Peekable, str::CharIndices};
 use std::collections::VecDeque;
+use std::{default, iter::Peekable, str::CharIndices};
 
 use either::Either;
 use itertools::Itertools;
@@ -227,10 +227,13 @@ impl FormalTypeParameterVisitable for SignatureVisitorImpl {}
 impl FormalTypeParameterVisitor for SignatureVisitorImpl {}
 impl TypeVisitor for SignatureVisitorImpl {}
 
-pub fn accept_class_signature_visitor(
-    signature: impl Into<String>,
+pub fn accept_class_signature_visitor<S>(
+    signature: S,
     visitor: &mut impl ClassSignatureVisitor,
-) -> KapiResult<()> {
+) -> KapiResult<()>
+where
+    S: Into<String>,
+{
     let signature = signature.into();
     let mut signature_iter = signature.chars().peekable();
 
@@ -251,10 +254,13 @@ pub fn accept_class_signature_visitor(
     strict_check_iter_empty(&mut signature_iter)
 }
 
-pub fn accept_field_signature_visitor(
-    signature: impl Into<String>,
+pub fn accept_field_signature_visitor<S>(
+    signature: S,
     visitor: &mut impl FieldSignatureVisitor,
-) -> KapiResult<()> {
+) -> KapiResult<()>
+where
+    S: Into<String>,
+{
     let signature = signature.into();
     let mut signature_iter = signature.chars().peekable();
 
@@ -267,10 +273,13 @@ pub fn accept_field_signature_visitor(
     strict_check_iter_empty(&mut signature_iter)
 }
 
-pub fn accept_method_signature_visitor(
-    signature: impl Into<String>,
+pub fn accept_method_signature_visitor<S>(
+    signature: S,
     visitor: &mut impl MethodSignatureVisitor,
-) -> KapiResult<()> {
+) -> KapiResult<()>
+where
+    S: Into<String>,
+{
     let signature = signature.into();
     let mut signature_iter = signature.chars().peekable();
 
