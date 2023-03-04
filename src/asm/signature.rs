@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::asm::field::FieldVisitor;
-use crate::asm::node::signature::Wildcard;
+use crate::asm::node::signature::{BaseType, Wildcard};
 use crate::error::{KapiError, KapiResult};
 
 /// A visitor to visit class generic signature. This trait requires struct also implements
@@ -124,8 +124,8 @@ pub trait FormalTypeParameterVisitor {
 #[allow(unused_variables)]
 pub trait TypeVisitor {
     /// Visits base type in signature. This could be any type defined by
-    /// [`BaseType`](crate::asm::node::signature::BaseType).
-    fn visit_base_type(&mut self, char: &char) {}
+    /// [`BaseType`].
+    fn visit_base_type(&mut self, base_type: BaseType) {}
 
     /// Visits array type in signature. Further type visiting is required after
     /// [`visit_array_type`](TypeVisitor::visit_array_type) called. For example: you can call this
@@ -331,7 +331,7 @@ where
 
     match char {
         'Z' | 'C' | 'B' | 'S' | 'I' | 'F' | 'J' | 'D' | 'V' => {
-            visitor.visit_base_type(&char);
+            visitor.visit_base_type(TryFrom::try_from(char)?);
             visitor.visit_end();
             signature_iter.next();
             Ok(())
@@ -468,7 +468,7 @@ where
 }
 
 /// A default implementation of class signature writer.
-/// 
+///
 /// This is commonly used in class file generation.
 #[derive(Debug, Default)]
 pub struct ClassSignatureWriter {
@@ -478,7 +478,7 @@ pub struct ClassSignatureWriter {
 
 impl ClassSignatureWriter {
     /// Reserve capacity for builder to build.
-    /// 
+    ///
     /// This is useful when mass appending is required.
     pub fn with_capacity(size: usize) -> Self {
         Self {
@@ -693,8 +693,8 @@ impl<'parent> TypeWriter<'parent> {
 }
 
 impl<'parent> TypeVisitor for TypeWriter<'parent> {
-    fn visit_base_type(&mut self, char: &char) {
-        self.parent_builder.push(*char);
+    fn visit_base_type(&mut self, base_type: BaseType) {
+        self.parent_builder.push(base_type.into());
     }
 
     fn visit_array_type(&mut self) {

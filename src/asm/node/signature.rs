@@ -282,7 +282,7 @@ const SUPER: char = '-';
 const INSTANCEOF: char = '=';
 
 /// An enum representation for wildcard indicators, which is used in
-/// [`Type::WildcardTypeArgument`](crate::asm::node::signature::Type::WildcardTypeArgument) as class
+/// [`Type::WildcardTypeArgument`] as class
 /// type argument bound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u8)]
@@ -321,15 +321,7 @@ impl TryFrom<&char> for Wildcard {
     type Error = KapiError;
 
     fn try_from(value: &char) -> KapiResult<Self> {
-        match *value {
-            EXTENDS => Ok(Wildcard::EXTENDS),
-            SUPER => Ok(Wildcard::SUPER),
-            INSTANCEOF => Ok(Self::INSTANCEOF),
-            _ => Err(KapiError::ArgError(format!(
-                "Character {} cannot be converted into Wildcard",
-                value
-            ))),
-        }
+        TryFrom::<char>::try_from(*value)
     }
 }
 
@@ -344,6 +336,12 @@ pub enum BaseType {
     Float = 'F' as u8,
     Double = 'D' as u8,
     Void = 'V' as u8,
+}
+
+impl Into<char> for BaseType {
+    fn into(self) -> char {
+        self as u8 as char
+    }
 }
 
 impl TryFrom<char> for BaseType {
@@ -364,6 +362,14 @@ impl TryFrom<char> for BaseType {
                 value
             ))),
         }
+    }
+}
+
+impl TryFrom<&char> for BaseType {
+    type Error = KapiError;
+
+    fn try_from(value: &char) -> KapiResult<Self> {
+        TryFrom::<char>::try_from(*value)
     }
 }
 
@@ -403,9 +409,8 @@ impl<F> TypeVisitor for TypeCollector<F>
 where
     F: FnMut(Type),
 {
-    fn visit_base_type(&mut self, char: &char) {
-        self.holder = TryInto::<BaseType>::try_into(*char)
-            .map_or(Type::Unknown, |base_type| Type::BaseType(base_type));
+    fn visit_base_type(&mut self, base_type: BaseType) {
+        self.holder = Type::BaseType(base_type);
     }
 
     fn visit_array_type(&mut self) {
