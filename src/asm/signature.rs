@@ -227,6 +227,7 @@ impl FormalTypeParameterVisitable for SignatureVisitorImpl {}
 impl FormalTypeParameterVisitor for SignatureVisitorImpl {}
 impl TypeVisitor for SignatureVisitorImpl {}
 
+/// Accepts a [`ClassSignatureVisitor`] and visits given signature.
 pub fn accept_class_signature_visitor<S>(
     signature: S,
     visitor: &mut impl ClassSignatureVisitor,
@@ -254,6 +255,7 @@ where
     strict_check_iter_empty(&mut signature_iter)
 }
 
+/// Accepts a [`FieldSignatureVisitor`] and visits given signature.
 pub fn accept_field_signature_visitor<S>(
     signature: S,
     visitor: &mut impl FieldSignatureVisitor,
@@ -273,6 +275,7 @@ where
     strict_check_iter_empty(&mut signature_iter)
 }
 
+/// Accepts a [`MethodSignatureVisitor`] and visits given signature.
 pub fn accept_method_signature_visitor<S>(
     signature: S,
     visitor: &mut impl MethodSignatureVisitor,
