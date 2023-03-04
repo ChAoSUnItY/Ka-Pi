@@ -8,7 +8,7 @@ use crate::asm::signature::{
     accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter,
     FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
     FormalTypeParameterVisitor, MethodSignatureVisitor, MethodSignatureWriter,
-    SignatureVisitorImpl, TypeVisitor, Wildcard,
+    SignatureVisitorImpl, TypeVisitor,
 };
 use crate::error::{KapiError, KapiResult};
 
@@ -274,6 +274,62 @@ pub enum Type {
 impl Default for Type {
     fn default() -> Self {
         Self::Unknown
+    }
+}
+
+const EXTENDS: char = '+';
+const SUPER: char = '-';
+const INSTANCEOF: char = '=';
+
+/// An enum representation for wildcard indicators, which is used in
+/// [`Type::WildcardTypeArgument`](crate::asm::node::signature::Type::WildcardTypeArgument) as class
+/// type argument bound.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum Wildcard {
+    /// Indicates type argument must extends class bound, see java's upper bounds wildcard.
+    EXTENDS = EXTENDS as u8,
+    /// Indicates type argument must super class bound, see java's lower bounds wildcard.
+    SUPER = SUPER as u8,
+    /// Indicates type argument must be instance of specified type.
+    INSTANCEOF = INSTANCEOF as u8,
+}
+
+impl Into<char> for Wildcard {
+    fn into(self) -> char {
+        self as u8 as char
+    }
+}
+
+impl TryFrom<char> for Wildcard {
+    type Error = KapiError;
+
+    fn try_from(value: char) -> KapiResult<Self> {
+        match value {
+            EXTENDS => Ok(Wildcard::EXTENDS),
+            SUPER => Ok(Wildcard::SUPER),
+            INSTANCEOF => Ok(Self::INSTANCEOF),
+            _ => Err(KapiError::ArgError(format!(
+                "Character {} cannot be converted into Wildcard",
+                value
+            ))),
+        }
+    }
+}
+
+impl TryFrom<&char> for Wildcard {
+    type Error = KapiError;
+
+    fn try_from(value: &char) -> KapiResult<Self> {
+        match *value {
+            EXTENDS => Ok(Wildcard::EXTENDS),
+            SUPER => Ok(Wildcard::SUPER),
+            INSTANCEOF => Ok(Self::INSTANCEOF),
+            _ => Err(KapiError::ArgError(format!(
+                "Character {} cannot be converted into Wildcard",
+                value
+            ))),
+        }
     }
 }
 
