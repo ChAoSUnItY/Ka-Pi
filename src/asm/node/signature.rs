@@ -3,7 +3,13 @@ use std::collections::VecDeque;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::class::ClassReaderImpl;
-use crate::asm::signature::{accept_class_signature_visitor, accept_field_signature_visitor, accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter, FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureVisitor, MethodSignatureWriter, SignatureVisitorImpl, TypeVisitor, Wildcard};
+use crate::asm::signature::{
+    accept_class_signature_visitor, accept_field_signature_visitor,
+    accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter,
+    FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
+    FormalTypeParameterVisitor, MethodSignatureVisitor, MethodSignatureWriter,
+    SignatureVisitorImpl, TypeVisitor, Wildcard,
+};
 use crate::error::{KapiError, KapiResult};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -31,7 +37,7 @@ impl Signature {
     {
         let string = string.into();
         let mut collector = ClassSignatureCollector::default();
-        
+
         accept_class_signature_visitor(&string, &mut collector)?;
 
         collector
@@ -48,7 +54,7 @@ impl Signature {
     {
         let string = string.into();
         let mut collector = FieldSignatureCollector::default();
-        
+
         accept_field_signature_visitor(&string, &mut collector)?;
 
         collector
@@ -65,7 +71,7 @@ impl Signature {
     {
         let string = string.into();
         let mut collector = MethodSignatureCollector::default();
-        
+
         accept_method_signature_visitor(&string, &mut collector)?;
 
         collector
