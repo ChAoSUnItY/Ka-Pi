@@ -1,5 +1,6 @@
 use std::cmp::max;
 use std::fs::read;
+use std::marker::PhantomData;
 use std::mem;
 use std::rc::Rc;
 
@@ -13,6 +14,8 @@ use crate::asm::record::RecordVisitor;
 use crate::asm::types::{Type, TypePath};
 use crate::asm::{constants, opcodes, symbol, Handle};
 use crate::error::{KapiError, KapiResult};
+#[cfg(feature = "reflection")]
+use crate::reflection::jvm::RefPseudoVM;
 
 pub const SKIP_CODE: u8 = 1;
 pub const SKIP_DEBUG: u8 = 2;
@@ -106,7 +109,7 @@ pub trait ClassVisitor {
     }
 }
 
-pub trait ClassReader {
+pub trait ClassReadable {
     // Internal field accessors
 
     fn bytes(&self) -> &Vec<u8>;
@@ -365,10 +368,8 @@ pub trait ClassReader {
     }
 }
 
-pub trait Writer {}
-
 #[derive(Debug, Default)]
-pub struct ClassReaderImpl {
+pub struct ClassReader {
     header: usize,
     class_file_buffer: Vec<u8>,
     cp_info_offsets: Vec<usize>,
@@ -378,7 +379,7 @@ pub struct ClassReaderImpl {
     max_string_len: usize,
 }
 
-impl ClassReaderImpl {
+impl ClassReader {
     pub fn new_reader_from_raw(bytes: &[u8]) -> KapiResult<Self> {
         Self::new_reader(bytes, 0)
     }
@@ -487,7 +488,7 @@ impl ClassReaderImpl {
     }
 }
 
-impl ClassReader for ClassReaderImpl {
+impl ClassReadable for ClassReader {
     #[inline]
     fn bytes(&self) -> &Vec<u8> {
         &self.class_file_buffer
@@ -563,4 +564,13 @@ impl ClassReader for ClassReaderImpl {
     fn put_constant_dynamic(&mut self, constant_dynamic: Rc<ConstantDynamic>, _: usize) {
         self.constant_dynamic_values.push(constant_dynamic)
     }
+}
+
+#[derive(Debug)]
+pub struct ClassWriter<'writer> {
+    #[cfg(feature = "reflection")]
+    vm: RefPseudoVM<'writer>,
+    #[cfg(not(feature = "reflection"))]
+    _pd: PhantomData<&'writer ()>,
+    
 }
