@@ -1,5 +1,7 @@
 // Tag values for the constant pool entries (using the same order as in the JVMS).
 
+use crate::asm::byte_vec::ByteVec;
+
 /** The tag value of CONSTANT_Class_info JVMS structures. */
 pub(crate) const CONSTANT_CLASS_TAG: u8 = 7;
 
@@ -89,4 +91,53 @@ pub(crate) trait Symbol {
     ) -> Self;
 }
 
-pub(crate) struct SymbolTable {}
+pub(crate) struct SymbolTable<BV> where BV: ByteVec {
+    major_version: u16,
+    class_name: String,
+    constant_pool: BV,
+    entry_count: usize,
+}
+
+struct Entry {
+    index: usize,
+    tag: u8,
+    owner: String,
+    name: String,
+    value: String,
+    data: i64,
+    info: i32,
+}
+
+impl Symbol for Entry {
+    fn index(&self) -> usize {
+        self.index
+    }
+
+    fn tag(&self) -> u8 {
+        self.tag
+    }
+
+    fn owner(&self) -> &str {
+        &self.owner
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn value(&self) -> &str {
+        &self.value
+    }
+
+    fn data(&self) -> i64 {
+        self.data
+    }
+
+    fn info(&self) -> i32 {
+        todo!()
+    }
+
+    fn new(index: usize, tag: u8, owner: String, name: String, value: String, data: i64, info: i32) -> Self {
+        todo!()
+    }
+}

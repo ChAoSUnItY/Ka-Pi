@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use serde::{Deserialize, Serialize};
 
-use crate::asm::class::ClassReaderImpl;
+use crate::asm::class::ClassReader;
 use crate::asm::node::types::BaseType;
 use crate::asm::signature::{
     accept_class_signature_visitor, accept_field_signature_visitor,
