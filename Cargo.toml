@@ -13,7 +13,6 @@ keywords = ["jvm", "jvm-bytecode", "bytecode"]
 
 [dependencies]
 serde = { version = "1.0.152", features = ["derive"] }
-jni = { version = "0.21.0", features = ["invocation"] }
 unicode-segmentation = "1.10.1"
 lazy_static = "1.4.0"
 either = "1.8.1"
@@ -25,5 +24,3 @@ rstest = "0.16.0"
 
 [features]
 default = []
-reflection = []
-
