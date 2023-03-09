@@ -1,10 +1,7 @@
-use std::fmt::write;
 use std::{
     error::Error,
     fmt::{Debug, Display},
 };
-
-use jni::errors::Error as JniError;
 
 use crate::error::KapiError::*;
 
@@ -49,9 +46,3 @@ impl Display for KapiError {
 }
 
 impl Error for KapiError {}
-
-impl From<jni::errors::Error> for KapiError {
-    fn from(value: JniError) -> Self {
-        JNIError(value.to_string())
-    }
-}
