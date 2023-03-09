@@ -28,7 +28,6 @@ pub enum KapiError {
     ArgError(String),
     ClassResolveError(&'static str),
     ClassParseError(String),
-    JNIError(String),
 }
 
 impl Display for KapiError {
@@ -40,7 +39,6 @@ impl Display for KapiError {
             ArgError(cause) => write!(f, "{}", cause),
             ClassResolveError(cause) => write!(f, "{}", cause),
             ClassParseError(cause) => write!(f, "{}", cause),
-            JNIError(cause) => write!(f, "{}", cause),
         }
     }
 }
