@@ -1,5 +1,3 @@
-pub use handle::Handle;
-
 pub mod node;
 
 pub mod annotation;
@@ -9,9 +7,6 @@ pub mod class;
 mod constants;
 mod edge;
 pub mod field;
-mod frame;
-mod handle;
-mod handler;
 mod label;
 pub mod method;
 pub mod module;
