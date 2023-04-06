@@ -389,7 +389,8 @@ where
     F: FnMut(Type),
 {
     holder: Type,
-    stack_actions: VecDeque<(Option<Wildcard>)>, // If option is None, then it's array wrapping, otherwise it's type argument wrapping
+    stack_actions: VecDeque<(Option<Wildcard>)>,
+    // If option is None, then it's array wrapping, otherwise it's type argument wrapping
     post_action: F,
 }
 

@@ -4,14 +4,14 @@ use std::mem;
 use std::rc::Rc;
 
 use crate::asm::annotation::AnnotationVisitor;
-use crate::asm::attribute::Attribute;
 use crate::asm::constants::{ConstantDynamic, ConstantObject};
 use crate::asm::field::FieldVisitor;
+use crate::asm::handle::Handle;
 use crate::asm::method::MethodVisitor;
 use crate::asm::module::ModuleVisitor;
 use crate::asm::record::RecordVisitor;
 use crate::asm::types::{Type, TypePath};
-use crate::asm::{constants, opcodes, symbol, Handle};
+use crate::asm::{constants, opcodes, symbol};
 use crate::error::{KapiError, KapiResult};
 
 pub const SKIP_CODE: u8 = 1;
@@ -62,7 +62,7 @@ pub trait ClassVisitor {
     ) -> Option<Box<dyn AnnotationVisitor>> {
         None
     }
-    fn visit_attribute(&mut self, attribute: Box<dyn Attribute>) {}
+    // fn visit_attribute(&mut self, attribute: Box<dyn Attribute>) {}
     fn visit_nest_member(&mut self, nest_member: String) {}
     fn visit_permitted_sub_class(&mut self, permitted_sub_class: String) {}
     fn visit_inner_class(
@@ -465,7 +465,7 @@ impl ClassReaderImpl {
                     return Err(KapiError::ClassParseError(format!(
                         "Illegal constant pool tag {}",
                         info_tag
-                    )))
+                    )));
                 }
             }
 

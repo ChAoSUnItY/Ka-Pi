@@ -1,5 +1,4 @@
 use crate::asm::annotation::AnnotationVisitor;
-use crate::asm::attribute::Attribute;
 use crate::asm::types::TypePath;
 
 #[allow(unused_variables)]
@@ -20,7 +19,7 @@ pub trait FieldVisitor {
     ) -> Option<Box<dyn AnnotationVisitor>> {
         None
     }
-    fn visit_attribute(&mut self, attribute: Box<dyn Attribute>) {}
+    // fn visit_attribute(&mut self, attribute: Box<dyn Attribute>) {}
     fn visit_end(self)
     where
         Self: Sized,
