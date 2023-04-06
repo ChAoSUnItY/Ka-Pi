@@ -1,8 +1,10 @@
 // Tag values for the constant pool entries (using the same order as in the JVMS).
 
 use crate::asm::symbol::ConstantTag::*;
+use crate::error::KapiError;
 
 #[repr(u8)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub enum ConstantTag {
     /** The tag value of CONSTANT_Class_info JVMS structures. */
     Class = 7,
@@ -39,6 +41,77 @@ pub enum ConstantTag {
     /** The tag value of CONSTANT_Module_info JVMS structures. */
     Package = 20,
 }
+
+/// Top level constant tag redefinitions for low level usage
+
+/** The tag value of CONSTANT_Class_info JVMS structures. */
+pub(crate) const CONSTANT_CLASS_TAG: u8 = 7;
+
+/** The tag value of CONSTANT_Fieldref_info JVMS structures. */
+pub(crate) const CONSTANT_FIELDREF_TAG: u8 = 9;
+
+/** The tag value of CONSTANT_Methodref_info JVMS structures. */
+pub(crate) const CONSTANT_METHODREF_TAG: u8 = 10;
+
+/** The tag value of CONSTANT_InterfaceMethodref_info JVMS structures. */
+pub(crate) const CONSTANT_INTERFACE_METHODREF_TAG: u8 = 11;
+
+/** The tag value of CONSTANT_String_info JVMS structures. */
+pub(crate) const CONSTANT_STRING_TAG: u8 = 8;
+
+/** The tag value of CONSTANT_Integer_info JVMS structures. */
+pub(crate) const CONSTANT_INTEGER_TAG: u8 = 3;
+
+/** The tag value of CONSTANT_Float_info JVMS structures. */
+pub(crate) const CONSTANT_FLOAT_TAG: u8 = 4;
+
+/** The tag value of CONSTANT_Long_info JVMS structures. */
+pub(crate) const CONSTANT_LONG_TAG: u8 = 5;
+
+/** The tag value of CONSTANT_Double_info JVMS structures. */
+pub(crate) const CONSTANT_DOUBLE_TAG: u8 = 6;
+
+/** The tag value of CONSTANT_NameAndType_info JVMS structures. */
+pub(crate) const CONSTANT_NAME_AND_TYPE_TAG: u8 = 12;
+
+/** The tag value of CONSTANT_Utf8_info JVMS structures. */
+pub(crate) const CONSTANT_UTF8_TAG: u8 = 1;
+
+/** The tag value of CONSTANT_MethodHandle_info JVMS structures. */
+pub(crate) const CONSTANT_METHOD_HANDLE_TAG: u8 = 15;
+
+/** The tag value of CONSTANT_MethodType_info JVMS structures. */
+pub(crate) const CONSTANT_METHOD_TYPE_TAG: u8 = 16;
+
+/** The tag value of CONSTANT_Dynamic_info JVMS structures. */
+pub(crate) const CONSTANT_DYNAMIC_TAG: u8 = 17;
+
+/** The tag value of CONSTANT_InvokeDynamic_info JVMS structures. */
+pub(crate) const CONSTANT_INVOKE_DYNAMIC_TAG: u8 = 18;
+
+/** The tag value of CONSTANT_Module_info JVMS structures. */
+pub(crate) const CONSTANT_MODULE_TAG: u8 = 19;
+
+/** The tag value of CONSTANT_Package_info JVMS structures. */
+pub(crate) const CONSTANT_PACKAGE_TAG: u8 = 20;
+
+// Tag values for the BootstrapMethods attribute entries (ASM specific tag).
+
+/** The tag value of the BootstrapMethods attribute entries. */
+pub(crate) const BOOTSTRAP_METHOD_TAG: u8 = 64;
+
+// Tag values for the type table entries (ASM specific tags).
+
+/** The tag value of a normal type entry in the (ASM specific) type table of a class. */
+pub(crate) const TYPE_TAG: u8 = 128;
+
+/**
+ * The tag value of an {@link Frame#ITEM_UNINITIALIZED} type entry in the type table of a class.
+ */
+pub(crate) const UNINITIALIZED_TYPE_TAG: u8 = 129;
+
+/** The tag value of a merged type entry in the (ASM specific) type table of a class. */
+pub(crate) const MERGED_TYPE_TAG: u8 = 130;
 
 pub(crate) enum Symbol {
     Class {
