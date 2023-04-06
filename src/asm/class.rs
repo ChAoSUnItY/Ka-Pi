@@ -6,12 +6,12 @@ use std::rc::Rc;
 use crate::asm::annotation::AnnotationVisitor;
 use crate::asm::constants::{ConstantDynamic, ConstantObject};
 use crate::asm::field::FieldVisitor;
+use crate::asm::handle::Handle;
 use crate::asm::method::MethodVisitor;
 use crate::asm::module::ModuleVisitor;
 use crate::asm::record::RecordVisitor;
 use crate::asm::types::{Type, TypePath};
 use crate::asm::{constants, opcodes, symbol};
-use crate::asm::handle::Handle;
 use crate::error::{KapiError, KapiResult};
 
 pub const SKIP_CODE: u8 = 1;
@@ -465,7 +465,7 @@ impl ClassReaderImpl {
                     return Err(KapiError::ClassParseError(format!(
                         "Illegal constant pool tag {}",
                         info_tag
-                    )))
+                    )));
                 }
             }
 

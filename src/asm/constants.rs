@@ -6,7 +6,7 @@ use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 
 use crate::asm::types::Type;
-use crate::asm::{opcodes, handle::Handle};
+use crate::asm::{handle::Handle, opcodes};
 use crate::error::{KapiError, KapiResult};
 
 pub(crate) const CONSTANT_VALUE: &'static str = "ConstantValue";
