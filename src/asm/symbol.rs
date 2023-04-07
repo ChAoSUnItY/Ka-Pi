@@ -4,6 +4,8 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::asm::opcodes::RefKind;
+
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ConstantTag {
@@ -222,6 +224,8 @@ pub struct SymbolTable {
     long_cache: HashMap<i64, usize>,
     #[serde(skip_serializing)]
     double_cache: HashMap<[u8; 8], usize>,
+    #[serde(skip_serializing)]
+    method_handle_cache: HashMap<(u8, u16), usize>,
 }
 
 impl SymbolTable {
@@ -401,6 +405,41 @@ impl SymbolTable {
             });
             self.double_index_cache
                 .insert((name_index, type_index), name_and_type_index)
+                .unwrap()
+        }
+    }
+
+    fn add_method_handle(
+        &mut self,
+        reference_kind: RefKind,
+        class: &str,
+        name: &str,
+        typ: &str,
+    ) -> usize {
+        let reference_index = match reference_kind {
+            RefKind::GetField | RefKind::GetStatic | RefKind::PutField | RefKind::PutStatic => {
+                self.add_field_ref(class, name, typ)
+            }
+            RefKind::InvokeVirtual | RefKind::NewInvokeSpecial => {
+                self.add_method_ref(class, name, typ)
+            }
+            RefKind::InvokeStatic | RefKind::InvokeSpecial | RefKind::InvokeInterface => {
+                self.add_interface_ref(class, name, typ)
+            }
+        } as u16;
+
+        if let Some(index) = self
+            .method_handle_cache
+            .get(&(reference_kind as u8, reference_index))
+        {
+            *index
+        } else {
+            self.symbols.push(Symbol::MethodHandle {
+                reference_kind: reference_kind as u8,
+                reference_index,
+            });
+            self.method_handle_cache
+                .insert((reference_kind as u8, reference_index), self.symbols.len())
                 .unwrap()
         }
     }

@@ -120,7 +120,7 @@ pub const T_LONG: u8 = 11;
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.4.8.
 
 #[repr(u8)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RefKind {
     GetField = 1,
     GetStatic = 2,
