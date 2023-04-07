@@ -443,6 +443,35 @@ impl SymbolTable {
                 .unwrap()
         }
     }
+
+    // TODO: fn add_dynamic()
+    // TODO: fn add_invoke_dynamic()
+
+    fn add_module(&mut self, name: &str) -> usize {
+        let name_index = self.add_utf8(name) as u16;
+
+        if let Some(index) = self.single_index_cache.get(&name_index) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Module { name_index });
+            self.single_index_cache
+                .insert(name_index, self.symbols.len())
+                .unwrap()
+        }
+    }
+
+    fn add_package(&mut self, name: &str) -> usize {
+        let name_index = self.add_utf8(name) as u16;
+
+        if let Some(index) = self.single_index_cache.get(&name_index) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Package { name_index });
+            self.single_index_cache
+                .insert(name_index, self.symbols.len())
+                .unwrap()
+        }
+    }
 }
 
 #[cfg(test)]
