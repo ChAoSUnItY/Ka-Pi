@@ -207,6 +207,10 @@ pub struct SymbolTable {
     symbols: Vec<Symbol>,
     utf8_cache: HashMap<String, usize>,
     name_and_type_cache: HashMap<(String, String), usize>,
+    integer_cache: HashMap<i32, usize>,
+    float_cache: HashMap<[u8; 4], usize>,
+    long_cache: HashMap<i64, usize>,
+    double_cache: HashMap<[u8; 8], usize>,
 }
 
 impl SymbolTable {
@@ -215,24 +219,83 @@ impl SymbolTable {
     }
 
     fn add_utf8(&mut self, string: &str) -> usize {
-        if let Some(registered_string_index) = self.utf8_cache.get(string) {
-            *registered_string_index
+        if let Some(index) = self.utf8_cache.get(string) {
+            *index
         } else {
-            let index = self.symbols.len();
             self.symbols.push(Symbol::Utf8 {
                 data: string.to_owned(),
             });
-            self.utf8_cache.insert(string.to_owned(), index);
-            index
+            self.utf8_cache
+                .insert(string.to_owned(), self.symbols.len())
+                .unwrap()
+        }
+    }
+
+    fn add_integer(&mut self, integer: i32) -> usize {
+        if let Some(index) = self.integer_cache.get(&integer) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Integer {
+                bytes: integer.to_be_bytes(),
+            });
+            self.integer_cache
+                .insert(integer, self.symbols.len())
+                .unwrap()
+        }
+    }
+
+    fn add_float(&mut self, float: f32) -> usize {
+        let be_bytes = float.to_be_bytes();
+
+        if let Some(index) = self.float_cache.get(&be_bytes) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Float { bytes: be_bytes });
+            self.float_cache
+                .insert(be_bytes, self.symbols.len())
+                .unwrap()
+        }
+    }
+
+    fn add_long(&mut self, long: i64) -> usize {
+        if let Some(index) = self.long_cache.get(&long) {
+            *index
+        } else {
+            let [high_bytes, low_bytes] =
+                unsafe { std::mem::transmute::<[u8; 8], [[u8; 4]; 2]>(long.to_be_bytes()) };
+            self.symbols.push(Symbol::Long {
+                high_bytes,
+                low_bytes,
+            });
+            self.long_cache.insert(long, self.symbols.len()).unwrap()
+        }
+    }
+
+    fn add_double(&mut self, double: f64) -> usize {
+        let be_bytes = double.to_be_bytes();
+
+        if let Some(index) = self.double_cache.get(&be_bytes) {
+            *index
+        } else {
+            let [high_bytes, low_bytes] =
+                unsafe { std::mem::transmute::<[u8; 8], [[u8; 4]; 2]>(be_bytes) };
+
+            self.symbols.push(Symbol::Double {
+                high_bytes,
+                low_bytes,
+            });
+            self.double_cache
+                .insert(be_bytes, self.symbols.len())
+                .unwrap()
         }
     }
 
     fn add_name_and_type(&mut self, name: &str, typ: &str) -> usize {
-        if let Some(registered_name_and_type_index) = self
+        if let Some(index) = self
             .name_and_type_cache
             .get(&(name.to_owned(), typ.to_owned()))
         {
-            *registered_name_and_type_index
+            *index
         } else {
             let name_index = self.add_utf8(name) as u16;
             let type_index = self.add_utf8(typ) as u16;
@@ -242,8 +305,8 @@ impl SymbolTable {
                 type_index,
             });
             self.name_and_type_cache
-                .insert((name.to_owned(), typ.to_owned()), name_and_type_index);
-            name_and_type_index
+                .insert((name.to_owned(), typ.to_owned()), name_and_type_index)
+                .unwrap()
         }
     }
 }
