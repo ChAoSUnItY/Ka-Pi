@@ -95,15 +95,6 @@ pub const ACC_MANDATED: u32 = 0x8000;
 // field, method, parameter, module, module *
 pub const ACC_MODULE: u32 = 0x8000; // class
 
-// ASM specific access flags.
-// WARNING: the 16 least significant bits must NOT be used, to avoid conflicts with standard
-// access flags, and also to make sure that these flags are automatically filtered out when
-// written in class files (because access flags are stored using 16 bits only).
-
-pub const ACC_RECORD: u32 = 0x10000;
-// class
-pub const ACC_DEPRECATED: u32 = 0x20000; // class, field, method
-
 // Possible values for the type operand of the NEWARRAY instruction.
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
 
