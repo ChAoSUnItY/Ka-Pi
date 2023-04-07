@@ -206,17 +206,44 @@ impl Symbol {
 pub struct SymbolTable {
     symbols: Vec<Symbol>,
     utf8_cache: HashMap<String, usize>,
+    name_and_type_cache: HashMap<(String, String), usize>,
 }
 
 impl SymbolTable {
+    fn len(&self) -> usize {
+        self.symbols.len()
+    }
+
     fn add_utf8(&mut self, string: &str) -> usize {
         if let Some(registered_string_index) = self.utf8_cache.get(string) {
             *registered_string_index
         } else {
             let index = self.symbols.len();
-            self.symbols.push(Symbol::Utf8 { data: string.to_owned() });
+            self.symbols.push(Symbol::Utf8 {
+                data: string.to_owned(),
+            });
             self.utf8_cache.insert(string.to_owned(), index);
             index
+        }
+    }
+
+    fn add_name_and_type(&mut self, name: &str, typ: &str) -> usize {
+        if let Some(registered_name_and_type_index) = self
+            .name_and_type_cache
+            .get(&(name.to_owned(), typ.to_owned()))
+        {
+            *registered_name_and_type_index
+        } else {
+            let name_index = self.add_utf8(name) as u16;
+            let type_index = self.add_utf8(typ) as u16;
+            let name_and_type_index = self.symbols.len();
+            self.symbols.push(Symbol::NameAndType {
+                name_index,
+                type_index,
+            });
+            self.name_and_type_cache
+                .insert((name.to_owned(), typ.to_owned()), name_and_type_index);
+            name_and_type_index
         }
     }
 }
@@ -228,10 +255,22 @@ mod test {
     #[test]
     pub fn test_symbol_table_utf8() {
         let mut table = SymbolTable::default();
-        
+
         let index = table.add_utf8("ClassName");
         let cached_index = table.add_utf8("ClassName");
-        
+
         assert_eq!(index, cached_index);
+        assert_eq!(table.len(), 1);
+    }
+
+    #[test]
+    pub fn test_symbol_table_name_and_type() {
+        let mut table = SymbolTable::default();
+
+        let index = table.add_name_and_type("clazz", "java.lang.Class");
+        let cached_index = table.add_name_and_type("clazz", "java.lang.Class");
+
+        assert_eq!(index, cached_index);
+        assert_eq!(table.len(), 3);
     }
 }
