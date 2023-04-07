@@ -206,7 +206,7 @@ impl Symbol {
 pub struct SymbolTable {
     symbols: Vec<Symbol>,
     utf8_cache: HashMap<String, usize>,
-    name_and_type_cache: HashMap<(String, String), usize>,
+    name_and_type_cache: HashMap<(u16, u16), usize>,
     integer_cache: HashMap<i32, usize>,
     float_cache: HashMap<[u8; 4], usize>,
     long_cache: HashMap<i64, usize>,
@@ -291,21 +291,19 @@ impl SymbolTable {
     }
 
     fn add_name_and_type(&mut self, name: &str, typ: &str) -> usize {
-        if let Some(index) = self
-            .name_and_type_cache
-            .get(&(name.to_owned(), typ.to_owned()))
-        {
+        let name_index = self.add_utf8(name) as u16;
+        let type_index = self.add_utf8(name) as u16;
+
+        if let Some(index) = self.name_and_type_cache.get(&(name_index, type_index)) {
             *index
         } else {
-            let name_index = self.add_utf8(name) as u16;
-            let type_index = self.add_utf8(typ) as u16;
             let name_and_type_index = self.symbols.len();
             self.symbols.push(Symbol::NameAndType {
                 name_index,
                 type_index,
             });
             self.name_and_type_cache
-                .insert((name.to_owned(), typ.to_owned()), name_and_type_index)
+                .insert((name_index, type_index), name_and_type_index)
                 .unwrap()
         }
     }
