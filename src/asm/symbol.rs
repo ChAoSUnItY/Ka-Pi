@@ -209,7 +209,7 @@ impl Symbol {
 }
 
 #[derive(Default, Serialize, Deserialize)]
-pub struct SymbolTable {
+struct SymbolTable {
     symbols: Vec<Symbol>,
     #[serde(skip_serializing)]
     utf8_cache: HashMap<String, u16>,
@@ -234,7 +234,7 @@ impl SymbolTable {
         self.symbols.len() as u16
     }
 
-    fn add_utf8(&mut self, string: &str) -> u16 {
+    pub(crate) fn add_utf8(&mut self, string: &str) -> u16 {
         if let Some(index) = self.utf8_cache.get(string) {
             *index
         } else {
@@ -246,7 +246,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_class(&mut self, class: &str) -> u16 {
+    pub(crate) fn add_class(&mut self, class: &str) -> u16 {
         let name_index = self.add_utf8(class);
 
         if let Some(index) = self.single_index_cache.get(&name_index) {
@@ -258,7 +258,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_string(&mut self, string: &str) -> u16 {
+    pub(crate) fn add_string(&mut self, string: &str) -> u16 {
         let string_index = self.add_utf8(string);
 
         if let Some(index) = self.single_index_cache.get(&string_index) {
@@ -270,7 +270,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_integer(&mut self, integer: i32) -> u16 {
+    pub(crate) fn add_integer(&mut self, integer: i32) -> u16 {
         if let Some(index) = self.integer_cache.get(&integer) {
             *index
         } else {
@@ -281,7 +281,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_float(&mut self, float: f32) -> u16 {
+    pub(crate) fn add_float(&mut self, float: f32) -> u16 {
         let be_bytes = float.to_be_bytes();
 
         if let Some(index) = self.float_cache.get(&be_bytes) {
@@ -292,7 +292,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_long(&mut self, long: i64) -> u16 {
+    pub(crate) fn add_long(&mut self, long: i64) -> u16 {
         if let Some(index) = self.long_cache.get(&long) {
             *index
         } else {
@@ -308,7 +308,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_double(&mut self, double: f64) -> u16 {
+    pub(crate) fn add_double(&mut self, double: f64) -> u16 {
         let be_bytes = double.to_be_bytes();
 
         if let Some(index) = self.double_cache.get(&be_bytes) {
@@ -328,7 +328,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_field_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
+    pub(crate) fn add_field_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
         let class_index = self.add_class(class);
         let name_and_type_index = self.add_name_and_type(name, typ);
 
@@ -347,7 +347,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_method_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
+    pub(crate) fn add_method_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
         let class_index = self.add_class(class);
         let name_and_type_index = self.add_name_and_type(name, typ);
 
@@ -366,7 +366,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_interface_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
+    pub(crate) fn add_interface_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
         let class_index = self.add_class(class);
         let name_and_type_index = self.add_name_and_type(name, typ);
 
@@ -385,7 +385,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_name_and_type(&mut self, name: &str, typ: &str) -> u16 {
+    pub(crate) fn add_name_and_type(&mut self, name: &str, typ: &str) -> u16 {
         let name_index = self.add_utf8(name);
         let type_index = self.add_utf8(typ);
 
@@ -401,7 +401,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_method_handle(
+    pub(crate) fn add_method_handle(
         &mut self,
         reference_kind: RefKind,
         class: &str,
@@ -438,7 +438,7 @@ impl SymbolTable {
     // TODO: fn add_dynamic()
     // TODO: fn add_invoke_dynamic()
 
-    fn add_module(&mut self, name: &str) -> u16 {
+    pub(crate) fn add_module(&mut self, name: &str) -> u16 {
         let name_index = self.add_utf8(name);
 
         if let Some(index) = self.single_index_cache.get(&name_index) {
@@ -450,7 +450,7 @@ impl SymbolTable {
         }
     }
 
-    fn add_package(&mut self, name: &str) -> u16 {
+    pub(crate) fn add_package(&mut self, name: &str) -> u16 {
         let name_index = self.add_utf8(name);
 
         if let Some(index) = self.single_index_cache.get(&name_index) {
