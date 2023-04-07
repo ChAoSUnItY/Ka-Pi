@@ -292,7 +292,7 @@ impl SymbolTable {
 
     fn add_name_and_type(&mut self, name: &str, typ: &str) -> usize {
         let name_index = self.add_utf8(name) as u16;
-        let type_index = self.add_utf8(name) as u16;
+        let type_index = self.add_utf8(typ) as u16;
 
         if let Some(index) = self.name_and_type_cache.get(&(name_index, type_index)) {
             *index
