@@ -211,29 +211,29 @@ impl Symbol {
 pub struct SymbolTable {
     symbols: Vec<Symbol>,
     #[serde(skip_serializing)]
-    utf8_cache: HashMap<String, usize>,
+    utf8_cache: HashMap<String, u16>,
     #[serde(skip_serializing)]
-    single_index_cache: HashMap<u16, usize>,
+    single_index_cache: HashMap<u16, u16>,
     #[serde(skip_serializing)]
-    double_index_cache: HashMap<(u16, u16), usize>,
+    double_index_cache: HashMap<(u16, u16), u16>,
     #[serde(skip_serializing)]
-    integer_cache: HashMap<i32, usize>,
+    integer_cache: HashMap<i32, u16>,
     #[serde(skip_serializing)]
-    float_cache: HashMap<[u8; 4], usize>,
+    float_cache: HashMap<[u8; 4], u16>,
     #[serde(skip_serializing)]
-    long_cache: HashMap<i64, usize>,
+    long_cache: HashMap<i64, u16>,
     #[serde(skip_serializing)]
-    double_cache: HashMap<[u8; 8], usize>,
+    double_cache: HashMap<[u8; 8], u16>,
     #[serde(skip_serializing)]
-    method_handle_cache: HashMap<(u8, u16), usize>,
+    method_handle_cache: HashMap<(u8, u16), u16>,
 }
 
 impl SymbolTable {
-    fn len(&self) -> usize {
-        self.symbols.len()
+    fn len(&self) -> u16 {
+        self.symbols.len() as u16
     }
 
-    fn add_utf8(&mut self, string: &str) -> usize {
+    fn add_utf8(&mut self, string: &str) -> u16 {
         if let Some(index) = self.utf8_cache.get(string) {
             *index
         } else {
@@ -241,64 +241,60 @@ impl SymbolTable {
                 data: string.to_owned(),
             });
             self.utf8_cache
-                .insert(string.to_owned(), self.symbols.len())
+                .insert(string.to_owned(), self.len())
                 .unwrap()
         }
     }
 
-    fn add_class(&mut self, class: &str) -> usize {
-        let name_index = self.add_utf8(class) as u16;
+    fn add_class(&mut self, class: &str) -> u16 {
+        let name_index = self.add_utf8(class);
 
         if let Some(index) = self.single_index_cache.get(&name_index) {
             *index
         } else {
             self.symbols.push(Symbol::Class { name_index });
             self.single_index_cache
-                .insert(name_index, self.symbols.len())
+                .insert(name_index, self.len())
                 .unwrap()
         }
     }
 
-    fn add_string(&mut self, string: &str) -> usize {
-        let string_index = self.add_utf8(string) as u16;
+    fn add_string(&mut self, string: &str) -> u16 {
+        let string_index = self.add_utf8(string);
 
         if let Some(index) = self.single_index_cache.get(&string_index) {
             *index
         } else {
             self.symbols.push(Symbol::String { string_index });
             self.single_index_cache
-                .insert(string_index, self.symbols.len())
+                .insert(string_index, self.len())
                 .unwrap()
         }
     }
 
-    fn add_integer(&mut self, integer: i32) -> usize {
+    fn add_integer(&mut self, integer: i32) -> u16 {
         if let Some(index) = self.integer_cache.get(&integer) {
             *index
         } else {
             self.symbols.push(Symbol::Integer {
                 bytes: integer.to_be_bytes(),
             });
-            self.integer_cache
-                .insert(integer, self.symbols.len())
-                .unwrap()
+            self.integer_cache.insert(integer, self.len()).unwrap()
         }
     }
 
-    fn add_float(&mut self, float: f32) -> usize {
+    fn add_float(&mut self, float: f32) -> u16 {
         let be_bytes = float.to_be_bytes();
 
         if let Some(index) = self.float_cache.get(&be_bytes) {
             *index
         } else {
             self.symbols.push(Symbol::Float { bytes: be_bytes });
-            self.float_cache
-                .insert(be_bytes, self.symbols.len())
-                .unwrap()
+            self.float_cache.insert(be_bytes, self.len()).unwrap()
         }
     }
 
-    fn add_long(&mut self, long: i64) -> usize {
+    fn add_long(&mut self, long: i64) -> u16 {
         if let Some(index) = self.long_cache.get(&long) {
             *index
         } else {
@@ -308,13 +304,13 @@ impl SymbolTable {
                 high_bytes,
                 low_bytes,
             });
-            self.long_cache.insert(long, self.symbols.len()).unwrap()
+            self.long_cache.insert(long, self.len()).unwrap()
         }
     }
 
-    fn add_field_ref(&mut self, class: &str, name: &str, typ: &str) -> usize {
-        let class_index = self.add_class(class) as u16;
-        let name_and_type_index = self.add_name_and_type(name, typ) as u16;
+    fn add_field_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
+        let class_index = self.add_class(class);
+        let name_and_type_index = self.add_name_and_type(name, typ);
 
         if let Some(index) = self
             .double_index_cache
@@ -327,14 +323,14 @@ impl SymbolTable {
                 name_and_type_index,
             });
             self.double_index_cache
-                .insert((class_index, name_and_type_index), self.symbols.len())
+                .insert((class_index, name_and_type_index), self.len())
                 .unwrap()
         }
     }
 
-    fn add_method_ref(&mut self, class: &str, name: &str, typ: &str) -> usize {
-        let class_index = self.add_class(class) as u16;
-        let name_and_type_index = self.add_name_and_type(name, typ) as u16;
+    fn add_method_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
+        let class_index = self.add_class(class);
+        let name_and_type_index = self.add_name_and_type(name, typ);
 
         if let Some(index) = self
             .double_index_cache
@@ -347,14 +343,14 @@ impl SymbolTable {
                 name_and_type_index,
             });
             self.double_index_cache
-                .insert((class_index, name_and_type_index), self.symbols.len())
+                .insert((class_index, name_and_type_index), self.len())
                 .unwrap()
         }
     }
 
-    fn add_interface_ref(&mut self, class: &str, name: &str, typ: &str) -> usize {
-        let class_index = self.add_class(class) as u16;
-        let name_and_type_index = self.add_name_and_type(name, typ) as u16;
+    fn add_interface_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
+        let class_index = self.add_class(class);
+        let name_and_type_index = self.add_name_and_type(name, typ);
 
         if let Some(index) = self
             .double_index_cache
@@ -367,12 +363,12 @@ impl SymbolTable {
                 name_and_type_index,
             });
             self.double_index_cache
-                .insert((class_index, name_and_type_index), self.symbols.len())
+                .insert((class_index, name_and_type_index), self.len())
                 .unwrap()
         }
     }
 
-    fn add_double(&mut self, double: f64) -> usize {
+    fn add_double(&mut self, double: f64) -> u16 {
         let be_bytes = double.to_be_bytes();
 
         if let Some(index) = self.double_cache.get(&be_bytes) {
@@ -385,26 +381,23 @@ impl SymbolTable {
                 high_bytes,
                 low_bytes,
             });
-            self.double_cache
-                .insert(be_bytes, self.symbols.len())
-                .unwrap()
+            self.double_cache.insert(be_bytes, self.len()).unwrap()
         }
     }
 
-    fn add_name_and_type(&mut self, name: &str, typ: &str) -> usize {
-        let name_index = self.add_utf8(name) as u16;
-        let type_index = self.add_utf8(typ) as u16;
+    fn add_name_and_type(&mut self, name: &str, typ: &str) -> u16 {
+        let name_index = self.add_utf8(name);
+        let type_index = self.add_utf8(typ);
 
         if let Some(index) = self.double_index_cache.get(&(name_index, type_index)) {
             *index
         } else {
-            let name_and_type_index = self.symbols.len();
             self.symbols.push(Symbol::NameAndType {
                 name_index,
                 type_index,
             });
             self.double_index_cache
-                .insert((name_index, type_index), name_and_type_index)
+                .insert((name_index, type_index), self.len())
                 .unwrap()
         }
     }
@@ -415,7 +408,7 @@ impl SymbolTable {
         class: &str,
         name: &str,
         typ: &str,
-    ) -> usize {
+    ) -> u16 {
         let reference_index = match reference_kind {
             RefKind::GetField | RefKind::GetStatic | RefKind::PutField | RefKind::PutStatic => {
                 self.add_field_ref(class, name, typ)
@@ -426,7 +419,7 @@ impl SymbolTable {
             RefKind::InvokeStatic | RefKind::InvokeSpecial | RefKind::InvokeInterface => {
                 self.add_interface_ref(class, name, typ)
             }
-        } as u16;
+        };
 
         if let Some(index) = self
             .method_handle_cache
@@ -439,7 +432,7 @@ impl SymbolTable {
                 reference_index,
             });
             self.method_handle_cache
-                .insert((reference_kind as u8, reference_index), self.symbols.len())
+                .insert((reference_kind as u8, reference_index), self.len())
                 .unwrap()
         }
     }
@@ -447,28 +440,28 @@ impl SymbolTable {
     // TODO: fn add_dynamic()
     // TODO: fn add_invoke_dynamic()
 
-    fn add_module(&mut self, name: &str) -> usize {
-        let name_index = self.add_utf8(name) as u16;
+    fn add_module(&mut self, name: &str) -> u16 {
+        let name_index = self.add_utf8(name);
 
         if let Some(index) = self.single_index_cache.get(&name_index) {
             *index
         } else {
             self.symbols.push(Symbol::Module { name_index });
             self.single_index_cache
-                .insert(name_index, self.symbols.len())
+                .insert(name_index, self.len())
                 .unwrap()
         }
     }
 
-    fn add_package(&mut self, name: &str) -> usize {
-        let name_index = self.add_utf8(name) as u16;
+    fn add_package(&mut self, name: &str) -> u16 {
+        let name_index = self.add_utf8(name);
 
         if let Some(index) = self.single_index_cache.get(&name_index) {
             *index
         } else {
             self.symbols.push(Symbol::Package { name_index });
             self.single_index_cache
-                .insert(name_index, self.symbols.len())
+                .insert(name_index, self.len())
                 .unwrap()
         }
     }
