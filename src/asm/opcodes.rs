@@ -1,6 +1,8 @@
 // ASM API versions.
 // These APIs are unused at this moments.
 
+use serde::{Deserialize, Serialize};
+
 pub const ASM4: u32 = 4 << 16 | 0 << 8;
 pub const ASM5: u32 = 5 << 16 | 0 << 8;
 pub const ASM6: u32 = 6 << 16 | 0 << 8;
@@ -116,6 +118,20 @@ pub const T_LONG: u8 = 11;
 
 // Possible values for the reference_kind field of CONSTANT_MethodHandle_info structures.
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.4.8.
+
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+pub enum RefKind {
+    GetField = 1,
+    GetStatic = 2,
+    PutField = 3,
+    PutStatic = 4,
+    InvokeVirtual = 5,
+    InvokeStatic = 6,
+    InvokeSpecial = 7,
+    NewInvokeSpecial = 8,
+    InvokeInterface = 9,
+}
 
 pub const H_GETFIELD: u8 = 1;
 pub const H_GETSTATIC: u8 = 2;

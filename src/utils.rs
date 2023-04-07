@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::hash::Hash;
 use std::ops::IndexMut;
 
 pub(crate) trait Replacable<T>: IndexMut<usize, Output = T> {}
@@ -34,6 +36,21 @@ impl Rev<4> for i32 {
         let mut bytes = self.to_ne_bytes();
         bytes.reverse();
         bytes
+    }
+}
+
+pub(crate) trait InsertAndRetrieve<K, V> {
+    fn insert_retrieve(&mut self, key: K, value: V) -> V;
+}
+
+impl<K, V> InsertAndRetrieve<K, V> for HashMap<K, V>
+where
+    K: Eq + Hash,
+    V: Copy,
+{
+    fn insert_retrieve(&mut self, key: K, value: V) -> V {
+        self.insert(key, value);
+        value
     }
 }
 

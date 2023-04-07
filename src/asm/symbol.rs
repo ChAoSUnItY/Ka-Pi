@@ -1,10 +1,14 @@
 // Tag values for the constant pool entries (using the same order as in the JVMS).
 
-use crate::asm::symbol::ConstantTag::*;
-use crate::error::KapiError;
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::asm::opcodes::RefKind;
+use crate::utils::InsertAndRetrieve;
 
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ConstantTag {
     /** The tag value of CONSTANT_Class_info JVMS structures. */
     Class = 7,
@@ -113,6 +117,7 @@ pub(crate) const UNINITIALIZED_TYPE_TAG: u8 = 129;
 /** The tag value of a merged type entry in the (ASM specific) type table of a class. */
 pub(crate) const MERGED_TYPE_TAG: u8 = 130;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) enum Symbol {
     Class {
         name_index: u16,
@@ -151,8 +156,10 @@ pub(crate) enum Symbol {
         type_index: u16,
     },
     Utf8 {
-        /* Due to rust's safety, len and bytes information are merged as Vec<u8> type */
-        bytes: Vec<u8>,
+        /*  Implementation note: This has been merged into a single String type for later table
+         *   implementation usage.
+         */
+        data: String,
     },
     MethodHandle {
         reference_kind: u8,
@@ -180,27 +187,302 @@ pub(crate) enum Symbol {
 impl Symbol {
     pub const fn tag(&self) -> ConstantTag {
         match self {
-            Symbol::Class { .. } => Class,
-            Symbol::FieldRef { .. } => FieldRef,
-            Symbol::MethodRef { .. } => MethodRef,
-            Symbol::InterfaceMethodRef { .. } => InterfaceMethodRef,
-            Symbol::String { .. } => String,
-            Symbol::Integer { .. } => Integer,
-            Symbol::Float { .. } => Float,
-            Symbol::Long { .. } => Long,
-            Symbol::Double { .. } => Double,
-            Symbol::NameAndType { .. } => NameAndType,
-            Symbol::Utf8 { .. } => Utf8,
-            Symbol::MethodHandle { .. } => MethodHandle,
-            Symbol::MethodType { .. } => MethodType,
-            Symbol::Dynamic { .. } => Dynamic,
-            Symbol::InvokeDynamic { .. } => InvokeDynamic,
-            Symbol::Module { .. } => Module,
-            Symbol::Package { .. } => Package,
+            Symbol::Class { .. } => ConstantTag::Class,
+            Symbol::FieldRef { .. } => ConstantTag::FieldRef,
+            Symbol::MethodRef { .. } => ConstantTag::MethodRef,
+            Symbol::InterfaceMethodRef { .. } => ConstantTag::InterfaceMethodRef,
+            Symbol::String { .. } => ConstantTag::String,
+            Symbol::Integer { .. } => ConstantTag::Integer,
+            Symbol::Float { .. } => ConstantTag::Float,
+            Symbol::Long { .. } => ConstantTag::Long,
+            Symbol::Double { .. } => ConstantTag::Double,
+            Symbol::NameAndType { .. } => ConstantTag::NameAndType,
+            Symbol::Utf8 { .. } => ConstantTag::Utf8,
+            Symbol::MethodHandle { .. } => ConstantTag::MethodHandle,
+            Symbol::MethodType { .. } => ConstantTag::MethodType,
+            Symbol::Dynamic { .. } => ConstantTag::Dynamic,
+            Symbol::InvokeDynamic { .. } => ConstantTag::InvokeDynamic,
+            Symbol::Module { .. } => ConstantTag::Module,
+            Symbol::Package { .. } => ConstantTag::Package,
         }
     }
 }
 
+#[derive(Default, Serialize, Deserialize)]
 pub struct SymbolTable {
     symbols: Vec<Symbol>,
+    #[serde(skip_serializing)]
+    utf8_cache: HashMap<String, u16>,
+    #[serde(skip_serializing)]
+    single_index_cache: HashMap<u16, u16>,
+    #[serde(skip_serializing)]
+    double_index_cache: HashMap<(u16, u16), u16>,
+    #[serde(skip_serializing)]
+    integer_cache: HashMap<i32, u16>,
+    #[serde(skip_serializing)]
+    float_cache: HashMap<[u8; 4], u16>,
+    #[serde(skip_serializing)]
+    long_cache: HashMap<i64, u16>,
+    #[serde(skip_serializing)]
+    double_cache: HashMap<[u8; 8], u16>,
+    #[serde(skip_serializing)]
+    method_handle_cache: HashMap<(u8, u16), u16>,
+}
+
+impl SymbolTable {
+    fn len(&self) -> u16 {
+        self.symbols.len() as u16
+    }
+
+    fn add_utf8(&mut self, string: &str) -> u16 {
+        if let Some(index) = self.utf8_cache.get(string) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Utf8 {
+                data: string.to_owned(),
+            });
+            self.utf8_cache
+                .insert_retrieve(string.to_owned(), self.len())
+        }
+    }
+
+    fn add_class(&mut self, class: &str) -> u16 {
+        let name_index = self.add_utf8(class);
+
+        if let Some(index) = self.single_index_cache.get(&name_index) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Class { name_index });
+            self.single_index_cache
+                .insert_retrieve(name_index, self.len())
+        }
+    }
+
+    fn add_string(&mut self, string: &str) -> u16 {
+        let string_index = self.add_utf8(string);
+
+        if let Some(index) = self.single_index_cache.get(&string_index) {
+            *index
+        } else {
+            self.symbols.push(Symbol::String { string_index });
+            self.single_index_cache
+                .insert_retrieve(string_index, self.len())
+        }
+    }
+
+    fn add_integer(&mut self, integer: i32) -> u16 {
+        if let Some(index) = self.integer_cache.get(&integer) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Integer {
+                bytes: integer.to_be_bytes(),
+            });
+            self.integer_cache.insert_retrieve(integer, self.len())
+        }
+    }
+
+    fn add_float(&mut self, float: f32) -> u16 {
+        let be_bytes = float.to_be_bytes();
+
+        if let Some(index) = self.float_cache.get(&be_bytes) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Float { bytes: be_bytes });
+            self.float_cache.insert_retrieve(be_bytes, self.len())
+        }
+    }
+
+    fn add_long(&mut self, long: i64) -> u16 {
+        if let Some(index) = self.long_cache.get(&long) {
+            *index
+        } else {
+            let [high_bytes, low_bytes] =
+                unsafe { std::mem::transmute::<[u8; 8], [[u8; 4]; 2]>(long.to_be_bytes()) };
+            self.symbols.push(Symbol::Long {
+                high_bytes,
+                low_bytes,
+            });
+            self.long_cache.insert_retrieve(long, self.len())
+        }
+    }
+
+    fn add_field_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
+        let class_index = self.add_class(class);
+        let name_and_type_index = self.add_name_and_type(name, typ);
+
+        if let Some(index) = self
+            .double_index_cache
+            .get(&(class_index, name_and_type_index))
+        {
+            *index
+        } else {
+            self.symbols.push(Symbol::FieldRef {
+                class_index,
+                name_and_type_index,
+            });
+            self.double_index_cache
+                .insert_retrieve((class_index, name_and_type_index), self.len())
+        }
+    }
+
+    fn add_method_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
+        let class_index = self.add_class(class);
+        let name_and_type_index = self.add_name_and_type(name, typ);
+
+        if let Some(index) = self
+            .double_index_cache
+            .get(&(class_index, name_and_type_index))
+        {
+            *index
+        } else {
+            self.symbols.push(Symbol::MethodRef {
+                class_index,
+                name_and_type_index,
+            });
+            self.double_index_cache
+                .insert_retrieve((class_index, name_and_type_index), self.len())
+        }
+    }
+
+    fn add_interface_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
+        let class_index = self.add_class(class);
+        let name_and_type_index = self.add_name_and_type(name, typ);
+
+        if let Some(index) = self
+            .double_index_cache
+            .get(&(class_index, name_and_type_index))
+        {
+            *index
+        } else {
+            self.symbols.push(Symbol::InterfaceMethodRef {
+                class_index,
+                name_and_type_index,
+            });
+            self.double_index_cache
+                .insert_retrieve((class_index, name_and_type_index), self.len())
+        }
+    }
+
+    fn add_double(&mut self, double: f64) -> u16 {
+        let be_bytes = double.to_be_bytes();
+
+        if let Some(index) = self.double_cache.get(&be_bytes) {
+            *index
+        } else {
+            let [high_bytes, low_bytes] =
+                unsafe { std::mem::transmute::<[u8; 8], [[u8; 4]; 2]>(be_bytes) };
+
+            self.symbols.push(Symbol::Double {
+                high_bytes,
+                low_bytes,
+            });
+            self.double_cache.insert_retrieve(be_bytes, self.len())
+        }
+    }
+
+    fn add_name_and_type(&mut self, name: &str, typ: &str) -> u16 {
+        let name_index = self.add_utf8(name);
+        let type_index = self.add_utf8(typ);
+
+        if let Some(index) = self.double_index_cache.get(&(name_index, type_index)) {
+            *index
+        } else {
+            self.symbols.push(Symbol::NameAndType {
+                name_index,
+                type_index,
+            });
+            self.double_index_cache
+                .insert_retrieve((name_index, type_index), self.len())
+        }
+    }
+
+    fn add_method_handle(
+        &mut self,
+        reference_kind: RefKind,
+        class: &str,
+        name: &str,
+        typ: &str,
+    ) -> u16 {
+        let reference_index = match reference_kind {
+            RefKind::GetField | RefKind::GetStatic | RefKind::PutField | RefKind::PutStatic => {
+                self.add_field_ref(class, name, typ)
+            }
+            RefKind::InvokeVirtual | RefKind::NewInvokeSpecial => {
+                self.add_method_ref(class, name, typ)
+            }
+            RefKind::InvokeStatic | RefKind::InvokeSpecial | RefKind::InvokeInterface => {
+                self.add_interface_ref(class, name, typ)
+            }
+        };
+
+        if let Some(index) = self
+            .method_handle_cache
+            .get(&(reference_kind as u8, reference_index))
+        {
+            *index
+        } else {
+            self.symbols.push(Symbol::MethodHandle {
+                reference_kind: reference_kind as u8,
+                reference_index,
+            });
+            self.method_handle_cache
+                .insert_retrieve((reference_kind as u8, reference_index), self.len())
+        }
+    }
+
+    // TODO: fn add_dynamic()
+    // TODO: fn add_invoke_dynamic()
+
+    fn add_module(&mut self, name: &str) -> u16 {
+        let name_index = self.add_utf8(name);
+
+        if let Some(index) = self.single_index_cache.get(&name_index) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Module { name_index });
+            self.single_index_cache
+                .insert_retrieve(name_index, self.len())
+        }
+    }
+
+    fn add_package(&mut self, name: &str) -> u16 {
+        let name_index = self.add_utf8(name);
+
+        if let Some(index) = self.single_index_cache.get(&name_index) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Package { name_index });
+            self.single_index_cache
+                .insert_retrieve(name_index, self.len())
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::asm::symbol::SymbolTable;
+
+    #[test]
+    pub fn test_symbol_table_utf8() {
+        let mut table = SymbolTable::default();
+
+        let index = table.add_utf8("ClassName");
+        let cached_index = table.add_utf8("ClassName");
+
+        assert_eq!(index, cached_index);
+        assert_eq!(table.len(), 1);
+    }
+
+    #[test]
+    pub fn test_symbol_table_name_and_type() {
+        let mut table = SymbolTable::default();
+
+        let index = table.add_name_and_type("clazz", "java.lang.Class");
+        let cached_index = table.add_name_and_type("clazz", "java.lang.Class");
+
+        assert_eq!(index, cached_index);
+        assert_eq!(table.len(), 3);
+    }
+
+    // More tests?
 }
