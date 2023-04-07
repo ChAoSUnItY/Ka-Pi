@@ -130,7 +130,7 @@ pub enum RefKind {
     InvokeStatic = 6,
     InvokeSpecial = 7,
     NewInvokeSpecial = 8,
-    InvokeInterface = 9
+    InvokeInterface = 9,
 }
 
 pub const H_GETFIELD: u8 = 1;

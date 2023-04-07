@@ -492,6 +492,6 @@ mod test {
         assert_eq!(index, cached_index);
         assert_eq!(table.len(), 3);
     }
-    
+
     // More tests?
 }
