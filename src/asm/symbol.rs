@@ -1,6 +1,7 @@
 // Tag values for the constant pool entries (using the same order as in the JVMS).
 
 use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -112,6 +113,7 @@ pub(crate) const UNINITIALIZED_TYPE_TAG: u8 = 129;
 /** The tag value of a merged type entry in the (ASM specific) type table of a class. */
 pub(crate) const MERGED_TYPE_TAG: u8 = 130;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) enum Symbol {
     Class {
         name_index: u16,
@@ -206,7 +208,8 @@ impl Symbol {
 pub struct SymbolTable {
     symbols: Vec<Symbol>,
     utf8_cache: HashMap<String, usize>,
-    name_and_type_cache: HashMap<(u16, u16), usize>,
+    single_index_cache: HashMap<u16, usize>,
+    double_index_cache: HashMap<(u16, u16), usize>,
     integer_cache: HashMap<i32, usize>,
     float_cache: HashMap<[u8; 4], usize>,
     long_cache: HashMap<i64, usize>,
@@ -228,6 +231,32 @@ impl SymbolTable {
             self.utf8_cache
                 .insert(string.to_owned(), self.symbols.len())
                 .unwrap()
+        }
+    }
+    
+    fn add_class(&mut self, class: &str) -> usize {
+        let name_index = self.add_utf8(class) as u16;
+        
+        if let Some(index) = self.single_index_cache.get(&name_index) {
+            *index
+        } else {
+            self.symbols.push(Symbol::Class {
+                name_index
+            });
+            self.single_index_cache.insert(name_index, self.symbols.len()).unwrap()
+        }
+    }
+    
+    fn add_string(&mut self, string: &str) -> usize {
+        let string_index = self.add_utf8(string) as u16;
+        
+        if let Some(index) = self.single_index_cache.get(&string_index) {
+            *index
+        } else {
+            self.symbols.push(Symbol::String {
+                string_index
+            });
+            self.single_index_cache.insert(string_index, self.symbols.len()).unwrap()
         }
     }
 
@@ -270,6 +299,51 @@ impl SymbolTable {
             self.long_cache.insert(long, self.symbols.len()).unwrap()
         }
     }
+    
+    fn add_field_ref(&mut self, class: &str, name: &str, typ: &str) -> usize {
+        let class_index = self.add_class(class) as u16;
+        let name_and_type_index = self.add_name_and_type(name, typ) as u16;
+        
+        if let Some(index) = self.double_index_cache.get(&(class_index, name_and_type_index)) {
+            *index
+        } else {
+            self.symbols.push(Symbol::FieldRef {
+                class_index,
+                name_and_type_index
+            });
+            self.double_index_cache.insert((class_index, name_and_type_index), self.symbols.len()).unwrap()
+        }
+    }
+
+    fn add_method_ref(&mut self, class: &str, name: &str, typ: &str) -> usize {
+        let class_index = self.add_class(class) as u16;
+        let name_and_type_index = self.add_name_and_type(name, typ) as u16;
+
+        if let Some(index) = self.double_index_cache.get(&(class_index, name_and_type_index)) {
+            *index
+        } else {
+            self.symbols.push(Symbol::MethodRef {
+                class_index,
+                name_and_type_index
+            });
+            self.double_index_cache.insert((class_index, name_and_type_index), self.symbols.len()).unwrap()
+        }
+    }
+
+    fn add_interface_ref(&mut self, class: &str, name: &str, typ: &str) -> usize {
+        let class_index = self.add_class(class) as u16;
+        let name_and_type_index = self.add_name_and_type(name, typ) as u16;
+
+        if let Some(index) = self.double_index_cache.get(&(class_index, name_and_type_index)) {
+            *index
+        } else {
+            self.symbols.push(Symbol::InterfaceMethodRef {
+                class_index,
+                name_and_type_index
+            });
+            self.double_index_cache.insert((class_index, name_and_type_index), self.symbols.len()).unwrap()
+        }
+    }
 
     fn add_double(&mut self, double: f64) -> usize {
         let be_bytes = double.to_be_bytes();
@@ -294,7 +368,7 @@ impl SymbolTable {
         let name_index = self.add_utf8(name) as u16;
         let type_index = self.add_utf8(typ) as u16;
 
-        if let Some(index) = self.name_and_type_cache.get(&(name_index, type_index)) {
+        if let Some(index) = self.double_index_cache.get(&(name_index, type_index)) {
             *index
         } else {
             let name_and_type_index = self.symbols.len();
@@ -302,7 +376,7 @@ impl SymbolTable {
                 name_index,
                 type_index,
             });
-            self.name_and_type_cache
+            self.double_index_cache
                 .insert((name_index, type_index), name_and_type_index)
                 .unwrap()
         }
