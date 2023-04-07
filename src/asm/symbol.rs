@@ -298,11 +298,33 @@ impl SymbolTable {
         } else {
             let [high_bytes, low_bytes] =
                 unsafe { std::mem::transmute::<[u8; 8], [[u8; 4]; 2]>(long.to_be_bytes()) };
-            self.symbols.push(Symbol::Long {
-                high_bytes,
-                low_bytes,
-            });
-            self.long_cache.insert_retrieve(long, self.len())
+            for _ in 0..2 {
+                self.symbols.push(Symbol::Long {
+                    high_bytes,
+                    low_bytes,
+                });
+            }
+            self.long_cache.insert_retrieve(long, self.len() - 1)
+        }
+    }
+
+    fn add_double(&mut self, double: f64) -> u16 {
+        let be_bytes = double.to_be_bytes();
+
+        if let Some(index) = self.double_cache.get(&be_bytes) {
+            *index
+        } else {
+            let [high_bytes, low_bytes] =
+                unsafe { std::mem::transmute::<[u8; 8], [[u8; 4]; 2]>(be_bytes) };
+
+            for _ in 0..2 {
+                self.symbols.push(Symbol::Double {
+                    high_bytes,
+                    low_bytes,
+                });
+            }
+
+            self.double_cache.insert_retrieve(be_bytes, self.len() - 1)
         }
     }
 
@@ -360,23 +382,6 @@ impl SymbolTable {
             });
             self.double_index_cache
                 .insert_retrieve((class_index, name_and_type_index), self.len())
-        }
-    }
-
-    fn add_double(&mut self, double: f64) -> u16 {
-        let be_bytes = double.to_be_bytes();
-
-        if let Some(index) = self.double_cache.get(&be_bytes) {
-            *index
-        } else {
-            let [high_bytes, low_bytes] =
-                unsafe { std::mem::transmute::<[u8; 8], [[u8; 4]; 2]>(be_bytes) };
-
-            self.symbols.push(Symbol::Double {
-                high_bytes,
-                low_bytes,
-            });
-            self.double_cache.insert_retrieve(be_bytes, self.len())
         }
     }
 
@@ -463,25 +468,48 @@ mod test {
     use crate::asm::symbol::SymbolTable;
 
     #[test]
-    pub fn test_symbol_table_utf8() {
+    fn test_symbol_table_utf8() {
         let mut table = SymbolTable::default();
 
         let index = table.add_utf8("ClassName");
         let cached_index = table.add_utf8("ClassName");
 
+        assert_eq!(index, 1);
         assert_eq!(index, cached_index);
         assert_eq!(table.len(), 1);
     }
 
     #[test]
-    pub fn test_symbol_table_name_and_type() {
+    fn test_symbol_table_name_and_type() {
         let mut table = SymbolTable::default();
 
         let index = table.add_name_and_type("clazz", "java.lang.Class");
         let cached_index = table.add_name_and_type("clazz", "java.lang.Class");
 
+        // NameAndType is registered with 3 entries (utf8 & utf8 -> name_and_type),
+        // therefore the index of NameAndType should be 3
+        assert_eq!(index, 3);
         assert_eq!(index, cached_index);
         assert_eq!(table.len(), 3);
+    }
+
+    #[test]
+    fn test_symbol_table_long_double() {
+        let mut table = SymbolTable::default();
+
+        let index = table.add_long(i64::MAX);
+        let cached_index = table.add_long(i64::MAX);
+
+        assert_eq!(index, 1);
+        assert_eq!(index, cached_index);
+        assert_eq!(table.len(), 2); // Long takes 2 entries
+
+        let index = table.add_double(f64::MAX);
+        let cached_index = table.add_double(f64::MAX);
+
+        assert_eq!(index, 3);
+        assert_eq!(index, cached_index);
+        assert_eq!(table.len(), 4); // Long takes 2 entries
     }
 
     // More tests?
