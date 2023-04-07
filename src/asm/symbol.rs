@@ -1,7 +1,6 @@
 // Tag values for the constant pool entries (using the same order as in the JVMS).
 
-use crate::asm::symbol::ConstantTag::*;
-use crate::error::KapiError;
+use std::collections::HashMap;
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -151,8 +150,10 @@ pub(crate) enum Symbol {
         type_index: u16,
     },
     Utf8 {
-        /* Due to rust's safety, len and bytes information are merged as Vec<u8> type */
-        bytes: Vec<u8>,
+        /*  Implementation note: This has been merged into a single String type for later table
+         *   implementation usage.
+         */
+        data: String,
     },
     MethodHandle {
         reference_kind: u8,
@@ -180,27 +181,57 @@ pub(crate) enum Symbol {
 impl Symbol {
     pub const fn tag(&self) -> ConstantTag {
         match self {
-            Symbol::Class { .. } => Class,
-            Symbol::FieldRef { .. } => FieldRef,
-            Symbol::MethodRef { .. } => MethodRef,
-            Symbol::InterfaceMethodRef { .. } => InterfaceMethodRef,
-            Symbol::String { .. } => String,
-            Symbol::Integer { .. } => Integer,
-            Symbol::Float { .. } => Float,
-            Symbol::Long { .. } => Long,
-            Symbol::Double { .. } => Double,
-            Symbol::NameAndType { .. } => NameAndType,
-            Symbol::Utf8 { .. } => Utf8,
-            Symbol::MethodHandle { .. } => MethodHandle,
-            Symbol::MethodType { .. } => MethodType,
-            Symbol::Dynamic { .. } => Dynamic,
-            Symbol::InvokeDynamic { .. } => InvokeDynamic,
-            Symbol::Module { .. } => Module,
-            Symbol::Package { .. } => Package,
+            Symbol::Class { .. } => ConstantTag::Class,
+            Symbol::FieldRef { .. } => ConstantTag::FieldRef,
+            Symbol::MethodRef { .. } => ConstantTag::MethodRef,
+            Symbol::InterfaceMethodRef { .. } => ConstantTag::InterfaceMethodRef,
+            Symbol::String { .. } => ConstantTag::String,
+            Symbol::Integer { .. } => ConstantTag::Integer,
+            Symbol::Float { .. } => ConstantTag::Float,
+            Symbol::Long { .. } => ConstantTag::Long,
+            Symbol::Double { .. } => ConstantTag::Double,
+            Symbol::NameAndType { .. } => ConstantTag::NameAndType,
+            Symbol::Utf8 { .. } => ConstantTag::Utf8,
+            Symbol::MethodHandle { .. } => ConstantTag::MethodHandle,
+            Symbol::MethodType { .. } => ConstantTag::MethodType,
+            Symbol::Dynamic { .. } => ConstantTag::Dynamic,
+            Symbol::InvokeDynamic { .. } => ConstantTag::InvokeDynamic,
+            Symbol::Module { .. } => ConstantTag::Module,
+            Symbol::Package { .. } => ConstantTag::Package,
         }
     }
 }
 
+#[derive(Default)]
 pub struct SymbolTable {
     symbols: Vec<Symbol>,
+    utf8_cache: HashMap<String, usize>,
+}
+
+impl SymbolTable {
+    fn add_utf8(&mut self, string: &str) -> usize {
+        if let Some(registered_string_index) = self.utf8_cache.get(string) {
+            *registered_string_index
+        } else {
+            let index = self.symbols.len();
+            self.symbols.push(Symbol::Utf8 { data: string.to_owned() });
+            self.utf8_cache.insert(string.to_owned(), index);
+            index
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::asm::symbol::SymbolTable;
+
+    #[test]
+    pub fn test_symbol_table_utf8() {
+        let mut table = SymbolTable::default();
+        
+        let index = table.add_utf8("ClassName");
+        let cached_index = table.add_utf8("ClassName");
+        
+        assert_eq!(index, cached_index);
+    }
 }
