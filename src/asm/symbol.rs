@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::opcodes::RefKind;
+use crate::utils::InsertAndRetrieve;
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
@@ -241,8 +242,7 @@ impl SymbolTable {
                 data: string.to_owned(),
             });
             self.utf8_cache
-                .insert(string.to_owned(), self.len())
-                .unwrap()
+                .insert_retrieve(string.to_owned(), self.len())
         }
     }
 
@@ -254,8 +254,7 @@ impl SymbolTable {
         } else {
             self.symbols.push(Symbol::Class { name_index });
             self.single_index_cache
-                .insert(name_index, self.len())
-                .unwrap()
+                .insert_retrieve(name_index, self.len())
         }
     }
 
@@ -267,8 +266,7 @@ impl SymbolTable {
         } else {
             self.symbols.push(Symbol::String { string_index });
             self.single_index_cache
-                .insert(string_index, self.len())
-                .unwrap()
+                .insert_retrieve(string_index, self.len())
         }
     }
 
@@ -279,7 +277,7 @@ impl SymbolTable {
             self.symbols.push(Symbol::Integer {
                 bytes: integer.to_be_bytes(),
             });
-            self.integer_cache.insert(integer, self.len()).unwrap()
+            self.integer_cache.insert_retrieve(integer, self.len())
         }
     }
 
@@ -290,7 +288,7 @@ impl SymbolTable {
             *index
         } else {
             self.symbols.push(Symbol::Float { bytes: be_bytes });
-            self.float_cache.insert(be_bytes, self.len()).unwrap()
+            self.float_cache.insert_retrieve(be_bytes, self.len())
         }
     }
 
@@ -304,7 +302,7 @@ impl SymbolTable {
                 high_bytes,
                 low_bytes,
             });
-            self.long_cache.insert(long, self.len()).unwrap()
+            self.long_cache.insert_retrieve(long, self.len())
         }
     }
 
@@ -323,8 +321,7 @@ impl SymbolTable {
                 name_and_type_index,
             });
             self.double_index_cache
-                .insert((class_index, name_and_type_index), self.len())
-                .unwrap()
+                .insert_retrieve((class_index, name_and_type_index), self.len())
         }
     }
 
@@ -343,8 +340,7 @@ impl SymbolTable {
                 name_and_type_index,
             });
             self.double_index_cache
-                .insert((class_index, name_and_type_index), self.len())
-                .unwrap()
+                .insert_retrieve((class_index, name_and_type_index), self.len())
         }
     }
 
@@ -363,8 +359,7 @@ impl SymbolTable {
                 name_and_type_index,
             });
             self.double_index_cache
-                .insert((class_index, name_and_type_index), self.len())
-                .unwrap()
+                .insert_retrieve((class_index, name_and_type_index), self.len())
         }
     }
 
@@ -381,7 +376,7 @@ impl SymbolTable {
                 high_bytes,
                 low_bytes,
             });
-            self.double_cache.insert(be_bytes, self.len()).unwrap()
+            self.double_cache.insert_retrieve(be_bytes, self.len())
         }
     }
 
@@ -397,8 +392,7 @@ impl SymbolTable {
                 type_index,
             });
             self.double_index_cache
-                .insert((name_index, type_index), self.len())
-                .unwrap()
+                .insert_retrieve((name_index, type_index), self.len())
         }
     }
 
@@ -432,8 +426,7 @@ impl SymbolTable {
                 reference_index,
             });
             self.method_handle_cache
-                .insert((reference_kind as u8, reference_index), self.len())
-                .unwrap()
+                .insert_retrieve((reference_kind as u8, reference_index), self.len())
         }
     }
 
@@ -448,8 +441,7 @@ impl SymbolTable {
         } else {
             self.symbols.push(Symbol::Module { name_index });
             self.single_index_cache
-                .insert(name_index, self.len())
-                .unwrap()
+                .insert_retrieve(name_index, self.len())
         }
     }
 
@@ -461,8 +453,7 @@ impl SymbolTable {
         } else {
             self.symbols.push(Symbol::Package { name_index });
             self.single_index_cache
-                .insert(name_index, self.len())
-                .unwrap()
+                .insert_retrieve(name_index, self.len())
         }
     }
 }
