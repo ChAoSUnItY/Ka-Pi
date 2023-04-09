@@ -209,7 +209,7 @@ impl Symbol {
 }
 
 #[derive(Default, Serialize, Deserialize)]
-struct SymbolTable {
+pub(crate) struct SymbolTable {
     symbols: Vec<Symbol>,
     #[serde(skip_serializing)]
     utf8_cache: HashMap<String, u16>,
