@@ -51,7 +51,7 @@ pub const V_PREVIEW: u32 = 0xFFFF0000;
 
 #[repr(u16)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
-pub enum ClassAccessFlags {
+pub enum ClassAccessFlag {
     Public = 0x0001,
     Final = 0x0010,
     Super = 0x0020,
@@ -65,7 +65,7 @@ pub enum ClassAccessFlags {
 
 #[repr(u16)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
-pub enum FieldAccessFlags {
+pub enum FieldAccessFlag {
     Public = 0x0001,
     Private = 0x0002,
     Protected = 0x0004,
@@ -79,7 +79,7 @@ pub enum FieldAccessFlags {
 
 #[repr(u16)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
-pub enum MethodAccessFlags {
+pub enum MethodAccessFlag {
     Public = 0x0001,
     Private = 0x0002,
     Protected = 0x0004,
