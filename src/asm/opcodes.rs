@@ -49,6 +49,51 @@ pub const V_PREVIEW: u32 = 0xFFFF0000;
 // - https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.6-200-A.1
 // - https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.25
 
+#[repr(u16)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+pub enum ClassAccessFlag {
+    Public = 0x0001,
+    Final = 0x0010,
+    Super = 0x0020,
+    Interface = 0x0200,
+    Abstract = 0x0400,
+    Synthetic = 0x1000,
+    Annotation = 0x2000,
+    Enum = 0x4000,
+    Module = 0x8000,
+}
+
+#[repr(u16)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+pub enum FieldAccessFlag {
+    Public = 0x0001,
+    Private = 0x0002,
+    Protected = 0x0004,
+    Static = 0x0008,
+    Final = 0x0010,
+    Volatile = 0x0040,
+    Transient = 0x0080,
+    Synthetic = 0x1000,
+    Enum = 0x4000,
+}
+
+#[repr(u16)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+pub enum MethodAccessFlag {
+    Public = 0x0001,
+    Private = 0x0002,
+    Protected = 0x0004,
+    Static = 0x0008,
+    Final = 0x0010,
+    Synchronized = 0x0020,
+    Bridge = 0x0040,
+    Varargs = 0x0080,
+    Native = 0x0100,
+    Abstract = 0x0400,
+    Strict = 0x0800,
+    Synthetic = 0x1000,
+}
+
 pub const ACC_PUBLIC: u32 = 0x0001;
 // class, field, method
 pub const ACC_PRIVATE: u32 = 0x0002;
@@ -94,15 +139,6 @@ pub const ACC_ENUM: u32 = 0x4000;
 pub const ACC_MANDATED: u32 = 0x8000;
 // field, method, parameter, module, module *
 pub const ACC_MODULE: u32 = 0x8000; // class
-
-// ASM specific access flags.
-// WARNING: the 16 least significant bits must NOT be used, to avoid conflicts with standard
-// access flags, and also to make sure that these flags are automatically filtered out when
-// written in class files (because access flags are stored using 16 bits only).
-
-pub const ACC_RECORD: u32 = 0x10000;
-// class
-pub const ACC_DEPRECATED: u32 = 0x20000; // class, field, method
 
 // Possible values for the type operand of the NEWARRAY instruction.
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.

@@ -443,17 +443,17 @@ impl TypeRef {
     ) -> KapiResult<()> {
         match target_type_and_info {
             CLASS_TYPE_PARAMETER | METHOD_TYPE_PARAMETER | METHOD_FORMAL_PARAMETER => {
-                output.put((target_type_and_info >> 16) as i16);
+                output.put_be((target_type_and_info >> 16) as i16);
             }
             FIELD | METHOD_RETURN | METHOD_RECEIVER => {
-                output.put((target_type_and_info >> 16) as i16);
+                output.put_be((target_type_and_info >> 16) as i16);
             }
             CAST
             | CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT
             | METHOD_INVOCATION_TYPE_ARGUMENT
             | CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT
             | METHOD_REFERENCE_TYPE_ARGUMENT => {
-                output.put(target_type_and_info as i16);
+                output.put_be(target_type_and_info as i16);
             }
             CLASS_EXTENDS
             | CLASS_TYPE_PARAMETER_BOUND
@@ -464,8 +464,8 @@ impl TypeRef {
             | NEW
             | CONSTRUCTOR_REFERENCE
             | METHOD_REFERENCE => {
-                output.put((target_type_and_info >> 24) as i8);
-                output.put(((target_type_and_info & 0xFFFF00) >> 8) as i16);
+                output.put_be((target_type_and_info >> 24) as i8);
+                output.put_be(((target_type_and_info & 0xFFFF00) >> 8) as i16);
             }
             _ => {
                 return Err(KapiError::ArgError(String::from(
