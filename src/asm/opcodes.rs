@@ -94,51 +94,52 @@ pub enum MethodAccessFlag {
     Synthetic = 0x1000,
 }
 
+// class, field, method
 pub const ACC_PUBLIC: u32 = 0x0001;
 // class, field, method
 pub const ACC_PRIVATE: u32 = 0x0002;
 // class, field, method
 pub const ACC_PROTECTED: u32 = 0x0004;
-// class, field, method
-pub const ACC_STATIC: u32 = 0x0008;
 // field, method
-pub const ACC_FINAL: u32 = 0x0010;
+pub const ACC_STATIC: u32 = 0x0008;
 // class, field, method, parameter
+pub const ACC_FINAL: u32 = 0x0010;
+// class
 pub const ACC_SUPER: u32 = 0x0020;
-// class
+// method
 pub const ACC_SYNCHRONIZED: u32 = 0x0020;
-// method
-pub const ACC_OPEN: u32 = 0x0020;
 // module
+pub const ACC_OPEN: u32 = 0x0020;
+// module requires
 pub const ACC_TRANSITIVE: u32 = 0x0020;
-// module requires
+// field
 pub const ACC_VOLATILE: u32 = 0x0040;
-// field
+// method
 pub const ACC_BRIDGE: u32 = 0x0040;
-// method
-pub const ACC_STATIC_PHASE: u32 = 0x0040;
 // module requires
+pub const ACC_STATIC_PHASE: u32 = 0x0040;
+// method
 pub const ACC_VARARGS: u32 = 0x0080;
-// method
-pub const ACC_TRANSIENT: u32 = 0x0080;
 // field
+pub const ACC_TRANSIENT: u32 = 0x0080;
+// method
 pub const ACC_NATIVE: u32 = 0x0100;
-// method
+// class
 pub const ACC_INTERFACE: u32 = 0x0200;
-// class
-pub const ACC_ABSTRACT: u32 = 0x0400;
 // class, method
-pub const ACC_STRICT: u32 = 0x0800;
+pub const ACC_ABSTRACT: u32 = 0x0400;
 // method
-pub const ACC_SYNTHETIC: u32 = 0x1000;
+pub const ACC_STRICT: u32 = 0x0800;
 // class, field, method, parameter, module *
-pub const ACC_ANNOTATION: u32 = 0x2000;
+pub const ACC_SYNTHETIC: u32 = 0x1000;
 // class
-pub const ACC_ENUM: u32 = 0x4000;
+pub const ACC_ANNOTATION: u32 = 0x2000;
 // class(?) field inner
-pub const ACC_MANDATED: u32 = 0x8000;
+pub const ACC_ENUM: u32 = 0x4000;
 // field, method, parameter, module, module *
-pub const ACC_MODULE: u32 = 0x8000; // class
+pub const ACC_MANDATED: u32 = 0x8000;
+// class
+pub const ACC_MODULE: u32 = 0x8000;
 
 // Possible values for the type operand of the NEWARRAY instruction.
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
