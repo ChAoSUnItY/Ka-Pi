@@ -144,6 +144,19 @@ pub const ACC_MODULE: u32 = 0x8000;
 // Possible values for the type operand of the NEWARRAY instruction.
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
 
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+pub enum ArrayType {
+    Boolean = 4,
+    Char = 5,
+    Float = 6,
+    Double = 7,
+    Byte = 8,
+    Short = 9,
+    Int = 10,
+    Long = 11,
+}
+
 pub const T_BOOLEAN: u8 = 4;
 pub const T_CHAR: u8 = 5;
 pub const T_FLOAT: u8 = 6;
