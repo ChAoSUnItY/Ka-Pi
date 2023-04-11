@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
 use super::opcodes;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Handle {
     tag: u8,
     owner: String,
