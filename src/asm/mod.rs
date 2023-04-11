@@ -22,3 +22,4 @@ pub mod record;
 pub mod signature;
 mod symbol;
 pub mod types;
+pub mod Label;

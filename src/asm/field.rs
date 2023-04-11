@@ -1,5 +1,5 @@
 use crate::asm::annotation::AnnotationVisitor;
-use crate::asm::byte_vec::ByteVec;
+use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::opcodes::FieldAccessFlag;
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::TypePath;
@@ -33,23 +33,19 @@ pub trait FieldVisitor {
     }
 }
 
-pub struct FieldWriter<'output, BV>
-where
-    BV: ByteVec,
+pub struct FieldWriter<'output>
 {
-    byte_vec: &'output mut BV,
+    byte_vec: &'output mut ByteVecImpl,
     symbol_table: &'output mut SymbolTable,
     access: FieldAccessFlag,
     name_index: u16,
     descriptor_index: u16,
 }
 
-impl<'output, BV> FieldWriter<'output, BV>
-where
-    BV: ByteVec,
+impl<'output> FieldWriter<'output>
 {
     pub(crate) fn new(
-        byte_vec: &'output mut BV,
+        byte_vec: &'output mut ByteVecImpl,
         symbol_table: &'output mut SymbolTable,
         access: FieldAccessFlag,
         name: &str,
@@ -68,9 +64,7 @@ where
     }
 }
 
-impl<'output, BV> FieldVisitor for FieldWriter<'output, BV>
-where
-    BV: ByteVec,
+impl<'output> FieldVisitor for FieldWriter<'output>
 {
     fn visit_end(self)
     where

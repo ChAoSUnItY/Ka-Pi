@@ -1,7 +1,11 @@
 // ASM API versions.
 // These APIs are unused at this moments.
 
+use std::fmt::Debug;
+use std::hash::Hash;
 use serde::{Deserialize, Serialize};
+
+use crate::asm::handle::Handle;
 
 pub const ASM4: u32 = 4 << 16 | 0 << 8;
 pub const ASM5: u32 = 5 << 16 | 0 << 8;
@@ -235,6 +239,7 @@ pub const F_SAME1: i8 = 4;
 // where '-' means 'same method name as on the previous line').
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html.
 
+// noinspection SpellCheckingInspection
 /// [NativeOpcode] represents low level JVM bytecode opcodes without any accompany data.
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
@@ -398,6 +403,243 @@ pub enum NativeOpcode {
     IFNULL = 198,
     IFNONNULL = 199,
 }
+
+// noinspection SpellCheckingInspection
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(non_camel_case_types)]
+pub enum Opcode {
+    NOP,
+    ACONST_NULL,
+    ICONST_M1,
+    ICONST_0,
+    ICONST_1,
+    ICONST_2,
+    ICONST_3,
+    ICONST_4,
+    ICONST_5,
+    LCONST_0,
+    LCONST_1,
+    FCONST_0,
+    FCONST_1,
+    FCONST_2,
+    DCONST_0,
+    DCONST_1,
+    BIPUSH(i8),
+    SIPUSH(i16),
+    LDC(ConstantObject),
+    ILOAD(u8),
+    LLOAD(u8),
+    FLOAD(u8),
+    DLOAD(u8),
+    ALOAD(u8),
+    ILOAD_0,
+    ILOAD_1,
+    ILOAD_2,
+    ILOAD_3,
+    LLOAD_0,
+    LLOAD_1,
+    LLOAD_2,
+    LLOAD_3,
+    FLOAD_0,
+    FLOAD_1,
+    FLOAD_2,
+    FLOAD_3,
+    DLOAD_0,
+    DLOAD_1,
+    DLOAD_2,
+    DLOAD_3,
+    ALOAD_0,
+    ALOAD_1,
+    ALOAD_2,
+    ALOAD_3,
+    IALOAD,
+    LALOAD,
+    FALOAD,
+    DALOAD,
+    AALOAD,
+    BALOAD,
+    CALOAD,
+    SALOAD,
+    ISTORE(u8),
+    LSTORE(u8),
+    FSTORE(u8),
+    DSTORE(u8),
+    ASTORE(u8),
+    ISTORE_0,
+    ISTORE_1,
+    ISTORE_2,
+    ISTORE_3,
+    LSTORE_0,
+    LSTORE_1,
+    LSTORE_2,
+    LSTORE_3,
+    FSTORE_0,
+    FSTORE_1,
+    FSTORE_2,
+    FSTORE_3,
+    DSTORE_0,
+    DSTORE_1,
+    DSTORE_2,
+    DSTORE_3,
+    ASTORE_0,
+    ASTORE_1,
+    ASTORE_2,
+    ASTORE_3,
+    IASTORE,
+    LASTORE,
+    FASTORE,
+    DASTORE,
+    AASTORE,
+    BASTORE,
+    CASTORE,
+    SASTORE,
+    POP,
+    POP2,
+    DUP,
+    DUP_X1,
+    DUP_X2,
+    DUP2,
+    DUP2_X1,
+    DUP2_X2,
+    SWAP,
+    IADD,
+    LADD,
+    FADD,
+    DADD,
+    ISUB,
+    LSUB,
+    FSUB,
+    DSUB,
+    IMUL,
+    LMUL,
+    FMUL,
+    DMUL,
+    IDIV,
+    LDIV,
+    FDIV,
+    DDIV,
+    IREM,
+    LREM,
+    FREM,
+    DREM,
+    INEG,
+    LNEG,
+    FNEG,
+    DNEG,
+    ISHL,
+    LSHL,
+    ISHR,
+    LSHR,
+    IUSHR,
+    LUSHR,
+    IAND,
+    LAND,
+    IOR,
+    LOR,
+    IXOR,
+    LXOR,
+    IINC(u8, u8),
+    I2L,
+    I2F,
+    I2D,
+    L2I,
+    L2F,
+    L2D,
+    F2I,
+    F2L,
+    F2D,
+    D2I,
+    D2L,
+    D2F,
+    I2B,
+    I2C,
+    I2S,
+    LCMP,
+    FCMPL,
+    FCMPG,
+    DCMPL,
+    DCMPG,
+    IFEQ(u16),
+    IFNE(u16),
+    IFLT(u16),
+    IFGE(u16),
+    IFGT(u16),
+    IFLE(u16),
+    IF_ICMPEQ(u16),
+    IF_ICMPNE(u16),
+    IF_ICMPLT(u16),
+    IF_ICMPGE(u16),
+    IF_ICMPGT(u16),
+    IF_ICMPLE(u16),
+    IF_ACMPEQ(u16),
+    IF_ACMPNE(u16),
+    GOTO(u16),
+    JSR(u16),
+    RET(u8),
+    TABLESWITCH, // TODO
+    LOOKUPSWITCH, // TODO
+    IRETURN,
+    LRETURN,
+    FRETURN,
+    DRETURN,
+    ARETURN,
+    RETURN,
+    GETSTATIC,
+    PUTSTATIC,
+    GETFIELD,
+    PUTFIELD,
+    INVOKEVIRTUAL,
+    INVOKESPECIAL,
+    INVOKESTATIC,
+    INVOKEINTERFACE,
+    INVOKEDYNAMIC,
+    NEW,
+    NEWARRAY,
+    ANEWARRAY,
+    ARRAYLENGTH,
+    ATHROW,
+    CHECKCAST,
+    INSTANCEOF,
+    MONITORENTER,
+    MONITOREXIT,
+    MULTIANEWARRAY,
+    IFNULL,
+    IFNONNULL,
+}
+
+impl Eq for Opcode {}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum ConstantObject {
+    String(String),
+    Int(i32),
+    Float(f32),
+    Long(i64),
+    Double(f64),
+    Class(String),
+    /// # Arguments
+    /// - [RefKind]: reference kind
+    /// - [String]: class name
+    /// - [String]: method name
+    /// - [String]: method descriptor
+    MethodHandle(RefKind, String, String, String),
+    MethodType(String),
+    /// # Arguments
+    /// - [String]: 
+    ConstantDynamic(String, String, Handle, Vec<ConstantObject>),
+}
+
+impl ConstantObject {
+    /// Returns true if [ConstantObject] is [ConstantObject::Long], [ConstantObject::Double].
+    pub(crate) const fn is_2(&self) -> bool {
+        match self {
+            ConstantObject::Long(..) | ConstantObject::Double(..) => true,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for ConstantObject {}
 
 pub const NOP: u8 = 0;
 // visitInsn
