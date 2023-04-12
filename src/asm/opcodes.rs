@@ -87,7 +87,9 @@ pub enum ClassAccessFlag {
 impl<'a> AccessFlag<'a, ClassAccessFlag> for &'a [ClassAccessFlag] {}
 
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize,
+)]
 pub enum FieldAccessFlag {
     Public = 0x0001,
     Private = 0x0002,
@@ -103,7 +105,9 @@ pub enum FieldAccessFlag {
 impl<'a> AccessFlag<'a, FieldAccessFlag> for &'a [FieldAccessFlag] {}
 
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize,
+)]
 pub enum MethodAccessFlag {
     Public = 0x0001,
     Private = 0x0002,
@@ -292,6 +296,26 @@ pub enum NativeOpcode {
     FLOAD = 23,
     DLOAD = 24,
     ALOAD = 25,
+    ILOAD_0 = 26,
+    ILOAD_1 = 27,
+    ILOAD_2 = 28,
+    ILOAD_3 = 29,
+    LLOAD_0 = 30,
+    LLOAD_1 = 31,
+    LLOAD_2 = 32,
+    LLOAD_3 = 33,
+    FLOAD_0 = 34,
+    FLOAD_1 = 35,
+    FLOAD_2 = 36,
+    FLOAD_3 = 37,
+    DLOAD_0 = 38,
+    DLOAD_1 = 39,
+    DLOAD_2 = 40,
+    DLOAD_3 = 41,
+    ALOAD_0 = 42,
+    ALOAD_1 = 43,
+    ALOAD_2 = 44,
+    ALOAD_3 = 45,
     IALOAD = 46,
     LALOAD = 47,
     FALOAD = 48,
@@ -305,6 +329,26 @@ pub enum NativeOpcode {
     FSTORE = 56,
     DSTORE = 57,
     ASTORE = 58,
+    ISTORE_0 = 59,
+    ISTORE_1 = 60,
+    ISTORE_2 = 61,
+    ISTORE_3 = 62,
+    LSTORE_0 = 63,
+    LSTORE_1 = 64,
+    LSTORE_2 = 65,
+    LSTORE_3 = 66,
+    FSTORE_0 = 67,
+    FSTORE_1 = 68,
+    FSTORE_2 = 69,
+    FSTORE_3 = 70,
+    DSTORE_0 = 71,
+    DSTORE_1 = 72,
+    DSTORE_2 = 73,
+    DSTORE_3 = 74,
+    ASTORE_0 = 75,
+    ASTORE_1 = 76,
+    ASTORE_2 = 77,
+    ASTORE_3 = 78,
     IASTORE = 79,
     LASTORE = 80,
     FASTORE = 81,
@@ -422,6 +466,7 @@ pub enum NativeOpcode {
     INSTANCEOF = 193,
     MONITORENTER = 194,
     MONITOREXIT = 195,
+    WIDE = 196,
     MULTIANEWARRAY = 197,
     IFNULL = 198,
     IFNONNULL = 199,
@@ -630,6 +675,210 @@ pub enum Opcode {
     IFNONNULL,
 }
 
+impl Opcode {
+    pub const fn native_opcode(&self) -> NativeOpcode {
+        match self {
+            Opcode::NOP => NativeOpcode::NOP,
+            Opcode::ACONST_NULL => NativeOpcode::ACONST_NULL,
+            Opcode::ICONST_M1 => NativeOpcode::ICONST_M1,
+            Opcode::ICONST_0 => NativeOpcode::ICONST_0,
+            Opcode::ICONST_1 => NativeOpcode::ICONST_1,
+            Opcode::ICONST_2 => NativeOpcode::ICONST_2,
+            Opcode::ICONST_3 => NativeOpcode::ICONST_3,
+            Opcode::ICONST_4 => NativeOpcode::ICONST_4,
+            Opcode::ICONST_5 => NativeOpcode::ICONST_5,
+            Opcode::LCONST_0 => NativeOpcode::LCONST_0,
+            Opcode::LCONST_1 => NativeOpcode::LCONST_1,
+            Opcode::FCONST_0 => NativeOpcode::FCONST_0,
+            Opcode::FCONST_1 => NativeOpcode::FCONST_1,
+            Opcode::FCONST_2 => NativeOpcode::FCONST_2,
+            Opcode::DCONST_0 => NativeOpcode::DCONST_0,
+            Opcode::DCONST_1 => NativeOpcode::DCONST_1,
+            Opcode::BIPUSH(_) => NativeOpcode::BIPUSH,
+            Opcode::SIPUSH(_) => NativeOpcode::SIPUSH,
+            Opcode::LDC(_) => NativeOpcode::LDC,
+            Opcode::ILOAD(_) => NativeOpcode::ILOAD,
+            Opcode::LLOAD(_) => NativeOpcode::LLOAD,
+            Opcode::FLOAD(_) => NativeOpcode::FLOAD,
+            Opcode::DLOAD(_) => NativeOpcode::DLOAD,
+            Opcode::ALOAD(_) => NativeOpcode::ALOAD,
+            Opcode::ILOAD_0 => NativeOpcode::ILOAD_0,
+            Opcode::ILOAD_1 => NativeOpcode::ILOAD_1,
+            Opcode::ILOAD_2 => NativeOpcode::ILOAD_2,
+            Opcode::ILOAD_3 => NativeOpcode::ILOAD_3,
+            Opcode::LLOAD_0 => NativeOpcode::LLOAD_0,
+            Opcode::LLOAD_1 => NativeOpcode::LLOAD_1,
+            Opcode::LLOAD_2 => NativeOpcode::LLOAD_2,
+            Opcode::LLOAD_3 => NativeOpcode::LLOAD_3,
+            Opcode::FLOAD_0 => NativeOpcode::FLOAD_0,
+            Opcode::FLOAD_1 => NativeOpcode::FLOAD_1,
+            Opcode::FLOAD_2 => NativeOpcode::FLOAD_2,
+            Opcode::FLOAD_3 => NativeOpcode::FLOAD_3,
+            Opcode::DLOAD_0 => NativeOpcode::DLOAD_0,
+            Opcode::DLOAD_1 => NativeOpcode::DLOAD_1,
+            Opcode::DLOAD_2 => NativeOpcode::DLOAD_2,
+            Opcode::DLOAD_3 => NativeOpcode::DLOAD_3,
+            Opcode::ALOAD_0 => NativeOpcode::ALOAD_0,
+            Opcode::ALOAD_1 => NativeOpcode::ALOAD_1,
+            Opcode::ALOAD_2 => NativeOpcode::ALOAD_2,
+            Opcode::ALOAD_3 => NativeOpcode::ALOAD_3,
+            Opcode::IALOAD => NativeOpcode::IALOAD,
+            Opcode::LALOAD => NativeOpcode::LALOAD,
+            Opcode::FALOAD => NativeOpcode::FALOAD,
+            Opcode::DALOAD => NativeOpcode::DALOAD,
+            Opcode::AALOAD => NativeOpcode::AALOAD,
+            Opcode::BALOAD => NativeOpcode::BALOAD,
+            Opcode::CALOAD => NativeOpcode::CALOAD,
+            Opcode::SALOAD => NativeOpcode::SALOAD,
+            Opcode::ISTORE(_) => NativeOpcode::ISTORE,
+            Opcode::LSTORE(_) => NativeOpcode::LSTORE,
+            Opcode::FSTORE(_) => NativeOpcode::FSTORE,
+            Opcode::DSTORE(_) => NativeOpcode::DSTORE,
+            Opcode::ASTORE(_) => NativeOpcode::ASTORE,
+            Opcode::ISTORE_0 => NativeOpcode::ISTORE_0,
+            Opcode::ISTORE_1 => NativeOpcode::ISTORE_1,
+            Opcode::ISTORE_2 => NativeOpcode::ISTORE_2,
+            Opcode::ISTORE_3 => NativeOpcode::ISTORE_3,
+            Opcode::LSTORE_0 => NativeOpcode::LSTORE_0,
+            Opcode::LSTORE_1 => NativeOpcode::LSTORE_1,
+            Opcode::LSTORE_2 => NativeOpcode::LSTORE_2,
+            Opcode::LSTORE_3 => NativeOpcode::LSTORE_3,
+            Opcode::FSTORE_0 => NativeOpcode::FSTORE_0,
+            Opcode::FSTORE_1 => NativeOpcode::FSTORE_1,
+            Opcode::FSTORE_2 => NativeOpcode::FSTORE_2,
+            Opcode::FSTORE_3 => NativeOpcode::FSTORE_3,
+            Opcode::DSTORE_0 => NativeOpcode::DSTORE_0,
+            Opcode::DSTORE_1 => NativeOpcode::DSTORE_1,
+            Opcode::DSTORE_2 => NativeOpcode::DSTORE_2,
+            Opcode::DSTORE_3 => NativeOpcode::DSTORE_3,
+            Opcode::ASTORE_0 => NativeOpcode::ASTORE_0,
+            Opcode::ASTORE_1 => NativeOpcode::ASTORE_1,
+            Opcode::ASTORE_2 => NativeOpcode::ASTORE_2,
+            Opcode::ASTORE_3 => NativeOpcode::ASTORE_3,
+            Opcode::IASTORE => NativeOpcode::IASTORE,
+            Opcode::LASTORE => NativeOpcode::LASTORE,
+            Opcode::FASTORE => NativeOpcode::FASTORE,
+            Opcode::DASTORE => NativeOpcode::DASTORE,
+            Opcode::AASTORE => NativeOpcode::AASTORE,
+            Opcode::BASTORE => NativeOpcode::BASTORE,
+            Opcode::CASTORE => NativeOpcode::CASTORE,
+            Opcode::SASTORE => NativeOpcode::SASTORE,
+            Opcode::POP => NativeOpcode::POP,
+            Opcode::POP2 => NativeOpcode::POP2,
+            Opcode::DUP => NativeOpcode::DUP,
+            Opcode::DUP_X1 => NativeOpcode::DUP_X1,
+            Opcode::DUP_X2 => NativeOpcode::DUP_X2,
+            Opcode::DUP2 => NativeOpcode::DUP2,
+            Opcode::DUP2_X1 => NativeOpcode::DUP2_X1,
+            Opcode::DUP2_X2 => NativeOpcode::DUP2_X2,
+            Opcode::SWAP => NativeOpcode::SWAP,
+            Opcode::IADD => NativeOpcode::IADD,
+            Opcode::LADD => NativeOpcode::LADD,
+            Opcode::FADD => NativeOpcode::FADD,
+            Opcode::DADD => NativeOpcode::DADD,
+            Opcode::ISUB => NativeOpcode::ISUB,
+            Opcode::LSUB => NativeOpcode::LSUB,
+            Opcode::FSUB => NativeOpcode::FSUB,
+            Opcode::DSUB => NativeOpcode::DSUB,
+            Opcode::IMUL => NativeOpcode::IMUL,
+            Opcode::LMUL => NativeOpcode::LMUL,
+            Opcode::FMUL => NativeOpcode::FMUL,
+            Opcode::DMUL => NativeOpcode::DMUL,
+            Opcode::IDIV => NativeOpcode::IDIV,
+            Opcode::LDIV => NativeOpcode::LDIV,
+            Opcode::FDIV => NativeOpcode::FDIV,
+            Opcode::DDIV => NativeOpcode::DDIV,
+            Opcode::IREM => NativeOpcode::IREM,
+            Opcode::LREM => NativeOpcode::LREM,
+            Opcode::FREM => NativeOpcode::FREM,
+            Opcode::DREM => NativeOpcode::DREM,
+            Opcode::INEG => NativeOpcode::INEG,
+            Opcode::LNEG => NativeOpcode::LNEG,
+            Opcode::FNEG => NativeOpcode::FNEG,
+            Opcode::DNEG => NativeOpcode::DNEG,
+            Opcode::ISHL => NativeOpcode::ISHL,
+            Opcode::LSHL => NativeOpcode::LSHL,
+            Opcode::ISHR => NativeOpcode::ISHR,
+            Opcode::LSHR => NativeOpcode::LSHR,
+            Opcode::IUSHR => NativeOpcode::IUSHR,
+            Opcode::LUSHR => NativeOpcode::LUSHR,
+            Opcode::IAND => NativeOpcode::IAND,
+            Opcode::LAND => NativeOpcode::LAND,
+            Opcode::IOR => NativeOpcode::IOR,
+            Opcode::LOR => NativeOpcode::LOR,
+            Opcode::IXOR => NativeOpcode::IXOR,
+            Opcode::LXOR => NativeOpcode::LXOR,
+            Opcode::IINC(_, _) => NativeOpcode::IINC,
+            Opcode::I2L => NativeOpcode::I2L,
+            Opcode::I2F => NativeOpcode::I2F,
+            Opcode::I2D => NativeOpcode::I2D,
+            Opcode::L2I => NativeOpcode::L2I,
+            Opcode::L2F => NativeOpcode::L2F,
+            Opcode::L2D => NativeOpcode::L2D,
+            Opcode::F2I => NativeOpcode::F2I,
+            Opcode::F2L => NativeOpcode::F2L,
+            Opcode::F2D => NativeOpcode::F2D,
+            Opcode::D2I => NativeOpcode::D2I,
+            Opcode::D2L => NativeOpcode::D2L,
+            Opcode::D2F => NativeOpcode::D2F,
+            Opcode::I2B => NativeOpcode::I2B,
+            Opcode::I2C => NativeOpcode::I2C,
+            Opcode::I2S => NativeOpcode::I2S,
+            Opcode::LCMP => NativeOpcode::LCMP,
+            Opcode::FCMPL => NativeOpcode::FCMPL,
+            Opcode::FCMPG => NativeOpcode::FCMPG,
+            Opcode::DCMPL => NativeOpcode::DCMPL,
+            Opcode::DCMPG => NativeOpcode::DCMPG,
+            Opcode::IFEQ(_) => NativeOpcode::IFEQ,
+            Opcode::IFNE(_) => NativeOpcode::IFNE,
+            Opcode::IFLT(_) => NativeOpcode::IFLT,
+            Opcode::IFGE(_) => NativeOpcode::IFGE,
+            Opcode::IFGT(_) => NativeOpcode::IFGT,
+            Opcode::IFLE(_) => NativeOpcode::IFLE,
+            Opcode::IF_ICMPEQ(_) => NativeOpcode::IF_ICMPEQ,
+            Opcode::IF_ICMPNE(_) => NativeOpcode::IF_ICMPNE,
+            Opcode::IF_ICMPLT(_) => NativeOpcode::IF_ICMPLT,
+            Opcode::IF_ICMPGE(_) => NativeOpcode::IF_ICMPGE,
+            Opcode::IF_ICMPGT(_) => NativeOpcode::IF_ICMPGT,
+            Opcode::IF_ICMPLE(_) => NativeOpcode::IF_ICMPLE,
+            Opcode::IF_ACMPEQ(_) => NativeOpcode::IF_ACMPEQ,
+            Opcode::IF_ACMPNE(_) => NativeOpcode::IF_ACMPNE,
+            Opcode::GOTO(_) => NativeOpcode::GOTO,
+            Opcode::JSR(_) => NativeOpcode::JSR,
+            Opcode::RET(_) => NativeOpcode::RET,
+            Opcode::TABLESWITCH => NativeOpcode::TABLESWITCH,
+            Opcode::LOOKUPSWITCH => NativeOpcode::LOOKUPSWITCH,
+            Opcode::IRETURN => NativeOpcode::IRETURN,
+            Opcode::LRETURN => NativeOpcode::LRETURN,
+            Opcode::FRETURN => NativeOpcode::FRETURN,
+            Opcode::DRETURN => NativeOpcode::DRETURN,
+            Opcode::ARETURN => NativeOpcode::ARETURN,
+            Opcode::RETURN => NativeOpcode::RETURN,
+            Opcode::GETSTATIC => NativeOpcode::GETSTATIC,
+            Opcode::PUTSTATIC => NativeOpcode::PUTSTATIC,
+            Opcode::GETFIELD => NativeOpcode::GETFIELD,
+            Opcode::PUTFIELD => NativeOpcode::PUTFIELD,
+            Opcode::INVOKEVIRTUAL => NativeOpcode::INVOKEVIRTUAL,
+            Opcode::INVOKESPECIAL => NativeOpcode::INVOKESPECIAL,
+            Opcode::INVOKESTATIC => NativeOpcode::INVOKESTATIC,
+            Opcode::INVOKEINTERFACE => NativeOpcode::INVOKEINTERFACE,
+            Opcode::INVOKEDYNAMIC => NativeOpcode::INVOKEDYNAMIC,
+            Opcode::NEW => NativeOpcode::NEW,
+            Opcode::NEWARRAY => NativeOpcode::NEWARRAY,
+            Opcode::ANEWARRAY => NativeOpcode::ANEWARRAY,
+            Opcode::ARRAYLENGTH => NativeOpcode::ARRAYLENGTH,
+            Opcode::ATHROW => NativeOpcode::ATHROW,
+            Opcode::CHECKCAST => NativeOpcode::CHECKCAST,
+            Opcode::INSTANCEOF => NativeOpcode::INSTANCEOF,
+            Opcode::MONITORENTER => NativeOpcode::MONITORENTER,
+            Opcode::MONITOREXIT => NativeOpcode::MONITOREXIT,
+            Opcode::MULTIANEWARRAY => NativeOpcode::MULTIANEWARRAY,
+            Opcode::IFNULL => NativeOpcode::IFNULL,
+            Opcode::IFNONNULL => NativeOpcode::IFNONNULL,
+        }
+    }
+}
+
 impl Eq for Opcode {}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -663,6 +912,42 @@ impl ConstantObject {
 }
 
 impl Eq for ConstantObject {}
+
+impl From<String> for ConstantObject {
+    fn from(value: String) -> Self {
+        Self::String(value)
+    }
+}
+
+impl From<&str> for ConstantObject {
+    fn from(value: &str) -> Self {
+        Self::String(value.to_owned())
+    }
+}
+
+impl From<i32> for ConstantObject {
+    fn from(value: i32) -> Self {
+        Self::Int(value)
+    }
+}
+
+impl From<f32> for ConstantObject {
+    fn from(value: f32) -> Self {
+        Self::Float(value)
+    }
+}
+
+impl From<i64> for ConstantObject {
+    fn from(value: i64) -> Self {
+        Self::Long(value)
+    }
+}
+
+impl From<f64> for ConstantObject {
+    fn from(value: f64) -> Self {
+        Self::Double(value)
+    }
+}
 
 pub const NOP: u8 = 0;
 // visitInsn
