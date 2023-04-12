@@ -3,6 +3,9 @@
 
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::ops::BitOr;
+
+use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::handle::Handle;
@@ -53,8 +56,22 @@ pub const V_PREVIEW: u32 = 0xFFFF0000;
 // - https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.6-200-A.1
 // - https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.25
 
+pub(crate) trait AccessFlag<'a, T>
+where
+    T: Into<u16> + Copy + 'a,
+    Self: IntoIterator<Item = &'a T> + Sized,
+{
+    fn fold_flags(self) -> u16 {
+        self.into_iter()
+            .map(|flag| (*flag).into())
+            .fold(0, u16::bitor)
+    }
+}
+
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize,
+)]
 pub enum ClassAccessFlag {
     Public = 0x0001,
     Final = 0x0010,
@@ -67,8 +84,10 @@ pub enum ClassAccessFlag {
     Module = 0x8000,
 }
 
+impl<'a> AccessFlag<'a, ClassAccessFlag> for &'a [ClassAccessFlag] {}
+
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize)]
 pub enum FieldAccessFlag {
     Public = 0x0001,
     Private = 0x0002,
@@ -81,8 +100,10 @@ pub enum FieldAccessFlag {
     Enum = 0x4000,
 }
 
+impl<'a> AccessFlag<'a, FieldAccessFlag> for &'a [FieldAccessFlag] {}
+
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize)]
 pub enum MethodAccessFlag {
     Public = 0x0001,
     Private = 0x0002,
@@ -97,6 +118,8 @@ pub enum MethodAccessFlag {
     Strict = 0x0800,
     Synthetic = 0x1000,
 }
+
+impl<'a> AccessFlag<'a, MethodAccessFlag> for &'a [MethodAccessFlag] {}
 
 // class, field, method
 pub const ACC_PUBLIC: u32 = 0x0001;
@@ -576,7 +599,7 @@ pub enum Opcode {
     GOTO(u16),
     JSR(u16),
     RET(u8),
-    TABLESWITCH, // TODO
+    TABLESWITCH,  // TODO
     LOOKUPSWITCH, // TODO
     IRETURN,
     LRETURN,
@@ -625,7 +648,7 @@ pub enum ConstantObject {
     MethodHandle(RefKind, String, String, String),
     MethodType(String),
     /// # Arguments
-    /// - [String]: 
+    /// - [String]:
     ConstantDynamic(String, String, Handle, Vec<ConstantObject>),
 }
 
