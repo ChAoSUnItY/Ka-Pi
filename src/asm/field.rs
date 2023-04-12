@@ -1,6 +1,6 @@
 use crate::asm::annotation::AnnotationVisitor;
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::opcodes::FieldAccessFlag;
+use crate::asm::opcodes::{AccessFlag, FieldAccessFlag};
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::TypePath;
 
@@ -33,21 +33,19 @@ pub trait FieldVisitor {
     }
 }
 
-pub struct FieldWriter<'output>
-{
+pub struct FieldWriter<'output> {
     byte_vec: &'output mut ByteVecImpl,
     symbol_table: &'output mut SymbolTable,
-    access: FieldAccessFlag,
+    access: &'output [FieldAccessFlag],
     name_index: u16,
     descriptor_index: u16,
 }
 
-impl<'output> FieldWriter<'output>
-{
+impl<'output> FieldWriter<'output> {
     pub(crate) fn new(
         byte_vec: &'output mut ByteVecImpl,
         symbol_table: &'output mut SymbolTable,
-        access: FieldAccessFlag,
+        access: &'output [FieldAccessFlag],
         name: &str,
         descriptor: &str,
     ) -> Self {
@@ -64,17 +62,22 @@ impl<'output> FieldWriter<'output>
     }
 }
 
-impl<'output> FieldVisitor for FieldWriter<'output>
-{
+impl<'output> FieldVisitor for FieldWriter<'output> {
     fn visit_end(self)
     where
         Self: Sized,
     {
-        let byte_vec = self.byte_vec;
+        let Self {
+            byte_vec,
+            symbol_table: _,
+            access,
+            name_index,
+            descriptor_index,
+        } = self;
 
-        byte_vec.put_be(self.access as u16);
-        byte_vec.put_be(self.name_index);
-        byte_vec.put_be(self.descriptor_index);
+        byte_vec.put_be(access.fold_flags());
+        byte_vec.put_be(name_index);
+        byte_vec.put_be(descriptor_index);
 
         // TODO: Implement attribute writing
         byte_vec.put_be(0u16);
