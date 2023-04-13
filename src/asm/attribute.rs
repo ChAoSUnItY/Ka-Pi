@@ -78,6 +78,10 @@ pub enum Attribute {
         number_of_classes: u16,
         class: Vec<InnerClass>,
     },
+    EnclosingMethod {
+        class_index: u16,
+        method_index: u16,
+    }
 }
 
 impl Attribute {
@@ -88,6 +92,7 @@ impl Attribute {
             Attribute::StackMapTable { .. } => constants::STACK_MAP_TABLE,
             Attribute::Exceptions { .. } => constants::EXCEPTIONS,
             Attribute::InnerClasses { .. } => constants::INNER_CLASSES,
+            Attribute::EnclosingMethod { .. } => constants::ENCLOSING_METHOD,
         }
     }
 
@@ -101,7 +106,7 @@ impl Attribute {
                 code: _,
                 exception_table_length,
                 exception_table: _,
-                attributes_length,
+                attributes_length: _,
                 attributes,
             } => {
                 // max_stack: 2
@@ -134,6 +139,7 @@ impl Attribute {
                 number_of_classes,
                 class: _,
             } => 8 * *number_of_classes as u32,
+            Attribute::EnclosingMethod { .. } => 4,
         }
     }
 }
