@@ -72,6 +72,10 @@ pub enum Attribute {
         number_of_exceptions: u16,
         exception_index_table: Vec<u16>,
     },
+    InnerClasses {
+        number_of_classes: u16,
+        class: Vec<InnerClass>,
+    },
 }
 
 impl Attribute {
@@ -81,6 +85,7 @@ impl Attribute {
             Attribute::Code { .. } => constants::CODE,
             Attribute::StackMapTable { .. } => constants::STACK_MAP_TABLE,
             Attribute::Exceptions { .. } => constants::EXCEPTIONS,
+            Attribute::InnerClasses { .. } => constants::INNER_CLASSES,
         }
     }
 
@@ -123,6 +128,10 @@ impl Attribute {
                 number_of_exceptions,
                 exception_index_table: _,
             } => 2 + 2 * *number_of_exceptions as u32,
+            Attribute::InnerClasses {
+                number_of_classes,
+                class: _,
+            } => 8 * *number_of_classes as u32,
         }
     }
 }
@@ -218,4 +227,12 @@ impl VerificationType {
             _ => 1,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InnerClass {
+    inner_class_info_index: u16,
+    outer_class_info_index: u16,
+    inner_name_index: u16,
+    inner_class_access_flags: u16,
 }
