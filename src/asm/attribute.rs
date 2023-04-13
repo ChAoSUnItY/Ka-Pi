@@ -68,6 +68,10 @@ pub enum Attribute {
         number_of_entries: u16,
         entries: Vec<StackMapEntry>,
     },
+    Exceptions {
+        number_of_exceptions: u16,
+        exception_index_table: Vec<u16>,
+    },
 }
 
 impl Attribute {
@@ -76,6 +80,7 @@ impl Attribute {
             Attribute::ConstantValue { .. } => constants::CONSTANT_VALUE,
             Attribute::Code { .. } => constants::CODE,
             Attribute::StackMapTable { .. } => constants::STACK_MAP_TABLE,
+            Attribute::Exceptions { .. } => constants::EXCEPTIONS,
         }
     }
 
@@ -114,6 +119,10 @@ impl Attribute {
                 number_of_entries: _,
                 entries,
             } => 2 + entries.iter().map(StackMapEntry::len).sum::<u32>(),
+            Attribute::Exceptions {
+                number_of_exceptions,
+                exception_index_table: _,
+            } => 2 + 2 * *number_of_exceptions as u32,
         }
     }
 }
