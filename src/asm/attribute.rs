@@ -85,6 +85,9 @@ pub enum Attribute {
     Synthetic,
     Signature {
         signature_index: u16,
+    },
+    SourceFile {
+        source_file_index: u16,
     }
 }
 
@@ -99,6 +102,7 @@ impl Attribute {
             Attribute::EnclosingMethod { .. } => constants::ENCLOSING_METHOD,
             Attribute::Synthetic => constants::SYNTHETIC,
             Attribute::Signature { .. } => constants::SIGNATURE,
+            Attribute::SourceFile { .. } => constants::SOURCE_FILE,
         }
     }
 
@@ -148,6 +152,7 @@ impl Attribute {
             Attribute::EnclosingMethod { .. } => 4,
             Attribute::Synthetic => 0,
             Attribute::Signature { .. } => 2,
+            Attribute::SourceFile { .. } => 2,
         }
     }
 }
