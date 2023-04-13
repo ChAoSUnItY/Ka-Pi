@@ -83,6 +83,9 @@ pub enum Attribute {
         method_index: u16,
     },
     Synthetic,
+    Signature {
+        signature_index: u16,
+    }
 }
 
 impl Attribute {
@@ -95,6 +98,7 @@ impl Attribute {
             Attribute::InnerClasses { .. } => constants::INNER_CLASSES,
             Attribute::EnclosingMethod { .. } => constants::ENCLOSING_METHOD,
             Attribute::Synthetic => constants::SYNTHETIC,
+            Attribute::Signature { .. } => constants::SIGNATURE,
         }
     }
 
@@ -143,6 +147,7 @@ impl Attribute {
             } => 8 * *number_of_classes as u32,
             Attribute::EnclosingMethod { .. } => 4,
             Attribute::Synthetic => 0,
+            Attribute::Signature { .. } => 2,
         }
     }
 }
