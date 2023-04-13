@@ -92,6 +92,10 @@ pub enum Attribute {
     SourceDebugExtension {
         debug_extension: Vec<u8>,
     },
+    LineNumberTable {
+        line_number_table_length: u16,
+        line_number_table: Vec<LineNumber>,
+    },
 }
 
 impl Attribute {
@@ -107,6 +111,7 @@ impl Attribute {
             Attribute::Signature { .. } => constants::SIGNATURE,
             Attribute::SourceFile { .. } => constants::SOURCE_FILE,
             Attribute::SourceDebugExtension { .. } => constants::SOURCE_DEBUG_EXTENSION,
+            Attribute::LineNumberTable { .. } => constants::LINE_NUMBER_TABLE,
         }
     }
 
@@ -158,6 +163,10 @@ impl Attribute {
             Attribute::Signature { .. } => 2,
             Attribute::SourceFile { .. } => 2,
             Attribute::SourceDebugExtension { debug_extension } => debug_extension.len() as u32,
+            Attribute::LineNumberTable {
+                line_number_table_length,
+                line_number_table: _,
+            } => 4 * *line_number_table_length,
         }
     }
 }
@@ -281,3 +290,9 @@ pub enum NestedClassAccessFlag {
 }
 
 impl<'a> AccessFlag<'a, NestedClassAccessFlag> for &'a [NestedClassAccessFlag] {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LineNumber {
+    start_pc: u16,
+    line_number: u16,
+}
