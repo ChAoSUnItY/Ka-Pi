@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+
 use crate::asm::constants;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -62,7 +63,11 @@ pub enum Attribute {
         exception_table: Vec<Exception>,
         attributes_length: u16,
         attributes: Vec<Attribute>,
-    }
+    },
+    StackMapTable {
+        number_of_entries: u16,
+        entries: Vec<StackMapEntry>,
+    },
 }
 
 impl Attribute {
@@ -70,9 +75,10 @@ impl Attribute {
         match self {
             Attribute::ConstantValue { .. } => constants::CONSTANT_VALUE,
             Attribute::Code { .. } => constants::CODE,
+            Attribute::StackMapTable { .. } => constants::STACK_MAP_TABLE,
         }
     }
-    
+
     pub fn attribute_len(&self) -> u32 {
         match self {
             Attribute::ConstantValue { .. } => 2,
@@ -103,8 +109,11 @@ impl Attribute {
                 12 + *code_length as u32
                     + 8 * *exception_table_length as u32
                     + attributes.iter().map(Attribute::attribute_len).sum::<u32>()
-                        * *attributes_length as u32
             }
+            Attribute::StackMapTable {
+                number_of_entries: _,
+                entries,
+            } => 2 + entries.iter().map(StackMapEntry::len).sum::<u32>(),
         }
     }
 }
@@ -115,4 +124,89 @@ pub struct Exception {
     end_pc: u16,
     handler_pc: u16,
     catch_type: u16,
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum StackMapEntry {
+    Same,
+    SameLocal1StackItem {
+        stack: VerificationType,
+    },
+    SameLocal1StackItemExtended {
+        offset_delta: u16,
+        stack: VerificationType,
+    },
+    Chop {
+        offset_delta: u16,
+    },
+    SameExtended {
+        frame_type: AppendType,
+        offset_delta: u16,
+    },
+    Full {
+        offset_delta: u16,
+        numbers_of_locals: u16,
+        locals: Vec<VerificationType>,
+        number_of_stack_items: u16,
+        stack: Vec<VerificationType>,
+    },
+}
+
+impl StackMapEntry {
+    pub fn len(&self) -> u32 {
+        // frame_type: 1
+        1 + match self {
+            StackMapEntry::Same => 0,
+            StackMapEntry::SameLocal1StackItem { stack } => stack.len(),
+            StackMapEntry::SameLocal1StackItemExtended {
+                offset_delta: _,
+                stack,
+            } => 2 + stack.len(),
+            StackMapEntry::Chop { .. } => 2,
+            StackMapEntry::SameExtended { .. } => 4,
+            StackMapEntry::Full {
+                offset_delta: _,
+                numbers_of_locals: _,
+                locals,
+                number_of_stack_items: _,
+                stack,
+            } => {
+                2 + locals.iter().map(VerificationType::len).sum::<u32>()
+                    + stack.iter().map(VerificationType::len).sum::<u32>()
+            }
+        }
+    }
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum AppendType {
+    One,
+    Two,
+    Three,
+}
+
+// noinspection ALL
+#[repr(u8)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum VerificationType {
+    Top,
+    Integer,
+    Float,
+    Double,
+    Long,
+    NullVariable,
+    UninitializedThis,
+    Object { cpool_index: u16 },
+    Uninitialized,
+}
+
+impl VerificationType {
+    pub const fn len(&self) -> u32 {
+        match self {
+            Self::Object { .. } => 2,
+            _ => 1,
+        }
+    }
 }
