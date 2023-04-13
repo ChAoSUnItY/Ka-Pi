@@ -88,7 +88,10 @@ pub enum Attribute {
     },
     SourceFile {
         source_file_index: u16,
-    }
+    },
+    SourceDebugExtension {
+        debug_extension: Vec<u8>,
+    },
 }
 
 impl Attribute {
@@ -103,6 +106,7 @@ impl Attribute {
             Attribute::Synthetic => constants::SYNTHETIC,
             Attribute::Signature { .. } => constants::SIGNATURE,
             Attribute::SourceFile { .. } => constants::SOURCE_FILE,
+            Attribute::SourceDebugExtension { .. } => constants::SOURCE_DEBUG_EXTENSION,
         }
     }
 
@@ -153,6 +157,7 @@ impl Attribute {
             Attribute::Synthetic => 0,
             Attribute::Signature { .. } => 2,
             Attribute::SourceFile { .. } => 2,
+            Attribute::SourceDebugExtension { debug_extension } => debug_extension.len() as u32,
         }
     }
 }
