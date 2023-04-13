@@ -81,7 +81,8 @@ pub enum Attribute {
     EnclosingMethod {
         class_index: u16,
         method_index: u16,
-    }
+    },
+    Synthetic,
 }
 
 impl Attribute {
@@ -93,6 +94,7 @@ impl Attribute {
             Attribute::Exceptions { .. } => constants::EXCEPTIONS,
             Attribute::InnerClasses { .. } => constants::INNER_CLASSES,
             Attribute::EnclosingMethod { .. } => constants::ENCLOSING_METHOD,
+            Attribute::Synthetic => constants::SYNTHETIC,
         }
     }
 
@@ -140,6 +142,7 @@ impl Attribute {
                 class: _,
             } => 8 * *number_of_classes as u32,
             Attribute::EnclosingMethod { .. } => 4,
+            Attribute::Synthetic => 0,
         }
     }
 }
