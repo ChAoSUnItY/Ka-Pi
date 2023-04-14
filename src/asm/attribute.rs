@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 
@@ -135,6 +136,42 @@ pub enum Attribute {
 }
 
 impl Attribute {
+    // For ordinalize usage
+    pub const fn ordinal(&self) -> u8 {
+        match self {
+            Attribute::ConstantValue { .. } => 0,
+            Attribute::Code { .. } => 1,
+            Attribute::StackMapTable { .. } => 2,
+            Attribute::Exceptions { .. } => 3,
+            Attribute::InnerClasses { .. } => 4,
+            Attribute::EnclosingMethod { .. } => 5,
+            Attribute::Synthetic => 6,
+            Attribute::Signature { .. } => 7,
+            Attribute::SourceFile { .. } => 8,
+            Attribute::SourceDebugExtension { .. } => 9,
+            Attribute::LineNumberTable { .. } => 10,
+            Attribute::LocalVariableTable { .. } => 11,
+            Attribute::LocalVariableTypeTable { .. } => 12,
+            Attribute::Deprecate => 13,
+            // Attribute::RuntimeVisibleAnnotations,
+            // Attribute::RuntimeInvisibleAnnotations,
+            // Attribute::RuntimeVisibleParameterAnnotations,
+            // Attribute::RuntimeInvisibleParameterAnnotations,
+            // Attribute::RuntimeVisibleTypeAnnotations,
+            // Attribute::RuntimeInvisibleTypeAnnotations,
+            // Attribute::AnnotationDefault,
+            Attribute::BootstrapMethods { .. } => 21,
+            Attribute::MethodParameters { .. } => 22,
+            // Attribute::Module,
+            // Attribute::ModulePackages,
+            // Attribute::ModuleMainClass,
+            Attribute::NestHost { .. } => 26,
+            Attribute::NestMembers { .. } => 27,
+            // Attribute::Record,
+            // Attribute::PermittedSubclasses,
+        }
+    }
+    
     pub const fn name(&self) -> &'static str {
         match self {
             Attribute::ConstantValue { .. } => constants::CONSTANT_VALUE,
@@ -260,6 +297,26 @@ impl Attribute {
             // Attribute::Record,
             // Attribute::PermittedSubclasses,
         }
+    }
+}
+
+impl PartialEq<Self> for Attribute {
+    fn eq(&self, other: &Self) -> bool {
+        self.ordinal() == other.ordinal()
+    }
+}
+
+impl Eq for Attribute {}
+
+impl Ord for Attribute {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.ordinal().cmp(&other.ordinal())
+    }
+}
+
+impl PartialOrd for Attribute {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
