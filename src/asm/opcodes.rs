@@ -85,6 +85,7 @@ pub enum ClassAccessFlag {
 }
 
 impl<'a> AccessFlag<'a, ClassAccessFlag> for &'a [ClassAccessFlag] {}
+impl<'a> AccessFlag<'a, ClassAccessFlag> for &'a Vec<ClassAccessFlag> {}
 
 #[repr(u16)]
 #[derive(
@@ -103,6 +104,7 @@ pub enum FieldAccessFlag {
 }
 
 impl<'a> AccessFlag<'a, FieldAccessFlag> for &'a [FieldAccessFlag] {}
+impl<'a> AccessFlag<'a, FieldAccessFlag> for &'a Vec<FieldAccessFlag> {}
 
 #[repr(u16)]
 #[derive(
@@ -124,6 +126,7 @@ pub enum MethodAccessFlag {
 }
 
 impl<'a> AccessFlag<'a, MethodAccessFlag> for &'a [MethodAccessFlag] {}
+impl<'a> AccessFlag<'a, MethodAccessFlag> for &'a Vec<MethodAccessFlag> {}
 
 // class, field, method
 pub const ACC_PUBLIC: u32 = 0x0001;
@@ -876,6 +879,10 @@ impl Opcode {
             Opcode::IFNULL => NativeOpcode::IFNULL,
             Opcode::IFNONNULL => NativeOpcode::IFNONNULL,
         }
+    }
+    
+    pub const fn opcode_byte(&self) -> u8 {
+        self.native_opcode() as u8
     }
 }
 
