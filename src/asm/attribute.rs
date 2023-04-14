@@ -96,6 +96,42 @@ pub enum Attribute {
         line_number_table_length: u16,
         line_number_table: Vec<LineNumber>,
     },
+    LocalVariableTable {
+        local_variable_table_length: u16,
+        local_variable_table: Vec<LocalVariable>,
+    },
+    LocalVariableTypeTable {
+        local_variable_type_table_length: u16,
+        local_variable_type_table: Vec<LocalVariableType>,
+    },
+    Deprecate,
+    // RuntimeVisibleAnnotations,
+    // RuntimeInvisibleAnnotations,
+    // RuntimeVisibleParameterAnnotations,
+    // RuntimeInvisibleParameterAnnotations,
+    // RuntimeVisibleTypeAnnotations,
+    // RuntimeInvisibleTypeAnnotations,
+    // AnnotationDefault,
+    BootstrapMethods {
+        num_bootstrap_methods: u16,
+        bootstrap_methods: Vec<BootstrapMethod>,
+    },
+    MethodParameters {
+        parameters_count: u16,
+        method_parameters: Vec<MethodParameter>,
+    },
+    // Module,
+    // ModulePackages,
+    // ModuleMainClass,
+    NestHost {
+        host_class_index: u16,
+    },
+    NestMembers {
+        number_of_classes: u16,
+        classes: Vec<u16>,
+    }
+    // Record,
+    // PermittedSubclasses,
 }
 
 impl Attribute {
@@ -112,6 +148,25 @@ impl Attribute {
             Attribute::SourceFile { .. } => constants::SOURCE_FILE,
             Attribute::SourceDebugExtension { .. } => constants::SOURCE_DEBUG_EXTENSION,
             Attribute::LineNumberTable { .. } => constants::LINE_NUMBER_TABLE,
+            Attribute::LocalVariableTable { .. } => constants::LOCAL_VARIABLE_TABLE,
+            Attribute::LocalVariableTypeTable { .. } => constants::LOCAL_VARIABLE_TYPE_TABLE,
+            Attribute::Deprecate => constants::DEPRECATED,
+            // Attribute::RuntimeVisibleAnnotations,
+            // Attribute::RuntimeInvisibleAnnotations,
+            // Attribute::RuntimeVisibleParameterAnnotations,
+            // Attribute::RuntimeInvisibleParameterAnnotations,
+            // Attribute::RuntimeVisibleTypeAnnotations,
+            // Attribute::RuntimeInvisibleTypeAnnotations,
+            // Attribute::AnnotationDefault,
+            Attribute::BootstrapMethods { .. } => constants::BOOTSTRAP_METHODS,
+            Attribute::MethodParameters { .. } => constants::METHOD_PARAMETERS,
+            // Attribute::Module,
+            // Attribute::ModulePackages,
+            // Attribute::ModuleMainClass,
+            Attribute::NestHost { .. } => constants::NEST_HOST,
+            Attribute::NestMembers { .. } => constants::NEST_MEMBERS,
+            // Attribute::Record,
+            // Attribute::PermittedSubclasses,
         }
     }
 
@@ -166,7 +221,44 @@ impl Attribute {
             Attribute::LineNumberTable {
                 line_number_table_length,
                 line_number_table: _,
-            } => 4 * *line_number_table_length,
+            } => 4 * *line_number_table_length as u32,
+            Attribute::LocalVariableTable {
+                local_variable_table_length,
+                local_variable_table: _,
+            } => 10 * *local_variable_table_length as u32,
+            Attribute::LocalVariableTypeTable {
+                local_variable_type_table_length,
+                local_variable_type_table: _,
+            } => 10 * *local_variable_type_table_length as u32,
+            Attribute::Deprecate => 0,
+            // Attribute::RuntimeVisibleAnnotations,
+            // Attribute::RuntimeInvisibleAnnotations,
+            // Attribute::RuntimeVisibleParameterAnnotations,
+            // Attribute::RuntimeInvisibleParameterAnnotations,
+            // Attribute::RuntimeVisibleTypeAnnotations,
+            // Attribute::RuntimeInvisibleTypeAnnotations,
+            // Attribute::AnnotationDefault,
+            Attribute::BootstrapMethods {
+                num_bootstrap_methods: _,
+                bootstrap_methods,
+            } => {
+                2 + bootstrap_methods
+                    .iter()
+                    .map(BootstrapMethod::len)
+                    .sum::<u32>()
+            },
+            Attribute::MethodParameters { parameters_count, method_parameters: _ } => {
+                2 + 4 * *parameters_count as u32
+            }
+            // Attribute::Module,
+            // Attribute::ModulePackages,
+            // Attribute::ModuleMainClass,
+            Attribute::NestHost { .. } => 2,
+            Attribute::NestMembers { number_of_classes, classes: _ } => {
+                2 + 2 * *number_of_classes as u32
+            }
+            // Attribute::Record,
+            // Attribute::PermittedSubclasses,
         }
     }
 }
@@ -269,7 +361,7 @@ pub struct InnerClass {
     inner_class_info_index: u16,
     outer_class_info_index: u16,
     inner_name_index: u16,
-    inner_class_access_flags: u16,
+    inner_class_access_flags: Vec<NestedClassAccessFlag>,
 }
 
 #[repr(u16)]
@@ -290,9 +382,59 @@ pub enum NestedClassAccessFlag {
 }
 
 impl<'a> AccessFlag<'a, NestedClassAccessFlag> for &'a [NestedClassAccessFlag] {}
+impl<'a> AccessFlag<'a, NestedClassAccessFlag> for &'a Vec<NestedClassAccessFlag> {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LineNumber {
     start_pc: u16,
     line_number: u16,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LocalVariable {
+    start_pc: u16,
+    length: u16,
+    name_index: u16,
+    descriptor_index: u16,
+    index: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LocalVariableType {
+    start_pc: u16,
+    length: u16,
+    name_index: u16,
+    signature_index: u16,
+    index: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BootstrapMethod {
+    bootstrap_method_ref: u16,
+    num_bootstrap_arguments: u16,
+    bootstrap_arguments: Vec<u16>,
+}
+
+impl BootstrapMethod {
+    pub fn len(&self) -> u32 {
+        4 + self.bootstrap_arguments.len() as u32 * 2
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MethodParameter {
+    name_index: u16,
+    access_flags: Vec<ParameterAccessFlag>,
+}
+
+#[repr(u16)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize,
+)]
+pub enum ParameterAccessFlag {
+    Final = 0x0010,
+    Synthetic = 0x1000,
+}
+
+impl<'a> AccessFlag<'a, ParameterAccessFlag> for &'a [ParameterAccessFlag] {}
+impl<'a> AccessFlag<'a, ParameterAccessFlag> for &'a Vec<ParameterAccessFlag> {}
