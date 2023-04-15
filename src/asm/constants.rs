@@ -1,13 +1,9 @@
 // The ClassFile attribute names, in the order they are defined in
 // https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.7-300.
 
-use std::any::Any;
-use std::fmt::{Debug, Formatter};
-use std::rc::Rc;
+use std::fmt::Debug;
 
-use crate::asm::types::Type;
-use crate::asm::{handle::Handle, opcodes};
-use crate::error::{KapiError, KapiResult};
+use crate::asm::opcodes;
 
 pub(crate) const CONSTANT_VALUE: &'static str = "ConstantValue";
 pub(crate) const CODE: &'static str = "Code";
@@ -146,87 +142,3 @@ pub(crate) const ASM_JSR: u8 = opcodes::JSR + ASM_OPCODE_DELTA;
 pub(crate) const ASM_IFNULL: u8 = opcodes::IFNULL + ASM_IFNULL_OPCODE_DELTA;
 pub(crate) const ASM_IFNONNULL: u8 = opcodes::IFNONNULL + ASM_IFNULL_OPCODE_DELTA;
 pub(crate) const ASM_GOTO_W: u8 = 220;
-
-macro_rules! impl_constant_object {
-    ($($target:tt)*) => {
-        impl ConstantObject for $($target)* {
-            fn as_any(&self) -> &dyn Any {
-                self
-            }
-
-            fn eqauls(&self, other: &dyn ConstantObject) -> bool {
-                other
-                    .as_any()
-                    .downcast_ref::<$($target)*>()
-                    .map_or(false, |other| self == other)
-            }
-        }
-    };
-}
-
-pub trait ConstantObject: Debug {
-    fn as_any(&self) -> &dyn Any;
-
-    fn eqauls(&self, other: &dyn ConstantObject) -> bool;
-}
-
-impl PartialEq for dyn ConstantObject + '_ {
-    fn eq(&self, other: &Self) -> bool {
-        self.eqauls(other)
-    }
-}
-
-impl Eq for dyn ConstantObject + '_ {}
-
-impl_constant_object!(i32);
-impl_constant_object!(i64);
-impl_constant_object!(f32);
-impl_constant_object!(f64);
-impl_constant_object!(String);
-impl_constant_object!(Rc<String>);
-impl_constant_object!(Handle);
-impl_constant_object!(Type);
-impl_constant_object!(Box<ConstantDynamic>);
-impl_constant_object!(Rc<ConstantDynamic>);
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct ConstantDynamic {
-    pub name: String,
-    pub descriptor: String,
-    pub bootstrap_method: Handle,
-    pub(crate) bootstrap_method_arguments: Vec<Box<dyn ConstantObject>>,
-}
-
-impl ConstantDynamic {
-    pub const fn new(
-        name: String,
-        descriptor: String,
-        bootstrap_method: Handle,
-        bootstrap_method_arguments: Vec<Box<dyn ConstantObject>>,
-    ) -> Self {
-        Self {
-            name,
-            descriptor,
-            bootstrap_method,
-            bootstrap_method_arguments,
-        }
-    }
-
-    pub fn argument_len(&self) -> usize {
-        self.bootstrap_method_arguments.len()
-    }
-
-    pub fn get_argument(&self, index: usize) -> Option<&Box<dyn ConstantObject>> {
-        self.bootstrap_method_arguments.get(index)
-    }
-
-    pub fn size(&self) -> KapiResult<usize> {
-        let first_descriptor_char = self.descriptor.chars().next().ok_or(KapiError::StateError(
-            "ConstantDynamic descriptor must not be empty",
-        ))?;
-        match first_descriptor_char {
-            'J' | 'D' => Ok(2),
-            _ => Ok(1),
-        }
-    }
-}

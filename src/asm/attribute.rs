@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 
@@ -52,7 +51,7 @@ impl From<&str> for ConstantValue {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Attribute {
     ConstantValue {
         constant_value_index: u16,
@@ -130,48 +129,11 @@ pub enum Attribute {
     NestMembers {
         number_of_classes: u16,
         classes: Vec<u16>,
-    }
-    // Record,
-    // PermittedSubclasses,
+    }, // Record,
+       // PermittedSubclasses,
 }
 
 impl Attribute {
-    // For ordinalize usage
-    pub const fn ordinal(&self) -> u8 {
-        match self {
-            Attribute::ConstantValue { .. } => 0,
-            Attribute::Code { .. } => 1,
-            Attribute::StackMapTable { .. } => 2,
-            Attribute::Exceptions { .. } => 3,
-            Attribute::InnerClasses { .. } => 4,
-            Attribute::EnclosingMethod { .. } => 5,
-            Attribute::Synthetic => 6,
-            Attribute::Signature { .. } => 7,
-            Attribute::SourceFile { .. } => 8,
-            Attribute::SourceDebugExtension { .. } => 9,
-            Attribute::LineNumberTable { .. } => 10,
-            Attribute::LocalVariableTable { .. } => 11,
-            Attribute::LocalVariableTypeTable { .. } => 12,
-            Attribute::Deprecate => 13,
-            // Attribute::RuntimeVisibleAnnotations,
-            // Attribute::RuntimeInvisibleAnnotations,
-            // Attribute::RuntimeVisibleParameterAnnotations,
-            // Attribute::RuntimeInvisibleParameterAnnotations,
-            // Attribute::RuntimeVisibleTypeAnnotations,
-            // Attribute::RuntimeInvisibleTypeAnnotations,
-            // Attribute::AnnotationDefault,
-            Attribute::BootstrapMethods { .. } => 21,
-            Attribute::MethodParameters { .. } => 22,
-            // Attribute::Module,
-            // Attribute::ModulePackages,
-            // Attribute::ModuleMainClass,
-            Attribute::NestHost { .. } => 26,
-            Attribute::NestMembers { .. } => 27,
-            // Attribute::Record,
-            // Attribute::PermittedSubclasses,
-        }
-    }
-    
     pub const fn name(&self) -> &'static str {
         match self {
             Attribute::ConstantValue { .. } => constants::CONSTANT_VALUE,
@@ -300,27 +262,7 @@ impl Attribute {
     }
 }
 
-impl PartialEq<Self> for Attribute {
-    fn eq(&self, other: &Self) -> bool {
-        self.ordinal() == other.ordinal()
-    }
-}
-
-impl Eq for Attribute {}
-
-impl Ord for Attribute {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.ordinal().cmp(&other.ordinal())
-    }
-}
-
-impl PartialOrd for Attribute {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Exception {
     start_pc: u16,
     end_pc: u16,
@@ -329,7 +271,7 @@ pub struct Exception {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum StackMapEntry {
     Same,
     SameLocal1StackItem {
@@ -382,7 +324,7 @@ impl StackMapEntry {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum AppendType {
     One,
     Two,
@@ -391,7 +333,7 @@ pub enum AppendType {
 
 // noinspection ALL
 #[repr(u8)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum VerificationType {
     Top,
     Integer,
@@ -413,7 +355,7 @@ impl VerificationType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct InnerClass {
     inner_class_info_index: u16,
     outer_class_info_index: u16,
@@ -423,7 +365,7 @@ pub struct InnerClass {
 
 #[repr(u16)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize,
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, IntoPrimitive, Serialize, Deserialize,
 )]
 pub enum NestedClassAccessFlag {
     Public = 0x0001,
@@ -441,13 +383,13 @@ pub enum NestedClassAccessFlag {
 impl<'a> AccessFlag<'a, NestedClassAccessFlag> for &'a [NestedClassAccessFlag] {}
 impl<'a> AccessFlag<'a, NestedClassAccessFlag> for &'a Vec<NestedClassAccessFlag> {}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LineNumber {
     start_pc: u16,
     line_number: u16,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LocalVariable {
     start_pc: u16,
     length: u16,
@@ -456,7 +398,7 @@ pub struct LocalVariable {
     index: u16,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LocalVariableType {
     start_pc: u16,
     length: u16,
@@ -473,20 +415,20 @@ pub struct BootstrapMethod {
 }
 
 impl BootstrapMethod {
-    pub const fn new(bootstrap_method_ref: u16, boostrap_arguments_indices: Vec<u16>) -> Self {
+    pub fn new(bootstrap_method_ref: u16, boostrap_arguments_indices: Vec<u16>) -> Self {
         Self {
             bootstrap_method_ref,
             num_bootstrap_arguments: boostrap_arguments_indices.len() as u16,
-            bootstrap_arguments: boostrap_arguments_indices
+            bootstrap_arguments: boostrap_arguments_indices,
         }
     }
-    
+
     pub fn len(&self) -> u32 {
         4 + self.bootstrap_arguments.len() as u32 * 2
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MethodParameter {
     name_index: u16,
     access_flags: Vec<ParameterAccessFlag>,
@@ -494,7 +436,7 @@ pub struct MethodParameter {
 
 #[repr(u16)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize,
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, IntoPrimitive, Serialize, Deserialize,
 )]
 pub enum ParameterAccessFlag {
     Final = 0x0010,

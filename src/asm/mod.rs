@@ -2,7 +2,6 @@ pub mod node;
 
 pub mod annotation;
 pub mod byte_vec;
-pub mod class;
 mod constants;
 pub mod field;
 pub mod handle;

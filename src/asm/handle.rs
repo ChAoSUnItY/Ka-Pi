@@ -2,14 +2,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::asm::opcodes::RefKind;
 
-use super::opcodes;
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Handle {
-    tag: RefKind,
-    owner: String,
-    name: String,
-    descriptor: String,
+    pub tag: RefKind,
+    pub owner: String,
+    pub name: String,
+    pub descriptor: String,
 }
 
 impl Handle {

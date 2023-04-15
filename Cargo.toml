@@ -18,6 +18,7 @@ lazy_static = "1.4.0"
 either = "1.8.1"
 itertools = "0.10.5"
 num_enum = "0.6.0"
+indexmap = { version = "1.9.3", features = ["serde-1"] }
 
 [dev-dependencies]
 insta = { version = "1.28.0", features = ["yaml"] }

@@ -2,13 +2,11 @@ use std::collections::VecDeque;
 
 use serde::{Deserialize, Serialize};
 
-use crate::asm::class::ClassReaderImpl;
 use crate::asm::signature::{
     accept_class_signature_visitor, accept_field_signature_visitor,
     accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter,
     FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
-    FormalTypeParameterVisitor, MethodSignatureVisitor, MethodSignatureWriter,
-    SignatureVisitorImpl, TypeVisitor,
+    FormalTypeParameterVisitor, MethodSignatureVisitor, MethodSignatureWriter, TypeVisitor,
 };
 use crate::error::{KapiError, KapiResult};
 
