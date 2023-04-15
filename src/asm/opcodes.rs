@@ -904,7 +904,10 @@ pub enum ConstantObject {
     MethodHandle(RefKind, String, String, String),
     MethodType(String),
     /// # Arguments
-    /// - [String]:
+    /// - [String]: method name
+    /// - [String]: method descriptor
+    /// - [Handle]: bootstrap method handle
+    /// - [Vec<ConstantObject>]: bootstrap method arguments
     ConstantDynamic(String, String, Handle, Vec<ConstantObject>),
 }
 

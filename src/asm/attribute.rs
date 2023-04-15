@@ -465,7 +465,7 @@ pub struct LocalVariableType {
     index: u16,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct BootstrapMethod {
     bootstrap_method_ref: u16,
     num_bootstrap_arguments: u16,
@@ -473,6 +473,14 @@ pub struct BootstrapMethod {
 }
 
 impl BootstrapMethod {
+    pub const fn new(bootstrap_method_ref: u16, boostrap_arguments_indices: Vec<u16>) -> Self {
+        Self {
+            bootstrap_method_ref,
+            num_bootstrap_arguments: boostrap_arguments_indices.len() as u16,
+            bootstrap_arguments: boostrap_arguments_indices
+        }
+    }
+    
     pub fn len(&self) -> u32 {
         4 + self.bootstrap_arguments.len() as u32 * 2
     }

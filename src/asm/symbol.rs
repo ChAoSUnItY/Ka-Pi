@@ -4,7 +4,9 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::asm::opcodes::RefKind;
+use crate::asm::attribute::{Attribute, BootstrapMethod, ConstantValue};
+use crate::asm::handle::Handle;
+use crate::asm::opcodes::{ConstantObject, RefKind};
 use crate::utils::InsertAndRetrieve;
 
 #[repr(u8)]
@@ -211,6 +213,8 @@ impl Symbol {
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct SymbolTable {
     symbols: Vec<Symbol>,
+    attributes: Vec<Attribute>,
+    // Symbol caching fields
     #[serde(skip_serializing)]
     utf8_cache: HashMap<String, u16>,
     #[serde(skip_serializing)]
@@ -227,11 +231,18 @@ pub(crate) struct SymbolTable {
     double_cache: HashMap<[u8; 8], u16>,
     #[serde(skip_serializing)]
     method_handle_cache: HashMap<(u8, u16), u16>,
+    // Attribute caching fields
+    #[serde(skip_serializing)]
+    bootstrap_methods: HashMap<BootstrapMethod, u16>,
 }
 
 impl SymbolTable {
-    fn len(&self) -> u16 {
+    fn symbol_len(&self) -> u16 {
         self.symbols.len() as u16
+    }
+
+    fn attr_len(&self) -> u16 {
+        self.attributes.len() as u16
     }
 
     pub(crate) fn add_utf8(&mut self, string: &str) -> u16 {
@@ -242,7 +253,7 @@ impl SymbolTable {
                 data: string.to_owned(),
             });
             self.utf8_cache
-                .insert_retrieve(string.to_owned(), self.len())
+                .insert_retrieve(string.to_owned(), self.symbol_len())
         }
     }
 
@@ -254,7 +265,7 @@ impl SymbolTable {
         } else {
             self.symbols.push(Symbol::Class { name_index });
             self.single_index_cache
-                .insert_retrieve(name_index, self.len())
+                .insert_retrieve(name_index, self.symbol_len())
         }
     }
 
@@ -266,7 +277,7 @@ impl SymbolTable {
         } else {
             self.symbols.push(Symbol::String { string_index });
             self.single_index_cache
-                .insert_retrieve(string_index, self.len())
+                .insert_retrieve(string_index, self.symbol_len())
         }
     }
 
@@ -277,7 +288,8 @@ impl SymbolTable {
             self.symbols.push(Symbol::Integer {
                 bytes: integer.to_be_bytes(),
             });
-            self.integer_cache.insert_retrieve(integer, self.len())
+            self.integer_cache
+                .insert_retrieve(integer, self.symbol_len())
         }
     }
 
@@ -288,7 +300,8 @@ impl SymbolTable {
             *index
         } else {
             self.symbols.push(Symbol::Float { bytes: be_bytes });
-            self.float_cache.insert_retrieve(be_bytes, self.len())
+            self.float_cache
+                .insert_retrieve(be_bytes, self.symbol_len())
         }
     }
 
@@ -304,7 +317,7 @@ impl SymbolTable {
                     low_bytes,
                 });
             }
-            self.long_cache.insert_retrieve(long, self.len() - 1)
+            self.long_cache.insert_retrieve(long, self.symbol_len() - 1)
         }
     }
 
@@ -324,7 +337,8 @@ impl SymbolTable {
                 });
             }
 
-            self.double_cache.insert_retrieve(be_bytes, self.len() - 1)
+            self.double_cache
+                .insert_retrieve(be_bytes, self.symbol_len() - 1)
         }
     }
 
@@ -343,7 +357,7 @@ impl SymbolTable {
                 name_and_type_index,
             });
             self.double_index_cache
-                .insert_retrieve((class_index, name_and_type_index), self.len())
+                .insert_retrieve((class_index, name_and_type_index), self.symbol_len())
         }
     }
 
@@ -362,7 +376,7 @@ impl SymbolTable {
                 name_and_type_index,
             });
             self.double_index_cache
-                .insert_retrieve((class_index, name_and_type_index), self.len())
+                .insert_retrieve((class_index, name_and_type_index), self.symbol_len())
         }
     }
 
@@ -381,7 +395,7 @@ impl SymbolTable {
                 name_and_type_index,
             });
             self.double_index_cache
-                .insert_retrieve((class_index, name_and_type_index), self.len())
+                .insert_retrieve((class_index, name_and_type_index), self.symbol_len())
         }
     }
 
@@ -397,13 +411,13 @@ impl SymbolTable {
                 type_index,
             });
             self.double_index_cache
-                .insert_retrieve((name_index, type_index), self.len())
+                .insert_retrieve((name_index, type_index), self.symbol_len())
         }
     }
 
     pub(crate) fn add_method_handle(
         &mut self,
-        reference_kind: RefKind,
+        reference_kind: &RefKind,
         class: &str,
         name: &str,
         typ: &str,
@@ -422,16 +436,16 @@ impl SymbolTable {
 
         if let Some(index) = self
             .method_handle_cache
-            .get(&(reference_kind as u8, reference_index))
+            .get(&(*reference_kind as u8, reference_index))
         {
             *index
         } else {
             self.symbols.push(Symbol::MethodHandle {
-                reference_kind: reference_kind as u8,
+                reference_kind: *reference_kind as u8,
                 reference_index,
             });
             self.method_handle_cache
-                .insert_retrieve((reference_kind as u8, reference_index), self.len())
+                .insert_retrieve((*reference_kind as u8, reference_index), self.symbol_len())
         }
     }
 
@@ -446,7 +460,7 @@ impl SymbolTable {
         } else {
             self.symbols.push(Symbol::Module { name_index });
             self.single_index_cache
-                .insert_retrieve(name_index, self.len())
+                .insert_retrieve(name_index, self.symbol_len())
         }
     }
 
@@ -458,7 +472,94 @@ impl SymbolTable {
         } else {
             self.symbols.push(Symbol::Package { name_index });
             self.single_index_cache
-                .insert_retrieve(name_index, self.len())
+                .insert_retrieve(name_index, self.symbol_len())
+        }
+    }
+
+    pub(crate) fn add_constant_attribute<CV>(&mut self, constant_value: CV) -> u16
+    where
+        CV: Into<ConstantValue>,
+    {
+        let constant_value = constant_value.into();
+        let index = match &constant_value {
+            ConstantValue::Int(val) => self.add_integer(*val),
+            ConstantValue::Float(val) => self.add_float(*val),
+            ConstantValue::Long(val) => self.add_long(*val),
+            ConstantValue::Double(val) => self.add_double(*val),
+            ConstantValue::String(val) => self.add_string(val),
+        };
+
+        self.attributes.push(Attribute::ConstantValue {
+            constant_value_index: index,
+        });
+        self.attr_len()
+    }
+
+    pub(crate) fn add_constant_object(&mut self, constant_object: &ConstantObject) -> u16 {
+        match constant_object {
+            ConstantObject::String(val) => self.add_string(val),
+            ConstantObject::Int(val) => self.add_integer(*val),
+            ConstantObject::Float(val) => self.add_float(*val),
+            ConstantObject::Long(val) => self.add_long(*val),
+            ConstantObject::Double(val) => self.add_double(*val),
+            ConstantObject::Class(val) => self.add_class(val),
+            ConstantObject::MethodHandle(ref_kind, class, name, descriptor) => {
+                self.add_method_handle(ref_kind, class, name, descriptor)
+            }
+            ConstantObject::MethodType(val) => self.add_utf8(val),
+            ConstantObject::ConstantDynamic(name, descriptor, handle, arguments) => {
+                self.add_constant_dynamic(name, descriptor, handle, arguments)
+            }
+        }
+    }
+
+    pub(crate) fn add_constant_dynamic(
+        &mut self,
+        name: &str,
+        descriptor: &str,
+        handle: &Handle,
+        arguments: &Vec<ConstantObject>,
+    ) -> u16 {
+        let boostrap_method_index = self.add_bootstrap_method(handle, arguments);
+        let name_and_type_index = self.add_name_and_type(name, descriptor);
+
+        if let Some(constant_dynamic) = self
+            .double_index_cache
+            .get(&(boostrap_method_index, name_and_type_index))
+        {
+            *constant_dynamic
+        } else {
+            self.symbols.push(Symbol::Dynamic {
+                bootstrap_method_attr_index: boostrap_method_index,
+                name_and_type_index,
+            });
+            self.double_index_cache.insert_retrieve(
+                (boostrap_method_index, name_and_type_index),
+                self.symbol_len(),
+            )
+        }
+    }
+
+    fn add_bootstrap_method(&mut self, handle: &Handle, arguments: &Vec<ConstantObject>) -> u16 {
+        let bootstrap_arguments_indices = arguments
+            .iter()
+            .map(|constant_object| self.add_constant_object(constant_object))
+            .collect::<Vec<_>>();
+        let Handle {
+            tag,
+            owner,
+            name,
+            descriptor,
+        } = handle;
+        let boostrap_method_handle = self.add_method_handle(tag, owner, name, descriptor);
+        let boostrap_method =
+            BootstrapMethod::new(boostrap_method_handle, bootstrap_arguments_indices);
+
+        if let Some(bootstrap_method_index) = self.bootstrap_methods.get(&boostrap_method) {
+            *bootstrap_method_index
+        } else {
+            self.bootstrap_methods
+                .insert_retrieve(boostrap_method, self.bootstrap_methods.len() as u16)
         }
     }
 }
@@ -476,7 +577,7 @@ mod test {
 
         assert_eq!(index, 1);
         assert_eq!(index, cached_index);
-        assert_eq!(table.len(), 1);
+        assert_eq!(table.symbol_len(), 1);
     }
 
     #[test]
@@ -490,7 +591,7 @@ mod test {
         // therefore the index of NameAndType should be 3
         assert_eq!(index, 3);
         assert_eq!(index, cached_index);
-        assert_eq!(table.len(), 3);
+        assert_eq!(table.symbol_len(), 3);
     }
 
     #[test]
@@ -502,14 +603,14 @@ mod test {
 
         assert_eq!(index, 1);
         assert_eq!(index, cached_index);
-        assert_eq!(table.len(), 2); // Long takes 2 entries
+        assert_eq!(table.symbol_len(), 2); // Long takes 2 entries
 
         let index = table.add_double(f64::MAX);
         let cached_index = table.add_double(f64::MAX);
 
         assert_eq!(index, 3);
         assert_eq!(index, cached_index);
-        assert_eq!(table.len(), 4); // Long takes 2 entries
+        assert_eq!(table.symbol_len(), 4); // Long takes 2 entries
     }
 
     // More tests?
