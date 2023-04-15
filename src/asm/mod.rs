@@ -23,3 +23,4 @@ mod symbol;
 pub mod types;
 pub mod label;
 mod attribute;
+pub mod class;

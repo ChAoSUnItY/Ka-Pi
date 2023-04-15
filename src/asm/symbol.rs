@@ -210,8 +210,8 @@ impl Constant {
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct SymbolTable {
-    constants: IndexSet<Constant>,
-    attributes: IndexSet<Attribute>,
+    pub(crate) constants: IndexSet<Constant>,
+    pub(crate) attributes: IndexSet<Attribute>,
     // Symbol caching fields
     // Attribute caching fields
     #[serde(skip_serializing)]

@@ -112,33 +112,3 @@ pub(crate) const JSR_W: u8 = 201;
 // The delta between the GOTO_W and JSR_W opcodes and GOTO and JUMP.
 pub(crate) const WIDE_JUMP_OPCODE_DELTA: u8 = GOTO_W - opcodes::GOTO;
 
-// Constants to convert JVM opcodes to the equivalent ASM specific opcodes, and vice versa.
-
-// The delta between the ASM_IFEQ, ..., ASM_IF_ACMPNE, ASM_GOTO and ASM_JSR opcodes
-// and IFEQ, ..., IF_ACMPNE, GOTO and JSR.
-pub(crate) const ASM_OPCODE_DELTA: u8 = 49;
-
-// The delta between the ASM_IFNULL and ASM_IFNONNULL opcodes and IFNULL and IFNONNULL.
-pub(crate) const ASM_IFNULL_OPCODE_DELTA: u8 = 20;
-
-// ASM specific opcodes, used for long forward jump instructions.
-
-pub(crate) const ASM_IFEQ: u8 = opcodes::IFEQ + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFNE: u8 = opcodes::IFNE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFLT: u8 = opcodes::IFLT + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFGE: u8 = opcodes::IFGE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFGT: u8 = opcodes::IFGT + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFLE: u8 = opcodes::IFLE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPEQ: u8 = opcodes::IF_ICMPEQ + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPNE: u8 = opcodes::IF_ICMPNE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPLT: u8 = opcodes::IF_ICMPLT + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPGE: u8 = opcodes::IF_ICMPGE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPGT: u8 = opcodes::IF_ICMPGT + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPLE: u8 = opcodes::IF_ICMPLE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ACMPEQ: u8 = opcodes::IF_ACMPEQ + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ACMPNE: u8 = opcodes::IF_ACMPNE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_GOTO: u8 = opcodes::GOTO + ASM_OPCODE_DELTA;
-pub(crate) const ASM_JSR: u8 = opcodes::JSR + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFNULL: u8 = opcodes::IFNULL + ASM_IFNULL_OPCODE_DELTA;
-pub(crate) const ASM_IFNONNULL: u8 = opcodes::IFNONNULL + ASM_IFNULL_OPCODE_DELTA;
-pub(crate) const ASM_GOTO_W: u8 = 220;

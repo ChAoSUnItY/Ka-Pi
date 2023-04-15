@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::constants;
 use crate::asm::label::Label;
-use crate::asm::opcodes::{AccessFlag, ConstantObject, MethodAccessFlag, NativeOpcode, Opcode};
+use crate::asm::opcodes::{AccessFlag, ConstantObject, Instruction, MethodAccessFlag, Opcode};
 use crate::asm::symbol::SymbolTable;
 use crate::error::KapiResult;
 
@@ -63,290 +63,449 @@ impl<'output> MethodWriter<'output> {
         self.max_stack = max(self.current_stack, self.max_stack);
     }
 
+    fn dec_stack(&mut self) {
+        self.current_stack -= 1;
+    }
+
     fn inc_locals(&mut self) {
         self.current_locals += 1;
         self.max_stack = max(self.current_locals, self.max_locals);
     }
 
-    /// Emit opcode with a predefined [Opcode] enum structure. This is useful when exist functions
+    fn put_opcode(&mut self, opcode: Opcode) {
+        self.code_byte_vec.put_be(opcode as u8);
+    }
+
+    /// Emit opcode with a [Opcode], following by the companion data which has dynamic length
+    /// based on given opcode. This is useful when exist functions does not have such feature implementation,
+    /// however, using this might results in unexpected errors.
+    ///
+    /// # Unsafety
+    ///
+    /// This function is highly unrecommended to use unless you know what you are doing, and also might
+    /// occur undesired behaviour (very possibly leads to invalid bytecode) based on given parameters.
+    ///
+    /// Use [Self::visit_inst] instead for your own safety.
+    pub unsafe fn visit_inst_raw(&mut self, opcode: Opcode, companion_data: &[u8]) {
+        self.code_byte_vec.put_u8(opcode as u8);
+        self.code_byte_vec.put_u8s(companion_data);
+    }
+
+    /// Emit instruction with a [Instruction]. This is useful when exist functions
     /// does not have such feature implementation, however, using this might results in unexpected
     /// errors.
     ///
     /// # Unsafety
     ///
-    /// This function might occur undesired behaviour based on give parameter **`opcode`**.
-    pub(crate) unsafe fn visit_opcode(&mut self, opcode: Opcode) -> KapiResult<()> {
-        match &opcode {
-            Opcode::NOP => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+    /// This function might occur undesired behaviour based on given parameter **`opcode`**.
+    pub unsafe fn visit_inst(&mut self, inst: Instruction) -> KapiResult<()> {
+        match &inst {
+            Instruction::NOP => {
+                self.put_opcode(inst.opcode());
             }
-            Opcode::ACONST_NULL => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::ACONST_NULL => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::ICONST_M1 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::ICONST_M1 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::ICONST_0 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::ICONST_0 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::ICONST_1 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::ICONST_1 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::ICONST_2 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::ICONST_2 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::ICONST_3 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::ICONST_3 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::ICONST_4 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::ICONST_4 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::ICONST_5 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::ICONST_5 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::LCONST_0 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::LCONST_0 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::LCONST_1 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::LCONST_1 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::FCONST_0 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::FCONST_0 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::FCONST_1 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::FCONST_1 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::FCONST_2 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::FCONST_2 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::DCONST_0 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::DCONST_0 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::DCONST_1 => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::DCONST_1 => {
+                self.put_opcode(inst.opcode());
                 self.inc_stack();
             }
-            Opcode::BIPUSH(val) => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::BIPUSH(val) => {
+                self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
             }
-            Opcode::SIPUSH(val) => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::SIPUSH(val) => {
+                self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
             }
-            Opcode::LDC(constant) => {
-                self.code_byte_vec.put_be(opcode.opcode_byte());
+            Instruction::LDC(constant) => {
+                self.put_opcode(inst.opcode());
 
                 let constant_index = self.symbol_table.add_constant_object(constant);
+
+                self.code_byte_vec.put_be(constant_index);
+                self.inc_stack();
             }
-            Opcode::ILOAD(_) => {}
-            Opcode::LLOAD(_) => {}
-            Opcode::FLOAD(_) => {}
-            Opcode::DLOAD(_) => {}
-            Opcode::ALOAD(_) => {}
-            Opcode::ILOAD_0 => {}
-            Opcode::ILOAD_1 => {}
-            Opcode::ILOAD_2 => {}
-            Opcode::ILOAD_3 => {}
-            Opcode::LLOAD_0 => {}
-            Opcode::LLOAD_1 => {}
-            Opcode::LLOAD_2 => {}
-            Opcode::LLOAD_3 => {}
-            Opcode::FLOAD_0 => {}
-            Opcode::FLOAD_1 => {}
-            Opcode::FLOAD_2 => {}
-            Opcode::FLOAD_3 => {}
-            Opcode::DLOAD_0 => {}
-            Opcode::DLOAD_1 => {}
-            Opcode::DLOAD_2 => {}
-            Opcode::DLOAD_3 => {}
-            Opcode::ALOAD_0 => {}
-            Opcode::ALOAD_1 => {}
-            Opcode::ALOAD_2 => {}
-            Opcode::ALOAD_3 => {}
-            Opcode::IALOAD => {}
-            Opcode::LALOAD => {}
-            Opcode::FALOAD => {}
-            Opcode::DALOAD => {}
-            Opcode::AALOAD => {}
-            Opcode::BALOAD => {}
-            Opcode::CALOAD => {}
-            Opcode::SALOAD => {}
-            Opcode::ISTORE(_) => {}
-            Opcode::LSTORE(_) => {}
-            Opcode::FSTORE(_) => {}
-            Opcode::DSTORE(_) => {}
-            Opcode::ASTORE(_) => {}
-            Opcode::ISTORE_0 => {}
-            Opcode::ISTORE_1 => {}
-            Opcode::ISTORE_2 => {}
-            Opcode::ISTORE_3 => {}
-            Opcode::LSTORE_0 => {}
-            Opcode::LSTORE_1 => {}
-            Opcode::LSTORE_2 => {}
-            Opcode::LSTORE_3 => {}
-            Opcode::FSTORE_0 => {}
-            Opcode::FSTORE_1 => {}
-            Opcode::FSTORE_2 => {}
-            Opcode::FSTORE_3 => {}
-            Opcode::DSTORE_0 => {}
-            Opcode::DSTORE_1 => {}
-            Opcode::DSTORE_2 => {}
-            Opcode::DSTORE_3 => {}
-            Opcode::ASTORE_0 => {}
-            Opcode::ASTORE_1 => {}
-            Opcode::ASTORE_2 => {}
-            Opcode::ASTORE_3 => {}
-            Opcode::IASTORE => {}
-            Opcode::LASTORE => {}
-            Opcode::FASTORE => {}
-            Opcode::DASTORE => {}
-            Opcode::AASTORE => {}
-            Opcode::BASTORE => {}
-            Opcode::CASTORE => {}
-            Opcode::SASTORE => {}
-            Opcode::POP => {}
-            Opcode::POP2 => {}
-            Opcode::DUP => {}
-            Opcode::DUP_X1 => {}
-            Opcode::DUP_X2 => {}
-            Opcode::DUP2 => {}
-            Opcode::DUP2_X1 => {}
-            Opcode::DUP2_X2 => {}
-            Opcode::SWAP => {}
-            Opcode::IADD => {}
-            Opcode::LADD => {}
-            Opcode::FADD => {}
-            Opcode::DADD => {}
-            Opcode::ISUB => {}
-            Opcode::LSUB => {}
-            Opcode::FSUB => {}
-            Opcode::DSUB => {}
-            Opcode::IMUL => {}
-            Opcode::LMUL => {}
-            Opcode::FMUL => {}
-            Opcode::DMUL => {}
-            Opcode::IDIV => {}
-            Opcode::LDIV => {}
-            Opcode::FDIV => {}
-            Opcode::DDIV => {}
-            Opcode::IREM => {}
-            Opcode::LREM => {}
-            Opcode::FREM => {}
-            Opcode::DREM => {}
-            Opcode::INEG => {}
-            Opcode::LNEG => {}
-            Opcode::FNEG => {}
-            Opcode::DNEG => {}
-            Opcode::ISHL => {}
-            Opcode::LSHL => {}
-            Opcode::ISHR => {}
-            Opcode::LSHR => {}
-            Opcode::IUSHR => {}
-            Opcode::LUSHR => {}
-            Opcode::IAND => {}
-            Opcode::LAND => {}
-            Opcode::IOR => {}
-            Opcode::LOR => {}
-            Opcode::IXOR => {}
-            Opcode::LXOR => {}
-            Opcode::IINC(_, _) => {}
-            Opcode::I2L => {}
-            Opcode::I2F => {}
-            Opcode::I2D => {}
-            Opcode::L2I => {}
-            Opcode::L2F => {}
-            Opcode::L2D => {}
-            Opcode::F2I => {}
-            Opcode::F2L => {}
-            Opcode::F2D => {}
-            Opcode::D2I => {}
-            Opcode::D2L => {}
-            Opcode::D2F => {}
-            Opcode::I2B => {}
-            Opcode::I2C => {}
-            Opcode::I2S => {}
-            Opcode::LCMP => {}
-            Opcode::FCMPL => {}
-            Opcode::FCMPG => {}
-            Opcode::DCMPL => {}
-            Opcode::DCMPG => {}
-            Opcode::IFEQ(_) => {}
-            Opcode::IFNE(_) => {}
-            Opcode::IFLT(_) => {}
-            Opcode::IFGE(_) => {}
-            Opcode::IFGT(_) => {}
-            Opcode::IFLE(_) => {}
-            Opcode::IF_ICMPEQ(_) => {}
-            Opcode::IF_ICMPNE(_) => {}
-            Opcode::IF_ICMPLT(_) => {}
-            Opcode::IF_ICMPGE(_) => {}
-            Opcode::IF_ICMPGT(_) => {}
-            Opcode::IF_ICMPLE(_) => {}
-            Opcode::IF_ACMPEQ(_) => {}
-            Opcode::IF_ACMPNE(_) => {}
-            Opcode::GOTO(_) => {}
-            Opcode::JSR(_) => {}
-            Opcode::RET(_) => {}
-            Opcode::TABLESWITCH => {}
-            Opcode::LOOKUPSWITCH => {}
-            Opcode::IRETURN => {}
-            Opcode::LRETURN => {}
-            Opcode::FRETURN => {}
-            Opcode::DRETURN => {}
-            Opcode::ARETURN => {}
-            Opcode::RETURN => {}
-            Opcode::GETSTATIC => {}
-            Opcode::PUTSTATIC => {}
-            Opcode::GETFIELD => {}
-            Opcode::PUTFIELD => {}
-            Opcode::INVOKEVIRTUAL => {}
-            Opcode::INVOKESPECIAL => {}
-            Opcode::INVOKESTATIC => {}
-            Opcode::INVOKEINTERFACE => {}
-            Opcode::INVOKEDYNAMIC => {}
-            Opcode::NEW => {}
-            Opcode::NEWARRAY => {}
-            Opcode::ANEWARRAY => {}
-            Opcode::ARRAYLENGTH => {}
-            Opcode::ATHROW => {}
-            Opcode::CHECKCAST => {}
-            Opcode::INSTANCEOF => {}
-            Opcode::MONITORENTER => {}
-            Opcode::MONITOREXIT => {}
-            Opcode::MULTIANEWARRAY => {}
-            Opcode::IFNULL => {}
-            Opcode::IFNONNULL => {}
+            Instruction::ILOAD(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.inc_stack();
+            }
+            Instruction::LLOAD(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.inc_stack();
+            }
+            Instruction::FLOAD(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.inc_stack();
+            }
+            Instruction::DLOAD(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.inc_stack();
+            }
+            Instruction::ALOAD(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.inc_stack();
+            }
+            Instruction::ILOAD_0 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(0);
+                self.inc_stack();
+            }
+            Instruction::ILOAD_1 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(1);
+                self.inc_stack();
+            }
+            Instruction::ILOAD_2 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(2);
+                self.inc_stack();
+            }
+            Instruction::ILOAD_3 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(3);
+                self.inc_stack();
+            }
+            Instruction::LLOAD_0 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(0);
+                self.inc_stack();
+            }
+            Instruction::LLOAD_1 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(1);
+                self.inc_stack();
+            }
+            Instruction::LLOAD_2 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(2);
+                self.inc_stack();
+            }
+            Instruction::LLOAD_3 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(3);
+                self.inc_stack();
+            }
+            Instruction::FLOAD_0 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(0);
+                self.inc_stack();
+            }
+            Instruction::FLOAD_1 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(1);
+                self.inc_stack();
+            }
+            Instruction::FLOAD_2 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(2);
+                self.inc_stack();
+            }
+            Instruction::FLOAD_3 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(3);
+                self.inc_stack();
+            }
+            Instruction::DLOAD_0 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(0);
+                self.inc_stack();
+            }
+            Instruction::DLOAD_1 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(1);
+                self.inc_stack();
+            }
+            Instruction::DLOAD_2 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(2);
+                self.inc_stack();
+            }
+            Instruction::DLOAD_3 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(3);
+                self.inc_stack();
+            }
+            Instruction::ALOAD_0 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(0);
+                self.inc_stack();
+            }
+            Instruction::ALOAD_1 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(1);
+                self.inc_stack();
+            }
+            Instruction::ALOAD_2 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(2);
+                self.inc_stack();
+            }
+            Instruction::ALOAD_3 => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(3);
+                self.inc_stack();
+            }
+            Instruction::IALOAD => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack();
+            }
+            Instruction::LALOAD => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack();
+            }
+            Instruction::FALOAD => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack();
+            }
+            Instruction::DALOAD => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack();
+            }
+            Instruction::AALOAD => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack();
+            }
+            Instruction::BALOAD => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack();
+            }
+            Instruction::CALOAD => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack();
+            }
+            Instruction::SALOAD => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack();
+            }
+            Instruction::ISTORE(_) => {}
+            Instruction::LSTORE(_) => {}
+            Instruction::FSTORE(_) => {}
+            Instruction::DSTORE(_) => {}
+            Instruction::ASTORE(_) => {}
+            Instruction::ISTORE_0 => {}
+            Instruction::ISTORE_1 => {}
+            Instruction::ISTORE_2 => {}
+            Instruction::ISTORE_3 => {}
+            Instruction::LSTORE_0 => {}
+            Instruction::LSTORE_1 => {}
+            Instruction::LSTORE_2 => {}
+            Instruction::LSTORE_3 => {}
+            Instruction::FSTORE_0 => {}
+            Instruction::FSTORE_1 => {}
+            Instruction::FSTORE_2 => {}
+            Instruction::FSTORE_3 => {}
+            Instruction::DSTORE_0 => {}
+            Instruction::DSTORE_1 => {}
+            Instruction::DSTORE_2 => {}
+            Instruction::DSTORE_3 => {}
+            Instruction::ASTORE_0 => {}
+            Instruction::ASTORE_1 => {}
+            Instruction::ASTORE_2 => {}
+            Instruction::ASTORE_3 => {}
+            Instruction::IASTORE => {}
+            Instruction::LASTORE => {}
+            Instruction::FASTORE => {}
+            Instruction::DASTORE => {}
+            Instruction::AASTORE => {}
+            Instruction::BASTORE => {}
+            Instruction::CASTORE => {}
+            Instruction::SASTORE => {}
+            Instruction::POP => {}
+            Instruction::POP2 => {}
+            Instruction::DUP => {}
+            Instruction::DUP_X1 => {}
+            Instruction::DUP_X2 => {}
+            Instruction::DUP2 => {}
+            Instruction::DUP2_X1 => {}
+            Instruction::DUP2_X2 => {}
+            Instruction::SWAP => {}
+            Instruction::IADD => {}
+            Instruction::LADD => {}
+            Instruction::FADD => {}
+            Instruction::DADD => {}
+            Instruction::ISUB => {}
+            Instruction::LSUB => {}
+            Instruction::FSUB => {}
+            Instruction::DSUB => {}
+            Instruction::IMUL => {}
+            Instruction::LMUL => {}
+            Instruction::FMUL => {}
+            Instruction::DMUL => {}
+            Instruction::IDIV => {}
+            Instruction::LDIV => {}
+            Instruction::FDIV => {}
+            Instruction::DDIV => {}
+            Instruction::IREM => {}
+            Instruction::LREM => {}
+            Instruction::FREM => {}
+            Instruction::DREM => {}
+            Instruction::INEG => {}
+            Instruction::LNEG => {}
+            Instruction::FNEG => {}
+            Instruction::DNEG => {}
+            Instruction::ISHL => {}
+            Instruction::LSHL => {}
+            Instruction::ISHR => {}
+            Instruction::LSHR => {}
+            Instruction::IUSHR => {}
+            Instruction::LUSHR => {}
+            Instruction::IAND => {}
+            Instruction::LAND => {}
+            Instruction::IOR => {}
+            Instruction::LOR => {}
+            Instruction::IXOR => {}
+            Instruction::LXOR => {}
+            Instruction::IINC(_, _) => {}
+            Instruction::I2L => {}
+            Instruction::I2F => {}
+            Instruction::I2D => {}
+            Instruction::L2I => {}
+            Instruction::L2F => {}
+            Instruction::L2D => {}
+            Instruction::F2I => {}
+            Instruction::F2L => {}
+            Instruction::F2D => {}
+            Instruction::D2I => {}
+            Instruction::D2L => {}
+            Instruction::D2F => {}
+            Instruction::I2B => {}
+            Instruction::I2C => {}
+            Instruction::I2S => {}
+            Instruction::LCMP => {}
+            Instruction::FCMPL => {}
+            Instruction::FCMPG => {}
+            Instruction::DCMPL => {}
+            Instruction::DCMPG => {}
+            Instruction::IFEQ(_) => {}
+            Instruction::IFNE(_) => {}
+            Instruction::IFLT(_) => {}
+            Instruction::IFGE(_) => {}
+            Instruction::IFGT(_) => {}
+            Instruction::IFLE(_) => {}
+            Instruction::IF_ICMPEQ(_) => {}
+            Instruction::IF_ICMPNE(_) => {}
+            Instruction::IF_ICMPLT(_) => {}
+            Instruction::IF_ICMPGE(_) => {}
+            Instruction::IF_ICMPGT(_) => {}
+            Instruction::IF_ICMPLE(_) => {}
+            Instruction::IF_ACMPEQ(_) => {}
+            Instruction::IF_ACMPNE(_) => {}
+            Instruction::GOTO(_) => {}
+            Instruction::JSR(_) => {}
+            Instruction::RET(_) => {}
+            Instruction::TABLESWITCH => {}
+            Instruction::LOOKUPSWITCH => {}
+            Instruction::IRETURN => {}
+            Instruction::LRETURN => {}
+            Instruction::FRETURN => {}
+            Instruction::DRETURN => {}
+            Instruction::ARETURN => {}
+            Instruction::RETURN => {}
+            Instruction::GETSTATIC => {}
+            Instruction::PUTSTATIC => {}
+            Instruction::GETFIELD => {}
+            Instruction::PUTFIELD => {}
+            Instruction::INVOKEVIRTUAL => {}
+            Instruction::INVOKESPECIAL => {}
+            Instruction::INVOKESTATIC => {}
+            Instruction::INVOKEINTERFACE => {}
+            Instruction::INVOKEDYNAMIC => {}
+            Instruction::NEW => {}
+            Instruction::NEWARRAY => {}
+            Instruction::ANEWARRAY => {}
+            Instruction::ARRAYLENGTH => {}
+            Instruction::ATHROW => {}
+            Instruction::CHECKCAST => {}
+            Instruction::INSTANCEOF => {}
+            Instruction::MONITORENTER => {}
+            Instruction::MONITOREXIT => {}
+            Instruction::MULTIANEWARRAY => {}
+            Instruction::IFNULL => {}
+            Instruction::IFNONNULL => {}
         }
 
         Ok(())
     }
 
-    pub(crate) fn visit_ldc<C>(&mut self, constant_value: C)
+    pub(crate) fn visit_ldc<C>(&mut self, constant_object: C)
     where
         C: Into<ConstantObject>,
     {
+        self.put_opcode(Opcode::LDC);
+
+        let constant_index = self
+            .symbol_table
+            .add_constant_object(&constant_object.into());
+
+        self.byte_vec.put_be(constant_index);
+        self.inc_stack();
     }
 
-    pub(crate) fn visit_jmp(
-        &mut self,
-        jmp_opcode: NativeOpcode,
-        destination_label: &Rc<RefCell<Label>>,
-    ) {
+    pub(crate) fn visit_return(&mut self, return_opcode: Opcode) {
+        self.put_opcode(return_opcode);
+        self.dec_stack();
+    }
+
+    pub(crate) fn visit_jmp(&mut self, jmp_opcode: Opcode, destination_label: &Rc<RefCell<Label>>) {
         self.labels
             .push((self.code_byte_vec.len() as u32, destination_label.clone()));
         self.code_byte_vec.put_u8(jmp_opcode as u8);
@@ -433,7 +592,7 @@ mod test {
     use crate::asm::byte_vec::ByteVecImpl;
     use crate::asm::label::Label;
     use crate::asm::method::{MethodVisitor, MethodWriter};
-    use crate::asm::opcodes::{MethodAccessFlag, NativeOpcode};
+    use crate::asm::opcodes::{MethodAccessFlag, Opcode};
     use crate::asm::symbol::SymbolTable;
     use crate::error::KapiResult;
 
@@ -467,7 +626,7 @@ mod test {
         );
         let mut label = Label::new_label();
 
-        mv.visit_jmp(NativeOpcode::GOTO, &label);
+        mv.visit_jmp(Opcode::GOTO, &label);
         mv.visit_label(label)?;
         mv.visit_end();
 
