@@ -1,10 +1,13 @@
 pub mod node;
 
 pub mod annotation;
+mod attribute;
 pub mod byte_vec;
+pub mod class;
 mod constants;
 pub mod field;
 pub mod handle;
+pub mod label;
 pub mod method;
 pub mod module;
 /// The JVM opcodes, access flags and array type codes. This interface does not define all the JVM
@@ -21,6 +24,3 @@ pub mod record;
 pub mod signature;
 mod symbol;
 pub mod types;
-pub mod label;
-mod attribute;
-pub mod class;

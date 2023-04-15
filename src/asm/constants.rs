@@ -111,4 +111,3 @@ pub(crate) const JSR_W: u8 = 201;
 
 // The delta between the GOTO_W and JSR_W opcodes and GOTO and JUMP.
 pub(crate) const WIDE_JUMP_OPCODE_DELTA: u8 = GOTO_W - opcodes::GOTO;
-

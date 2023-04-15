@@ -20,7 +20,7 @@ fn main() -> Result<(), Error> {
     class_writer.visit_end();
 
     fs::create_dir_all("./output")?;
-    
+
     let mut output = File::create("./output/Main.class")?;
     output.write_all(&bytecode[..])?;
 

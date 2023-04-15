@@ -1,6 +1,6 @@
+use crate::error::{KapiError, KapiResult};
 use std::ops::IndexMut;
 use std::slice::SliceIndex;
-use crate::error::{KapiError, KapiResult};
 
 pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
     fn len(&self) -> usize;
