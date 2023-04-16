@@ -160,8 +160,6 @@ impl ClassVisitor for ClassWriter {
         for constant in &symbol_table.constants {
             byte_vec.put_be(constant.tag() as u8);
 
-            println!("{:?}", constant);
-
             match constant {
                 Constant::Class { name_index } => {
                     byte_vec.put_be(*name_index);

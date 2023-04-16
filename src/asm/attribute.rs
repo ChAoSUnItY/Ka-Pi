@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 
+use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::constants;
 use crate::asm::opcodes::AccessFlag;
 use crate::asm::symbol::SymbolTable;
@@ -393,8 +393,6 @@ impl Attribute {
             } => {
                 byte_vec.put_be(2u32);
                 byte_vec.put_be(*constant_value_index);
-
-                println!("{}", *constant_value_index);
             }
             Attribute::Code { .. } => {}
             Attribute::StackMapTable { .. } => {}
