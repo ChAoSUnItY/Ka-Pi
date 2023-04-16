@@ -159,7 +159,7 @@ impl ClassVisitor for ClassWriter {
         byte_vec.put_be(symbol_table.constants.len() as u16 + 1); // constant pool length
         for constant in &symbol_table.constants {
             byte_vec.put_be(constant.tag() as u8);
-            
+
             println!("{:?}", constant);
 
             match constant {

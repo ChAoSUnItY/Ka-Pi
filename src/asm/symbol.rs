@@ -277,7 +277,7 @@ impl SymbolTable {
     /// therefore further modification will cause errors. Other table's constant entries will be cleared,
     ///
     /// # Rearrangement Map
-    /// The returned [HashMap]<u16, u16> indicates the transformation of constant pool index from key 
+    /// The returned [HashMap]<u16, u16> indicates the transformation of constant pool index from key
     /// as original position to value as modified position.
     pub(crate) fn merge(&mut self, other: &mut SymbolTable) -> HashMap<u16, u16> {
         let SymbolTable {
@@ -302,7 +302,7 @@ impl SymbolTable {
         }
 
         other.attributes = rearranged_attrs;
-        
+
         rearrangements
     }
 

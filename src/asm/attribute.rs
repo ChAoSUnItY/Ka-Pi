@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
+use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
-use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 
 use crate::asm::constants;
 use crate::asm::opcodes::AccessFlag;
@@ -382,16 +382,18 @@ impl Attribute {
             }
         }
     }
-    
+
     pub(crate) fn bytecode(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) {
         let name_index = symbol_table.add_utf8(self.name());
         byte_vec.put_be(name_index);
-        
+
         match self {
-            Attribute::ConstantValue { constant_value_index } => {
+            Attribute::ConstantValue {
+                constant_value_index,
+            } => {
                 byte_vec.put_be(2u32);
                 byte_vec.put_be(*constant_value_index);
-            
+
                 println!("{}", *constant_value_index);
             }
             Attribute::Code { .. } => {}
