@@ -6,6 +6,7 @@ use crate::asm::attribute::{Attribute, ConstantValue};
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::opcodes::{AccessFlag, FieldAccessFlag};
 use crate::asm::symbol::SymbolTable;
+use crate::asm::types::{get_arguments_and_return_types, get_type};
 use crate::error::{KapiError, KapiResult};
 
 #[allow(unused_variables)]
@@ -39,6 +40,7 @@ impl FieldWriter {
     {
         let name_index = symbol_table.borrow_mut().add_utf8(name);
         let descriptor_index = symbol_table.borrow_mut().add_utf8(descriptor);
+        get_type(descriptor)?;
 
         Ok(Self {
             byte_vec: byte_vec.clone(),
@@ -62,7 +64,6 @@ impl FieldVisitor for FieldWriter {
         let symbol_table = self.symbol_table.borrow();
         let descriptor = symbol_table.get_utf8(self.descriptor_index).unwrap();
 
-        // TODO: Descriptor must be checked when writer is created
         match descriptor.chars().next().unwrap() {
             'I' | 'S' | 'C' | 'B' | 'Z' => {
                 if !matches!(constant_value, ConstantValue::Int(_)) {
