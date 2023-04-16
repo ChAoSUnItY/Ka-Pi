@@ -1,7 +1,7 @@
 use std::collections::HashMap;
-use std::{rc::Rc, str::FromStr};
 use std::iter::Peekable;
 use std::str::Chars;
+use std::{rc::Rc, str::FromStr};
 
 use itertools::PeekingNext;
 use lazy_static::lazy_static;
@@ -72,7 +72,9 @@ where
     internal_name_builder
 }
 
-pub(crate) fn get_arguments_and_return_types(descriptor: &str) -> KapiResult<(Vec<(String, usize)>, (String, usize))> {
+pub(crate) fn get_arguments_and_return_types(
+    descriptor: &str,
+) -> KapiResult<(Vec<(String, usize)>, (String, usize))> {
     let mut descriptor_iter = descriptor.chars().peekable();
     let mut argument_types = Vec::new();
 
@@ -91,16 +93,22 @@ pub(crate) fn get_arguments_and_return_types(descriptor: &str) -> KapiResult<(Ve
     if descriptor_iter.peeking_next(|char| *char == ')').is_none() {
         return Err(KapiError::ArgError(format!(
             "Expected `)` for descriptor arguments ending"
-        )))
+        )));
     }
-    
+
     let return_type = parse_descriptor_type(&mut descriptor_iter)?;
-    
+
     if descriptor_iter.next().is_some() {
-        Err(KapiError::StateError("Expected descriptor end but got remaining characters"))
+        Err(KapiError::StateError(
+            "Expected descriptor end but got remaining characters",
+        ))
     } else {
         Ok((argument_types, return_type))
     }
+}
+
+pub(crate) fn get_type(descriptor: &str) -> KapiResult<(String, usize)> {
+    parse_descriptor_argument_type(&mut descriptor.chars().peekable())
 }
 
 fn parse_descriptor_type(descriptor_iter: &mut Peekable<Chars>) -> KapiResult<(String, usize)> {
@@ -111,10 +119,12 @@ fn parse_descriptor_type(descriptor_iter: &mut Peekable<Chars>) -> KapiResult<(S
     }
 }
 
-fn parse_descriptor_argument_type(descriptor_iter: &mut Peekable<Chars>) -> KapiResult<(String, usize)> {
-    let mut type_builder = String::new(); 
+fn parse_descriptor_argument_type(
+    descriptor_iter: &mut Peekable<Chars>,
+) -> KapiResult<(String, usize)> {
+    let mut type_builder = String::new();
     let mut type_size: usize;
-    
+
     while descriptor_iter.peeking_next(|char| *char == '[').is_some() {
         type_builder.push('[');
     }
@@ -133,28 +143,25 @@ fn parse_descriptor_argument_type(descriptor_iter: &mut Peekable<Chars>) -> Kapi
         }
 
         type_size = 1;
-    } else if descriptor_iter
+    } else if let Some(primitive_descriptor) = descriptor_iter
         .peeking_next(|char| matches!(*char, 'Z' | 'B' | 'C' | 'S' | 'I' | 'F' | 'J' | 'D' | 'Z'))
-        .is_none()
     {
+        type_size = if matches!(primitive_descriptor, 'J' | 'D') {
+            2
+        } else if primitive_descriptor == 'V' {
+            return Err(KapiError::ArgError(format!(
+                "Argument type must not be `void`"
+            )));
+        } else {
+            1
+        };
+
+        type_builder.push(primitive_descriptor);
+    } else {
         return Err(KapiError::ArgError(format!(
             "Expected primitive type but got `{:?}`",
             descriptor_iter.next()
         )));
-    } else if descriptor_iter.peeking_next(|char| *char == 'V').is_some() {
-        return Err(KapiError::ArgError(format!(
-            "Argument type must not be `void`"
-        )))
-    } else {
-        let primitive_descriptor = descriptor_iter.next().unwrap();
-        
-        type_size = if matches!(primitive_descriptor, 'J' | 'D') {
-            2
-        } else {
-            1
-        };
-            
-        type_builder.push(primitive_descriptor);
     }
 
     Ok((type_builder, type_size))
