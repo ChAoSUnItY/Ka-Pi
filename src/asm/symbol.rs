@@ -1,5 +1,9 @@
 // Tag values for the constant pool entries (using the same order as in the JVMS).
 
+use std::collections::HashMap;
+use std::hash::Hash;
+use std::ops::Index;
+
 use indexmap::IndexSet;
 use serde::{Deserialize, Serialize};
 
@@ -261,6 +265,53 @@ impl SymbolTable {
             self.bootstrap_methods.insert(boostrap_method);
             self.bootstrap_methods.len() as u16 - 1
         }
+    }
+
+    /// Merges another [SymbolTable] into current one. This function eliminates other table's constants
+    /// if constant is already existed in current one. Otherwise, clone other table's non-duplicated
+    /// constants to current table. This function will also relocate the constant index for [Constant]s
+    /// and [Attribute]s which depends on it.
+    ///
+    /// # Finalization
+    /// Notice that this function is meant for finalize and optimize the other table's constant entries,
+    /// therefore further modification will cause errors. Other table's constant entries will be cleared,
+    ///
+    /// # Attribute Refinement
+    /// The returned [Vec]<[Attribute]> is refined and optimized attribute enties.
+    pub(crate) fn merge(&mut self, other: &mut SymbolTable) {
+        let SymbolTable {
+            constants,
+            attributes,
+            bootstrap_methods,
+        } = other;
+        let mut rearrangements = HashMap::with_capacity(constants.len());
+        let mut rearranged_attrs = IndexSet::with_capacity(bootstrap_methods.len());
+
+        for (index, constant) in constants.iter().enumerate() {
+            let new_index = self.insert_constant(constant.to_owned());
+
+            rearrangements.insert((index + 1) as u16, new_index);
+        }
+
+        for attribute in attributes.iter() {
+            let mut attribute = attribute.clone();
+
+            attribute.rearrange_indices(&rearrangements);
+            rearranged_attrs.insert(attribute);
+        }
+
+        other.attributes = rearranged_attrs;
+    }
+
+    pub(crate) fn get_utf8(&self, index: u16) -> Option<&String> {
+        match self.constants.index((index - 1) as usize) {
+            Constant::Utf8 { data } => Some(data),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn add_constant(&mut self, constant: Constant) -> u16 {
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_utf8(&mut self, string: &str) -> u16 {

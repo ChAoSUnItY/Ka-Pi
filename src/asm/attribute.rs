@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 
@@ -260,6 +262,124 @@ impl Attribute {
             // Attribute::PermittedSubclasses,
         }
     }
+
+    fn rearrange_index(original: &mut u16, rearrangements: &HashMap<u16, u16>) {
+        if let Some(target_index) = rearrangements.get(original) {
+            *original = *target_index;
+        }
+    }
+
+    pub(crate) fn rearrange_indices(&mut self, rearrangements: &HashMap<u16, u16>) {
+        match self {
+            Attribute::ConstantValue {
+                constant_value_index,
+            } => {
+                Self::rearrange_index(constant_value_index, &rearrangements);
+            }
+            Attribute::Code {
+                max_stack: _,
+                max_locals: _,
+                code_length: _,
+                code: _,
+                exception_table_length: _,
+                exception_table,
+                attributes_length: _,
+                attributes,
+            } => {
+                for exception in exception_table {
+                    Self::rearrange_index(&mut exception.catch_type, rearrangements);
+                }
+
+                for attribute in attributes {
+                    attribute.rearrange_indices(rearrangements);
+                }
+            }
+            Attribute::StackMapTable {
+                number_of_entries: _,
+                entries,
+            } => {
+                for entry in entries {
+                    entry.rearrange_index(rearrangements);
+                }
+            }
+            Attribute::Exceptions {
+                number_of_exceptions: _,
+                exception_index_table,
+            } => {
+                for exception_index in exception_index_table {
+                    Self::rearrange_index(exception_index, rearrangements);
+                }
+            }
+            Attribute::InnerClasses {
+                number_of_classes: _,
+                class,
+            } => {
+                for class in class {
+                    class.rearrange_index(rearrangements);
+                }
+            }
+            Attribute::EnclosingMethod {
+                class_index,
+                method_index,
+            } => {
+                Self::rearrange_index(class_index, rearrangements);
+                Self::rearrange_index(method_index, rearrangements);
+            }
+            Attribute::Synthetic => {}
+            Attribute::Signature { signature_index } => {
+                Self::rearrange_index(signature_index, rearrangements);
+            }
+            Attribute::SourceFile { source_file_index } => {
+                Self::rearrange_index(source_file_index, rearrangements);
+            }
+            Attribute::SourceDebugExtension { .. } => {}
+            Attribute::LineNumberTable { .. } => {}
+            Attribute::LocalVariableTable {
+                local_variable_table_length: _,
+                local_variable_table,
+            } => {
+                for local_variable in local_variable_table {
+                    local_variable.rearrange_index(rearrangements);
+                }
+            }
+            Attribute::LocalVariableTypeTable {
+                local_variable_type_table_length: _,
+                local_variable_type_table,
+            } => {
+                for local_variable_type in local_variable_type_table {
+                    local_variable_type.rearrange_index(rearrangements);
+                }
+            }
+            Attribute::Deprecate => {}
+            Attribute::BootstrapMethods {
+                num_bootstrap_methods: _,
+                bootstrap_methods,
+            } => {
+                for bootstrap_method in bootstrap_methods {
+                    bootstrap_method.rearrange_index(rearrangements);
+                }
+            }
+            Attribute::MethodParameters {
+                parameters_count: _,
+                method_parameters,
+            } => {
+                for method_parameter in method_parameters {
+                    method_parameter.rearrange_index(rearrangements);
+                }
+            }
+            Attribute::NestHost { host_class_index } => {
+                Self::rearrange_index(host_class_index, rearrangements);
+            }
+            Attribute::NestMembers {
+                number_of_classes: _,
+                classes,
+            } => {
+                for class in classes {
+                    Self::rearrange_index(class, rearrangements);
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -267,7 +387,15 @@ pub struct Exception {
     start_pc: u16,
     end_pc: u16,
     handler_pc: u16,
-    catch_type: u16,
+    pub(crate) catch_type: u16,
+}
+
+impl Exception {
+    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
+        if let Some(target_index) = rearrangements.get(&self.catch_type) {
+            self.catch_type = *target_index;
+        }
+    }
 }
 
 #[repr(u8)]
@@ -321,6 +449,36 @@ impl StackMapEntry {
             }
         }
     }
+
+    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
+        match self {
+            StackMapEntry::SameLocal1StackItem { stack } => {
+                stack.rearrange_index(rearrangements);
+            }
+            StackMapEntry::SameLocal1StackItemExtended {
+                offset_delta: _,
+                stack,
+            } => {
+                stack.rearrange_index(rearrangements);
+            }
+            StackMapEntry::Full {
+                offset_delta: _,
+                numbers_of_locals: _,
+                locals,
+                number_of_stack_items: _,
+                stack,
+            } => {
+                for local in locals {
+                    local.rearrange_index(rearrangements);
+                }
+
+                for stack_entry in stack {
+                    stack_entry.rearrange_index(rearrangements);
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 #[repr(u8)]
@@ -347,6 +505,16 @@ pub enum VerificationType {
 }
 
 impl VerificationType {
+    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
+        if let Self::Object { cpool_index } = self {
+            if let Some(target_index) = rearrangements.get(cpool_index) {
+                *cpool_index = *target_index;
+            }
+        }
+    }
+}
+
+impl VerificationType {
     pub const fn len(&self) -> u32 {
         match self {
             Self::Object { .. } => 2,
@@ -361,6 +529,20 @@ pub struct InnerClass {
     outer_class_info_index: u16,
     inner_name_index: u16,
     inner_class_access_flags: Vec<NestedClassAccessFlag>,
+}
+
+impl InnerClass {
+    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
+        if let Some(target_index) = rearrangements.get(&self.inner_class_info_index) {
+            self.inner_class_info_index = *target_index;
+        }
+        if let Some(target_index) = rearrangements.get(&self.outer_class_info_index) {
+            self.outer_class_info_index = *target_index;
+        }
+        if let Some(target_index) = rearrangements.get(&self.inner_name_index) {
+            self.inner_name_index = *target_index;
+        }
+    }
 }
 
 #[repr(u16)]
@@ -398,6 +580,17 @@ pub struct LocalVariable {
     index: u16,
 }
 
+impl LocalVariable {
+    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
+        if let Some(target_index) = rearrangements.get(&self.name_index) {
+            self.name_index = *target_index;
+        }
+        if let Some(target_index) = rearrangements.get(&self.descriptor_index) {
+            self.descriptor_index = *target_index;
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LocalVariableType {
     start_pc: u16,
@@ -405,6 +598,17 @@ pub struct LocalVariableType {
     name_index: u16,
     signature_index: u16,
     index: u16,
+}
+
+impl LocalVariableType {
+    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
+        if let Some(target_index) = rearrangements.get(&self.name_index) {
+            self.name_index = *target_index;
+        }
+        if let Some(target_index) = rearrangements.get(&self.signature_index) {
+            self.signature_index = *target_index;
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -426,12 +630,32 @@ impl BootstrapMethod {
     pub fn len(&self) -> u32 {
         4 + self.bootstrap_arguments.len() as u32 * 2
     }
+
+    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
+        if let Some(target_index) = rearrangements.get(&self.bootstrap_method_ref) {
+            self.bootstrap_method_ref = *target_index;
+        }
+
+        for bootstrap_argument in &mut self.bootstrap_arguments {
+            if let Some(target_index) = rearrangements.get(bootstrap_argument) {
+                *bootstrap_argument = *target_index;
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MethodParameter {
     name_index: u16,
     access_flags: Vec<ParameterAccessFlag>,
+}
+
+impl MethodParameter {
+    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
+        if let Some(target_index) = rearrangements.get(&self.name_index) {
+            self.name_index = *target_index;
+        }
+    }
 }
 
 #[repr(u16)]
