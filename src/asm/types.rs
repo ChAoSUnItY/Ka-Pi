@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::{rc::Rc, str::FromStr};
+use std::iter::Peekable;
+use std::str::Chars;
 
+use itertools::PeekingNext;
 use lazy_static::lazy_static;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -67,6 +70,94 @@ where
     }
 
     internal_name_builder
+}
+
+pub(crate) fn get_arguments_and_return_types(descriptor: &str) -> KapiResult<(Vec<(String, usize)>, (String, usize))> {
+    let mut descriptor_iter = descriptor.chars().peekable();
+    let mut argument_types = Vec::new();
+
+    if descriptor_iter.peeking_next(|char| *char == '(').is_none() {
+        return Err(KapiError::ArgError(format!(
+            "Expected `(` for descriptor arguments start"
+        )));
+    }
+
+    while descriptor_iter.peek().map_or(false, |char| *char != ')') {
+        let argument_type = parse_descriptor_argument_type(&mut descriptor_iter)?;
+
+        argument_types.push(argument_type);
+    }
+
+    if descriptor_iter.peeking_next(|char| *char == ')').is_none() {
+        return Err(KapiError::ArgError(format!(
+            "Expected `)` for descriptor arguments ending"
+        )))
+    }
+    
+    let return_type = parse_descriptor_type(&mut descriptor_iter)?;
+    
+    if descriptor_iter.next().is_some() {
+        Err(KapiError::StateError("Expected descriptor end but got remaining characters"))
+    } else {
+        Ok((argument_types, return_type))
+    }
+}
+
+fn parse_descriptor_type(descriptor_iter: &mut Peekable<Chars>) -> KapiResult<(String, usize)> {
+    if descriptor_iter.peeking_next(|char| *char == 'V').is_some() {
+        Ok((String::from('V'), 0))
+    } else {
+        parse_descriptor_argument_type(descriptor_iter)
+    }
+}
+
+fn parse_descriptor_argument_type(descriptor_iter: &mut Peekable<Chars>) -> KapiResult<(String, usize)> {
+    let mut type_builder = String::new(); 
+    let mut type_size: usize;
+    
+    while descriptor_iter.peeking_next(|char| *char == '[').is_some() {
+        type_builder.push('[');
+    }
+
+    if descriptor_iter.peeking_next(|char| *char == 'L').is_some() {
+        while let Some(char) = descriptor_iter.peeking_next(|char| *char != ';') {
+            type_builder.push(char);
+        }
+
+        if descriptor_iter.peeking_next(|char| *char == ';').is_none() {
+            return Err(KapiError::ArgError(format!(
+                "Expected `;` for reference type ending",
+            )));
+        } else {
+            type_builder.push(';');
+        }
+
+        type_size = 1;
+    } else if descriptor_iter
+        .peeking_next(|char| matches!(*char, 'Z' | 'B' | 'C' | 'S' | 'I' | 'F' | 'J' | 'D' | 'Z'))
+        .is_none()
+    {
+        return Err(KapiError::ArgError(format!(
+            "Expected primitive type but got `{:?}`",
+            descriptor_iter.next()
+        )));
+    } else if descriptor_iter.peeking_next(|char| *char == 'V').is_some() {
+        return Err(KapiError::ArgError(format!(
+            "Argument type must not be `void`"
+        )))
+    } else {
+        let primitive_descriptor = descriptor_iter.next().unwrap();
+        
+        type_size = if matches!(primitive_descriptor, 'J' | 'D') {
+            2
+        } else {
+            1
+        };
+            
+        type_builder.push(primitive_descriptor);
+    }
+
+    Ok((type_builder, type_size))
 }
 
 pub const VOID: u8 = 0;

@@ -2,19 +2,35 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::field::{FieldVisitor, FieldWriter};
 use crate::asm::method::{MethodVisitor, MethodWriter};
-use crate::asm::opcodes::{AccessFlag, ClassAccessFlag, JavaVersion, MethodAccessFlag};
+use crate::asm::opcodes::{
+    AccessFlag, ClassAccessFlag, FieldAccessFlag, JavaVersion, MethodAccessFlag,
+};
 use crate::asm::symbol::{Constant, SymbolTable};
+use crate::error::KapiResult;
 
 pub trait ClassVisitor {
     type MethodVisitor: MethodVisitor + Sized;
+    type FieldVisitor: FieldVisitor + Sized;
 
-    fn visit_method(
+    fn visit_method<F>(
         &mut self,
-        access_flags: &[MethodAccessFlag],
+        access_flags: F,
         name: &str,
         descriptor: &str,
-    ) -> Self::MethodVisitor;
+    ) -> KapiResult<Self::MethodVisitor>
+    where
+        F: IntoIterator<Item = MethodAccessFlag>;
+
+    fn visit_field<F>(
+        &mut self,
+        access_flags: F,
+        name: &str,
+        descriptor: &str,
+    ) -> KapiResult<Self::FieldVisitor>
+    where
+        F: IntoIterator<Item = FieldAccessFlag>;
 
     fn visit_end(&self) {}
 }
@@ -72,13 +88,17 @@ impl ClassWriter {
 
 impl ClassVisitor for ClassWriter {
     type MethodVisitor = MethodWriter;
+    type FieldVisitor = FieldWriter;
 
-    fn visit_method(
+    fn visit_method<F>(
         &mut self,
-        access_flags: &[MethodAccessFlag],
+        access_flags: F,
         name: &str,
         descriptor: &str,
-    ) -> Self::MethodVisitor {
+    ) -> KapiResult<Self::MethodVisitor>
+    where
+        F: IntoIterator<Item = MethodAccessFlag>,
+    {
         let method_byte_vec = Rc::new(RefCell::new(ByteVecImpl::with_capacity(8)));
 
         self.methods.push(method_byte_vec.clone());
@@ -86,7 +106,29 @@ impl ClassVisitor for ClassWriter {
         MethodWriter::new(
             &method_byte_vec,
             &self.symbol_table,
-            access_flags.to_owned(),
+            access_flags,
+            name,
+            descriptor,
+        )
+    }
+
+    fn visit_field<F>(
+        &mut self,
+        access_flags: F,
+        name: &str,
+        descriptor: &str,
+    ) -> KapiResult<Self::FieldVisitor>
+    where
+        F: IntoIterator<Item = FieldAccessFlag>,
+    {
+        let field_byte_vec = Rc::new(RefCell::new(ByteVecImpl::with_capacity(8)));
+
+        self.fields.push(field_byte_vec.clone());
+
+        FieldWriter::new(
+            &field_byte_vec,
+            &self.symbol_table,
+            access_flags,
             name,
             descriptor,
         )
@@ -116,9 +158,9 @@ impl ClassVisitor for ClassWriter {
 
         byte_vec.put_be(symbol_table.constants.len() as u16 + 1); // constant pool length
         for constant in &symbol_table.constants {
-            println!("{:?}", constant);
-
             byte_vec.put_be(constant.tag() as u8);
+            
+            println!("{:?}", constant);
 
             match constant {
                 Constant::Class { name_index } => {
@@ -219,7 +261,9 @@ impl ClassVisitor for ClassWriter {
         }
 
         byte_vec.put_be(fields.len() as u16); // fields length
-                                              // TODO: implement fields
+        for field_segment in fields {
+            byte_vec.put_u8s(&field_segment.borrow()[..]);
+        }
 
         byte_vec.put_be(methods.len() as u16); // methods length
         for method_segment in methods {

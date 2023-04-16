@@ -1,14 +1,18 @@
 use std::fs;
 use std::fs::File;
-use std::io::{Error, Write};
+use std::io::Write;
 
 use ka_pi::asm::class::{ClassVisitor, ClassWriter};
+use ka_pi::asm::field::FieldVisitor;
 use ka_pi::asm::method::MethodVisitor;
-use ka_pi::asm::opcodes::{ClassAccessFlag, Instruction, JavaVersion, MethodAccessFlag, Opcode};
+use ka_pi::asm::opcodes::{
+    ClassAccessFlag, FieldAccessFlag, JavaVersion, MethodAccessFlag, Opcode,
+};
+use ka_pi::error::KapiResult;
 
-fn main() -> Result<(), Error> {
+fn main() -> KapiResult<()> {
     let mut class_writer = ClassWriter::new_class_writer(
-        JavaVersion::V20,
+        JavaVersion::V17,
         vec![ClassAccessFlag::Super, ClassAccessFlag::Public],
         "Main",
         "java/lang/Object",
@@ -16,12 +20,23 @@ fn main() -> Result<(), Error> {
     );
 
     {
+        let mut field_writer = class_writer.visit_field(
+            vec![FieldAccessFlag::Public, FieldAccessFlag::Static],
+            "main",
+            "I",
+        )?;
+
+        field_writer.visit_constant(1)?;
+        field_writer.visit_end();
+    }
+
+    {
         let mut method_writer = class_writer.visit_method(
-            &[MethodAccessFlag::Public, MethodAccessFlag::Static],
+            vec![MethodAccessFlag::Public, MethodAccessFlag::Static],
             "main",
             "([Ljava/lang/String;)V",
-        );
-        
+        )?;
+
         method_writer.visit_return(Opcode::RETURN);
         method_writer.visit_end();
     }
@@ -30,10 +45,10 @@ fn main() -> Result<(), Error> {
 
     let bytecode = class_writer.bytecode();
 
-    fs::create_dir_all("./output")?;
+    fs::create_dir_all("./output").unwrap();
 
-    let mut output = File::create("./output/Main.class")?;
-    output.write_all(&bytecode[..])?;
+    let mut output = File::create("./output/Main.class").unwrap();
+    output.write_all(&bytecode[..]).unwrap();
 
     Ok(())
 }

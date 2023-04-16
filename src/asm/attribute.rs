@@ -2,9 +2,11 @@ use std::collections::HashMap;
 
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
+use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 
 use crate::asm::constants;
 use crate::asm::opcodes::AccessFlag;
+use crate::asm::symbol::SymbolTable;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ConstantValue {
@@ -378,6 +380,37 @@ impl Attribute {
                     Self::rearrange_index(class, rearrangements);
                 }
             }
+        }
+    }
+    
+    pub(crate) fn bytecode(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) {
+        let name_index = symbol_table.add_utf8(self.name());
+        byte_vec.put_be(name_index);
+        
+        match self {
+            Attribute::ConstantValue { constant_value_index } => {
+                byte_vec.put_be(2u32);
+                byte_vec.put_be(*constant_value_index);
+            
+                println!("{}", *constant_value_index);
+            }
+            Attribute::Code { .. } => {}
+            Attribute::StackMapTable { .. } => {}
+            Attribute::Exceptions { .. } => {}
+            Attribute::InnerClasses { .. } => {}
+            Attribute::EnclosingMethod { .. } => {}
+            Attribute::Synthetic => {}
+            Attribute::Signature { .. } => {}
+            Attribute::SourceFile { .. } => {}
+            Attribute::SourceDebugExtension { .. } => {}
+            Attribute::LineNumberTable { .. } => {}
+            Attribute::LocalVariableTable { .. } => {}
+            Attribute::LocalVariableTypeTable { .. } => {}
+            Attribute::Deprecate => {}
+            Attribute::BootstrapMethods { .. } => {}
+            Attribute::MethodParameters { .. } => {}
+            Attribute::NestHost { .. } => {}
+            Attribute::NestMembers { .. } => {}
         }
     }
 }

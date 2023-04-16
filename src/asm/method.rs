@@ -4,10 +4,10 @@ use std::ops::BitOr;
 use std::rc::Rc;
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::constants;
 use crate::asm::label::Label;
 use crate::asm::opcodes::{AccessFlag, ConstantObject, Instruction, MethodAccessFlag, Opcode};
 use crate::asm::symbol::SymbolTable;
+use crate::asm::{constants, types};
 use crate::error::KapiResult;
 
 pub trait MethodVisitor {
@@ -40,26 +40,36 @@ impl MethodWriter {
         access_flags: F,
         name: &str,
         descriptor: &str,
-    ) -> Self
+    ) -> KapiResult<Self>
     where
         F: IntoIterator<Item = MethodAccessFlag>,
     {
+        let access_flags = access_flags.into_iter().collect::<Vec<_>>();
         let name_index = symbol_table.borrow_mut().add_utf8(name);
         let descriptor_index = symbol_table.borrow_mut().add_utf8(descriptor);
 
-        Self {
+        let mut initial_locals = types::get_arguments_and_return_types(descriptor)?
+            .0
+            .iter()
+            .map(|(_, size)| *size)
+            .sum::<usize>();
+        if !access_flags.contains(&MethodAccessFlag::Static) {
+            initial_locals += 1;
+        }
+
+        Ok(Self {
             byte_vec: byte_vec.clone(),
             symbol_table: symbol_table.clone(),
-            access_flags: access_flags.into_iter().collect(),
+            access_flags,
             name_index,
             descriptor_index,
             code_byte_vec: ByteVecImpl::default(),
             max_stack: 0,
             current_stack: 0,
-            max_locals: 0,
+            max_locals: initial_locals,
             current_locals: 0,
             labels: Vec::new(),
-        }
+        })
     }
 
     fn inc_stack(&mut self) {
@@ -535,7 +545,7 @@ impl MethodVisitor for MethodWriter {
         let Self {
             byte_vec,
             symbol_table,
-            access_flags: access,
+            access_flags,
             name_index,
             descriptor_index,
             code_byte_vec,
@@ -561,7 +571,7 @@ impl MethodVisitor for MethodWriter {
         }
 
         // Generate method
-        byte_vec.put_be(access.fold_flags());
+        byte_vec.put_be(access_flags.fold_flags());
         byte_vec.put_be(*name_index);
         byte_vec.put_be(*descriptor_index);
         // TODO: Remove attribute_len hardcode
@@ -608,21 +618,23 @@ mod test {
     use crate::error::KapiResult;
 
     #[test]
-    fn test_method_writer_init() {
+    fn test_method_writer_init() -> KapiResult<()> {
         let mut bv = Rc::new(RefCell::new(ByteVecImpl::new()));
         let mut table = Rc::new(RefCell::new(SymbolTable::default()));
-        let mut mv = MethodWriter::new(&bv, &table, vec![MethodAccessFlag::Static], "Main", "()");
+        let mut mv = MethodWriter::new(&bv, &table, vec![MethodAccessFlag::Static], "Main", "()")?;
 
         mv.visit_end();
 
         assert_eq!(&bv.borrow()[..], [0, 8, 0, 1, 0, 2, 0, 0]);
+
+        Ok(())
     }
 
     #[test]
     fn test_method_writer_label_visit() -> KapiResult<()> {
         let mut bv = Rc::new(RefCell::new(ByteVecImpl::new()));
         let mut table = Rc::new(RefCell::new(SymbolTable::default()));
-        let mut mv = MethodWriter::new(&bv, &table, vec![MethodAccessFlag::Static], "Main", "()");
+        let mut mv = MethodWriter::new(&bv, &table, vec![MethodAccessFlag::Static], "Main", "()")?;
         let mut label = Label::new_label();
 
         mv.visit_jmp(Opcode::GOTO, &label);
