@@ -11,17 +11,18 @@ use crate::asm::symbol::SymbolTable;
 use crate::error::KapiResult;
 
 pub trait MethodVisitor {
-    fn visit_end(self)
-    where
-        Self: Sized,
-    {
-    }
+    fn visit_end(&mut self) {}
 }
 
-pub struct MethodWriter<'output> {
-    byte_vec: &'output mut ByteVecImpl,
-    symbol_table: &'output mut SymbolTable,
-    access: &'output [MethodAccessFlag],
+#[derive(Debug, Default)]
+pub struct MethodVisitorImpl {}
+
+impl MethodVisitor for MethodVisitorImpl {}
+
+pub struct MethodWriter {
+    byte_vec: Rc<RefCell<ByteVecImpl>>,
+    symbol_table: Rc<RefCell<SymbolTable>>,
+    access_flags: Vec<MethodAccessFlag>,
     name_index: u16,
     descriptor_index: u16,
     code_byte_vec: ByteVecImpl,
@@ -32,21 +33,24 @@ pub struct MethodWriter<'output> {
     labels: Vec<(u32, Rc<RefCell<Label>>)>,
 }
 
-impl<'output> MethodWriter<'output> {
-    pub(crate) fn new(
-        byte_vec: &'output mut ByteVecImpl,
-        symbol_table: &'output mut SymbolTable,
-        access: &'output [MethodAccessFlag],
+impl MethodWriter {
+    pub(crate) fn new<F>(
+        byte_vec: &Rc<RefCell<ByteVecImpl>>,
+        symbol_table: &Rc<RefCell<SymbolTable>>,
+        access_flags: F,
         name: &str,
         descriptor: &str,
-    ) -> Self {
-        let name_index = symbol_table.add_utf8(name);
-        let descriptor_index = symbol_table.add_utf8(descriptor);
+    ) -> Self
+    where
+        F: IntoIterator<Item = MethodAccessFlag>,
+    {
+        let name_index = symbol_table.borrow_mut().add_utf8(name);
+        let descriptor_index = symbol_table.borrow_mut().add_utf8(descriptor);
 
         Self {
-            byte_vec,
-            symbol_table,
-            access,
+            byte_vec: byte_vec.clone(),
+            symbol_table: symbol_table.clone(),
+            access_flags: access_flags.into_iter().collect(),
             name_index,
             descriptor_index,
             code_byte_vec: ByteVecImpl::default(),
@@ -174,7 +178,7 @@ impl<'output> MethodWriter<'output> {
             Instruction::LDC(constant) => {
                 self.put_opcode(inst.opcode());
 
-                let constant_index = self.symbol_table.add_constant_object(constant);
+                let constant_index = self.symbol_table.borrow_mut().add_constant_object(constant);
 
                 self.code_byte_vec.put_be(constant_index);
                 self.inc_stack();
@@ -486,7 +490,7 @@ impl<'output> MethodWriter<'output> {
         Ok(())
     }
 
-    pub(crate) fn visit_ldc<C>(&mut self, constant_object: C)
+    pub fn visit_ldc<C>(&mut self, constant_object: C)
     where
         C: Into<ConstantObject>,
     {
@@ -494,15 +498,19 @@ impl<'output> MethodWriter<'output> {
 
         let constant_index = self
             .symbol_table
+            .borrow_mut()
             .add_constant_object(&constant_object.into());
 
-        self.byte_vec.put_be(constant_index);
+        self.byte_vec.borrow_mut().put_be(constant_index);
         self.inc_stack();
     }
 
-    pub(crate) fn visit_return(&mut self, return_opcode: Opcode) {
+    pub fn visit_return(&mut self, return_opcode: Opcode) {
         self.put_opcode(return_opcode);
-        self.dec_stack();
+
+        if return_opcode != Opcode::RETURN {
+            self.dec_stack();
+        }
     }
 
     pub(crate) fn visit_jmp(&mut self, jmp_opcode: Opcode, destination_label: &Rc<RefCell<Label>>) {
@@ -522,18 +530,15 @@ impl<'output> MethodWriter<'output> {
     }
 }
 
-impl<'output> MethodVisitor for MethodWriter<'output> {
-    fn visit_end(self)
-    where
-        Self: Sized,
-    {
+impl MethodVisitor for MethodWriter {
+    fn visit_end(&mut self) {
         let Self {
             byte_vec,
             symbol_table,
-            access,
+            access_flags: access,
             name_index,
             descriptor_index,
-            mut code_byte_vec,
+            code_byte_vec,
             max_stack,
             current_stack: _,
             max_locals,
@@ -541,21 +546,24 @@ impl<'output> MethodVisitor for MethodWriter<'output> {
             labels,
         } = self;
 
+        let mut byte_vec = byte_vec.borrow_mut();
+        let mut symbol_table = symbol_table.borrow_mut();
+
         if code_byte_vec.len() != 0 {
             // Retrieve label's offset and put back to correct position
             for (start_index, label) in labels {
-                let index = start_index as usize;
+                let index = *start_index as usize;
                 let label = label.borrow();
 
                 code_byte_vec[index + 1..=index + 2]
-                    .swap_with_slice(&mut ((label.0 - start_index) as i16).to_be_bytes());
+                    .swap_with_slice(&mut ((label.0 - *start_index) as i16).to_be_bytes());
             }
         }
 
         // Generate method
         byte_vec.put_be(access.fold_flags());
-        byte_vec.put_be(name_index);
-        byte_vec.put_be(descriptor_index);
+        byte_vec.put_be(*name_index);
+        byte_vec.put_be(*descriptor_index);
         // TODO: Remove attribute_len hardcode
         let mut attribute_len = 0u16;
 
@@ -573,11 +581,11 @@ impl<'output> MethodVisitor for MethodWriter<'output> {
 
             byte_vec.put_be(attribute_name_index); // attribute_name_index
             byte_vec.put_be(attribute_len as u32); // attribute_length
-            byte_vec.put_be(max_stack as u16); // max_stack
-            byte_vec.put_be(max_locals as u16); // max_locals
+            byte_vec.put_be(*max_stack as u16); // max_stack
+            byte_vec.put_be(*max_locals as u16); // max_locals
             byte_vec.put_be(code_len as u32); // code_length
-            byte_vec.append(&mut code_byte_vec); // code[code_length]
-                                                 // TODO: Implement exceptions
+            byte_vec.append(code_byte_vec); // code[code_length]
+                                            // TODO: Implement exceptions
             byte_vec.put_be(0u16);
             // TODO_END
             // TODO: Implement attributes
@@ -589,6 +597,9 @@ impl<'output> MethodVisitor for MethodWriter<'output> {
 
 #[cfg(test)]
 mod test {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
     use crate::asm::byte_vec::ByteVecImpl;
     use crate::asm::label::Label;
     use crate::asm::method::{MethodVisitor, MethodWriter};
@@ -598,32 +609,20 @@ mod test {
 
     #[test]
     fn test_method_writer_init() {
-        let mut bv = ByteVecImpl::new();
-        let mut table = SymbolTable::default();
-        let mut mv = MethodWriter::new(
-            &mut bv,
-            &mut table,
-            &[MethodAccessFlag::Static],
-            "Main",
-            "()",
-        );
+        let mut bv = Rc::new(RefCell::new(ByteVecImpl::new()));
+        let mut table = Rc::new(RefCell::new(SymbolTable::default()));
+        let mut mv = MethodWriter::new(&bv, &table, vec![MethodAccessFlag::Static], "Main", "()");
 
         mv.visit_end();
 
-        assert_eq!(&bv[..], [0, 8, 0, 1, 0, 2, 0, 0])
+        assert_eq!(&bv.borrow()[..], [0, 8, 0, 1, 0, 2, 0, 0]);
     }
 
     #[test]
     fn test_method_writer_label_visit() -> KapiResult<()> {
-        let mut bv = ByteVecImpl::new();
-        let mut table = SymbolTable::default();
-        let mut mv = MethodWriter::new(
-            &mut bv,
-            &mut table,
-            &[MethodAccessFlag::Static],
-            "Main",
-            "()",
-        );
+        let mut bv = Rc::new(RefCell::new(ByteVecImpl::new()));
+        let mut table = Rc::new(RefCell::new(SymbolTable::default()));
+        let mut mv = MethodWriter::new(&bv, &table, vec![MethodAccessFlag::Static], "Main", "()");
         let mut label = Label::new_label();
 
         mv.visit_jmp(Opcode::GOTO, &label);
@@ -631,7 +630,7 @@ mod test {
         mv.visit_end();
 
         assert_eq!(
-            &bv[..],
+            &bv.borrow()[..],
             [
                 0, 8, 0, 1, 0, 2, 0, 1, 0, 3, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 3, 167, 0, 3, 0, 0,
                 0, 0
