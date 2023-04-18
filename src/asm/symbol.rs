@@ -1,11 +1,15 @@
 // Tag values for the constant pool entries (using the same order as in the JVMS).
 
 use std::collections::HashMap;
+use std::hash::Hash;
+use std::ops::Index;
 
+use indexmap::IndexSet;
 use serde::{Deserialize, Serialize};
 
-use crate::asm::opcodes::RefKind;
-use crate::utils::InsertAndRetrieve;
+use crate::asm::attribute::{Attribute, BootstrapMethod, ConstantValue};
+use crate::asm::handle::Handle;
+use crate::asm::opcodes::{ConstantObject, RefKind};
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
@@ -117,8 +121,8 @@ pub(crate) const UNINITIALIZED_TYPE_TAG: u8 = 129;
 /** The tag value of a merged type entry in the (ASM specific) type table of a class. */
 pub(crate) const MERGED_TYPE_TAG: u8 = 130;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) enum Symbol {
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub(crate) enum Constant {
     Class {
         name_index: u16,
     },
@@ -184,226 +188,242 @@ pub(crate) enum Symbol {
     },
 }
 
-impl Symbol {
+impl Constant {
     pub const fn tag(&self) -> ConstantTag {
         match self {
-            Symbol::Class { .. } => ConstantTag::Class,
-            Symbol::FieldRef { .. } => ConstantTag::FieldRef,
-            Symbol::MethodRef { .. } => ConstantTag::MethodRef,
-            Symbol::InterfaceMethodRef { .. } => ConstantTag::InterfaceMethodRef,
-            Symbol::String { .. } => ConstantTag::String,
-            Symbol::Integer { .. } => ConstantTag::Integer,
-            Symbol::Float { .. } => ConstantTag::Float,
-            Symbol::Long { .. } => ConstantTag::Long,
-            Symbol::Double { .. } => ConstantTag::Double,
-            Symbol::NameAndType { .. } => ConstantTag::NameAndType,
-            Symbol::Utf8 { .. } => ConstantTag::Utf8,
-            Symbol::MethodHandle { .. } => ConstantTag::MethodHandle,
-            Symbol::MethodType { .. } => ConstantTag::MethodType,
-            Symbol::Dynamic { .. } => ConstantTag::Dynamic,
-            Symbol::InvokeDynamic { .. } => ConstantTag::InvokeDynamic,
-            Symbol::Module { .. } => ConstantTag::Module,
-            Symbol::Package { .. } => ConstantTag::Package,
+            Constant::Class { .. } => ConstantTag::Class,
+            Constant::FieldRef { .. } => ConstantTag::FieldRef,
+            Constant::MethodRef { .. } => ConstantTag::MethodRef,
+            Constant::InterfaceMethodRef { .. } => ConstantTag::InterfaceMethodRef,
+            Constant::String { .. } => ConstantTag::String,
+            Constant::Integer { .. } => ConstantTag::Integer,
+            Constant::Float { .. } => ConstantTag::Float,
+            Constant::Long { .. } => ConstantTag::Long,
+            Constant::Double { .. } => ConstantTag::Double,
+            Constant::NameAndType { .. } => ConstantTag::NameAndType,
+            Constant::Utf8 { .. } => ConstantTag::Utf8,
+            Constant::MethodHandle { .. } => ConstantTag::MethodHandle,
+            Constant::MethodType { .. } => ConstantTag::MethodType,
+            Constant::Dynamic { .. } => ConstantTag::Dynamic,
+            Constant::InvokeDynamic { .. } => ConstantTag::InvokeDynamic,
+            Constant::Module { .. } => ConstantTag::Module,
+            Constant::Package { .. } => ConstantTag::Package,
         }
     }
 }
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct SymbolTable {
-    symbols: Vec<Symbol>,
+    pub(crate) constants: IndexSet<Constant>,
+    pub(crate) attributes: IndexSet<Attribute>,
+    // Symbol caching fields
+    // Attribute caching fields
     #[serde(skip_serializing)]
-    utf8_cache: HashMap<String, u16>,
-    #[serde(skip_serializing)]
-    single_index_cache: HashMap<u16, u16>,
-    #[serde(skip_serializing)]
-    double_index_cache: HashMap<(u16, u16), u16>,
-    #[serde(skip_serializing)]
-    integer_cache: HashMap<i32, u16>,
-    #[serde(skip_serializing)]
-    float_cache: HashMap<[u8; 4], u16>,
-    #[serde(skip_serializing)]
-    long_cache: HashMap<i64, u16>,
-    #[serde(skip_serializing)]
-    double_cache: HashMap<[u8; 8], u16>,
-    #[serde(skip_serializing)]
-    method_handle_cache: HashMap<(u8, u16), u16>,
+    bootstrap_methods: IndexSet<BootstrapMethod>,
 }
 
 impl SymbolTable {
-    fn len(&self) -> u16 {
-        self.symbols.len() as u16
+    #[inline]
+    fn constants_len(&self) -> u16 {
+        self.constants.len() as u16
+    }
+
+    #[inline]
+    fn attributes_len(&self) -> u16 {
+        self.attributes.len() as u16
+    }
+
+    #[inline]
+    fn bootstrap_methods_len(&self) -> u16 {
+        self.bootstrap_methods.len() as u16
+    }
+
+    #[inline]
+    fn insert_constant(&mut self, constant: Constant) -> u16 {
+        if let Some(index) = self.constants.get_index_of(&constant) {
+            index as u16 + 1
+        } else {
+            self.constants.insert(constant);
+            self.constants_len()
+        }
+    }
+
+    #[inline]
+    fn insert_attr(&mut self, attr: Attribute) -> u16 {
+        if let Some(index) = self.attributes.get_index_of(&attr) {
+            index as u16
+        } else {
+            self.attributes.insert(attr);
+            self.attributes_len() - 1
+        }
+    }
+
+    fn insert_bootstrap_method(&mut self, boostrap_method: BootstrapMethod) -> u16 {
+        if let Some(index) = self.bootstrap_methods.get_index_of(&boostrap_method) {
+            index as u16
+        } else {
+            self.bootstrap_methods.insert(boostrap_method);
+            self.bootstrap_methods.len() as u16 - 1
+        }
+    }
+
+    /// Merges another [SymbolTable] into current one. This function eliminates other table's constants
+    /// if constant is already existed in current one. Otherwise, clone other table's non-duplicated
+    /// constants to current table. This function will also relocate the constant index for [Constant]s
+    /// and [Attribute]s which depends on it.
+    ///
+    /// # Finalization
+    /// Notice that this function is meant for finalize and optimize the other table's constant entries,
+    /// therefore further modification will cause errors. Other table's constant entries will be cleared,
+    ///
+    /// # Rearrangement Map
+    /// The returned [HashMap]<u16, u16> indicates the transformation of constant pool index from key
+    /// as original position to value as modified position.
+    pub(crate) fn merge(&mut self, other: &mut SymbolTable) -> HashMap<u16, u16> {
+        let SymbolTable {
+            constants,
+            attributes,
+            bootstrap_methods,
+        } = other;
+        let mut rearrangements = HashMap::with_capacity(constants.len());
+        let mut rearranged_attrs = IndexSet::with_capacity(bootstrap_methods.len());
+
+        for (index, constant) in constants.iter().enumerate() {
+            let new_index = self.insert_constant(constant.to_owned());
+
+            rearrangements.insert((index + 1) as u16, new_index);
+        }
+
+        for attribute in attributes.iter() {
+            let mut attribute = attribute.clone();
+
+            attribute.rearrange_indices(&rearrangements);
+            rearranged_attrs.insert(attribute);
+        }
+
+        other.attributes = rearranged_attrs;
+
+        rearrangements
+    }
+
+    pub(crate) fn get_utf8(&self, index: u16) -> Option<&String> {
+        match self.constants.index((index - 1) as usize) {
+            Constant::Utf8 { data } => Some(data),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn add_constant(&mut self, constant: Constant) -> u16 {
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_utf8(&mut self, string: &str) -> u16 {
-        if let Some(index) = self.utf8_cache.get(string) {
-            *index
-        } else {
-            self.symbols.push(Symbol::Utf8 {
-                data: string.to_owned(),
-            });
-            self.utf8_cache
-                .insert_retrieve(string.to_owned(), self.len())
-        }
+        let constant = Constant::Utf8 {
+            data: string.to_owned(),
+        };
+
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_class(&mut self, class: &str) -> u16 {
         let name_index = self.add_utf8(class);
+        let constant = Constant::Class { name_index };
 
-        if let Some(index) = self.single_index_cache.get(&name_index) {
-            *index
-        } else {
-            self.symbols.push(Symbol::Class { name_index });
-            self.single_index_cache
-                .insert_retrieve(name_index, self.len())
-        }
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_string(&mut self, string: &str) -> u16 {
         let string_index = self.add_utf8(string);
+        let constant = Constant::String { string_index };
 
-        if let Some(index) = self.single_index_cache.get(&string_index) {
-            *index
-        } else {
-            self.symbols.push(Symbol::String { string_index });
-            self.single_index_cache
-                .insert_retrieve(string_index, self.len())
-        }
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_integer(&mut self, integer: i32) -> u16 {
-        if let Some(index) = self.integer_cache.get(&integer) {
-            *index
-        } else {
-            self.symbols.push(Symbol::Integer {
-                bytes: integer.to_be_bytes(),
-            });
-            self.integer_cache.insert_retrieve(integer, self.len())
-        }
+        let constant = Constant::Integer {
+            bytes: integer.to_be_bytes(),
+        };
+
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_float(&mut self, float: f32) -> u16 {
-        let be_bytes = float.to_be_bytes();
+        let constant = Constant::Float {
+            bytes: float.to_be_bytes(),
+        };
 
-        if let Some(index) = self.float_cache.get(&be_bytes) {
-            *index
-        } else {
-            self.symbols.push(Symbol::Float { bytes: be_bytes });
-            self.float_cache.insert_retrieve(be_bytes, self.len())
-        }
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_long(&mut self, long: i64) -> u16 {
-        if let Some(index) = self.long_cache.get(&long) {
-            *index
-        } else {
-            let [high_bytes, low_bytes] =
-                unsafe { std::mem::transmute::<[u8; 8], [[u8; 4]; 2]>(long.to_be_bytes()) };
-            for _ in 0..2 {
-                self.symbols.push(Symbol::Long {
-                    high_bytes,
-                    low_bytes,
-                });
-            }
-            self.long_cache.insert_retrieve(long, self.len() - 1)
-        }
+        let bytes = long.to_be_bytes();
+        let (high_bytes, low_bytes) = bytes.split_at(4);
+        let constant = Constant::Long {
+            high_bytes: high_bytes.try_into().unwrap(),
+            low_bytes: low_bytes.try_into().unwrap(),
+        };
+
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_double(&mut self, double: f64) -> u16 {
-        let be_bytes = double.to_be_bytes();
+        let bytes = double.to_be_bytes();
+        let (high_bytes, low_bytes) = bytes.split_at(4);
+        let constant = Constant::Double {
+            high_bytes: high_bytes.try_into().unwrap(),
+            low_bytes: low_bytes.try_into().unwrap(),
+        };
 
-        if let Some(index) = self.double_cache.get(&be_bytes) {
-            *index
-        } else {
-            let [high_bytes, low_bytes] =
-                unsafe { std::mem::transmute::<[u8; 8], [[u8; 4]; 2]>(be_bytes) };
-
-            for _ in 0..2 {
-                self.symbols.push(Symbol::Double {
-                    high_bytes,
-                    low_bytes,
-                });
-            }
-
-            self.double_cache.insert_retrieve(be_bytes, self.len() - 1)
-        }
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_field_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
         let class_index = self.add_class(class);
         let name_and_type_index = self.add_name_and_type(name, typ);
+        let constant = Constant::FieldRef {
+            class_index,
+            name_and_type_index,
+        };
 
-        if let Some(index) = self
-            .double_index_cache
-            .get(&(class_index, name_and_type_index))
-        {
-            *index
-        } else {
-            self.symbols.push(Symbol::FieldRef {
-                class_index,
-                name_and_type_index,
-            });
-            self.double_index_cache
-                .insert_retrieve((class_index, name_and_type_index), self.len())
-        }
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_method_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
         let class_index = self.add_class(class);
         let name_and_type_index = self.add_name_and_type(name, typ);
+        let constant = Constant::MethodRef {
+            class_index,
+            name_and_type_index,
+        };
 
-        if let Some(index) = self
-            .double_index_cache
-            .get(&(class_index, name_and_type_index))
-        {
-            *index
-        } else {
-            self.symbols.push(Symbol::MethodRef {
-                class_index,
-                name_and_type_index,
-            });
-            self.double_index_cache
-                .insert_retrieve((class_index, name_and_type_index), self.len())
-        }
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_interface_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
         let class_index = self.add_class(class);
         let name_and_type_index = self.add_name_and_type(name, typ);
+        let constant = Constant::InterfaceMethodRef {
+            class_index,
+            name_and_type_index,
+        };
 
-        if let Some(index) = self
-            .double_index_cache
-            .get(&(class_index, name_and_type_index))
-        {
-            *index
-        } else {
-            self.symbols.push(Symbol::InterfaceMethodRef {
-                class_index,
-                name_and_type_index,
-            });
-            self.double_index_cache
-                .insert_retrieve((class_index, name_and_type_index), self.len())
-        }
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_name_and_type(&mut self, name: &str, typ: &str) -> u16 {
         let name_index = self.add_utf8(name);
         let type_index = self.add_utf8(typ);
+        let constant = Constant::NameAndType {
+            name_index,
+            type_index,
+        };
 
-        if let Some(index) = self.double_index_cache.get(&(name_index, type_index)) {
-            *index
-        } else {
-            self.symbols.push(Symbol::NameAndType {
-                name_index,
-                type_index,
-            });
-            self.double_index_cache
-                .insert_retrieve((name_index, type_index), self.len())
-        }
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_method_handle(
         &mut self,
-        reference_kind: RefKind,
+        reference_kind: &RefKind,
         class: &str,
         name: &str,
         typ: &str,
@@ -419,20 +439,12 @@ impl SymbolTable {
                 self.add_interface_ref(class, name, typ)
             }
         };
+        let constant = Constant::MethodHandle {
+            reference_kind: *reference_kind as u8,
+            reference_index,
+        };
 
-        if let Some(index) = self
-            .method_handle_cache
-            .get(&(reference_kind as u8, reference_index))
-        {
-            *index
-        } else {
-            self.symbols.push(Symbol::MethodHandle {
-                reference_kind: reference_kind as u8,
-                reference_index,
-            });
-            self.method_handle_cache
-                .insert_retrieve((reference_kind as u8, reference_index), self.len())
-        }
+        self.insert_constant(constant)
     }
 
     // TODO: fn add_dynamic()
@@ -440,26 +452,88 @@ impl SymbolTable {
 
     pub(crate) fn add_module(&mut self, name: &str) -> u16 {
         let name_index = self.add_utf8(name);
+        let constant = Constant::Module { name_index };
 
-        if let Some(index) = self.single_index_cache.get(&name_index) {
-            *index
-        } else {
-            self.symbols.push(Symbol::Module { name_index });
-            self.single_index_cache
-                .insert_retrieve(name_index, self.len())
-        }
+        self.insert_constant(constant)
     }
 
     pub(crate) fn add_package(&mut self, name: &str) -> u16 {
         let name_index = self.add_utf8(name);
+        let constant = Constant::Package { name_index };
 
-        if let Some(index) = self.single_index_cache.get(&name_index) {
-            *index
-        } else {
-            self.symbols.push(Symbol::Package { name_index });
-            self.single_index_cache
-                .insert_retrieve(name_index, self.len())
+        self.insert_constant(constant)
+    }
+
+    pub(crate) fn add_constant_attribute<CV>(&mut self, constant_value: CV) -> u16
+    where
+        CV: Into<ConstantValue>,
+    {
+        let constant_value = constant_value.into();
+        let constant_value_index = match &constant_value {
+            ConstantValue::Int(val) => self.add_integer(*val),
+            ConstantValue::Float(val) => self.add_float(*val),
+            ConstantValue::Long(val) => self.add_long(*val),
+            ConstantValue::Double(val) => self.add_double(*val),
+            ConstantValue::String(val) => self.add_string(val),
+        };
+        let attribute = Attribute::ConstantValue {
+            constant_value_index,
+        };
+
+        self.insert_attr(attribute)
+    }
+
+    pub(crate) fn add_constant_object(&mut self, constant_object: &ConstantObject) -> u16 {
+        match constant_object {
+            ConstantObject::String(val) => self.add_string(val),
+            ConstantObject::Int(val) => self.add_integer(*val),
+            ConstantObject::Float(val) => self.add_float(*val),
+            ConstantObject::Long(val) => self.add_long(*val),
+            ConstantObject::Double(val) => self.add_double(*val),
+            ConstantObject::Class(val) => self.add_class(val),
+            ConstantObject::MethodHandle(ref_kind, class, name, descriptor) => {
+                self.add_method_handle(ref_kind, class, name, descriptor)
+            }
+            ConstantObject::MethodType(val) => self.add_utf8(val),
+            ConstantObject::ConstantDynamic(name, descriptor, handle, arguments) => {
+                self.add_constant_dynamic(name, descriptor, handle, arguments)
+            }
         }
+    }
+
+    pub(crate) fn add_constant_dynamic(
+        &mut self,
+        name: &str,
+        descriptor: &str,
+        handle: &Handle,
+        arguments: &Vec<ConstantObject>,
+    ) -> u16 {
+        let boostrap_method_index = self.add_bootstrap_method(handle, arguments);
+        let name_and_type_index = self.add_name_and_type(name, descriptor);
+        let constant = Constant::Dynamic {
+            bootstrap_method_attr_index: boostrap_method_index,
+            name_and_type_index,
+        };
+
+        self.insert_constant(constant)
+    }
+
+    fn add_bootstrap_method(&mut self, handle: &Handle, arguments: &Vec<ConstantObject>) -> u16 {
+        let bootstrap_arguments_indices = arguments
+            .iter()
+            .map(|constant_object| self.add_constant_object(constant_object))
+            .collect::<Vec<_>>();
+        let Handle {
+            tag,
+            owner,
+            name,
+            descriptor,
+        } = handle;
+        let boostrap_method_handle = self.add_method_handle(tag, owner, name, descriptor);
+        let boostrap_method =
+            BootstrapMethod::new(boostrap_method_handle, bootstrap_arguments_indices);
+
+        self.insert_bootstrap_method(boostrap_method)
     }
 }
 
@@ -476,7 +550,7 @@ mod test {
 
         assert_eq!(index, 1);
         assert_eq!(index, cached_index);
-        assert_eq!(table.len(), 1);
+        assert_eq!(table.constants_len(), 1);
     }
 
     #[test]
@@ -490,7 +564,7 @@ mod test {
         // therefore the index of NameAndType should be 3
         assert_eq!(index, 3);
         assert_eq!(index, cached_index);
-        assert_eq!(table.len(), 3);
+        assert_eq!(table.constants_len(), 3);
     }
 
     #[test]
@@ -502,14 +576,14 @@ mod test {
 
         assert_eq!(index, 1);
         assert_eq!(index, cached_index);
-        assert_eq!(table.len(), 2); // Long takes 2 entries
+        assert_eq!(table.constants_len(), 1);
 
         let index = table.add_double(f64::MAX);
         let cached_index = table.add_double(f64::MAX);
 
-        assert_eq!(index, 3);
+        assert_eq!(index, 2);
         assert_eq!(index, cached_index);
-        assert_eq!(table.len(), 4); // Long takes 2 entries
+        assert_eq!(table.constants_len(), 2);
     }
 
     // More tests?

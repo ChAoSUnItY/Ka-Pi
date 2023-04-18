@@ -22,7 +22,7 @@ where
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum KapiError {
-    StateError(&'static str),
+    StateError(String),
     Utf8Error(&'static str),
     TypeError(&'static str),
     ArgError(String),

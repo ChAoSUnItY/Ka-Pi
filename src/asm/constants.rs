@@ -1,13 +1,9 @@
 // The ClassFile attribute names, in the order they are defined in
 // https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.7-300.
 
-use std::any::Any;
-use std::fmt::{Debug, Formatter};
-use std::rc::Rc;
+use std::fmt::Debug;
 
-use crate::asm::types::Type;
-use crate::asm::{handle::Handle, opcodes};
-use crate::error::{KapiError, KapiResult};
+use crate::asm::opcodes;
 
 pub(crate) const CONSTANT_VALUE: &'static str = "ConstantValue";
 pub(crate) const CODE: &'static str = "Code";
@@ -115,118 +111,3 @@ pub(crate) const JSR_W: u8 = 201;
 
 // The delta between the GOTO_W and JSR_W opcodes and GOTO and JUMP.
 pub(crate) const WIDE_JUMP_OPCODE_DELTA: u8 = GOTO_W - opcodes::GOTO;
-
-// Constants to convert JVM opcodes to the equivalent ASM specific opcodes, and vice versa.
-
-// The delta between the ASM_IFEQ, ..., ASM_IF_ACMPNE, ASM_GOTO and ASM_JSR opcodes
-// and IFEQ, ..., IF_ACMPNE, GOTO and JSR.
-pub(crate) const ASM_OPCODE_DELTA: u8 = 49;
-
-// The delta between the ASM_IFNULL and ASM_IFNONNULL opcodes and IFNULL and IFNONNULL.
-pub(crate) const ASM_IFNULL_OPCODE_DELTA: u8 = 20;
-
-// ASM specific opcodes, used for long forward jump instructions.
-
-pub(crate) const ASM_IFEQ: u8 = opcodes::IFEQ + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFNE: u8 = opcodes::IFNE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFLT: u8 = opcodes::IFLT + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFGE: u8 = opcodes::IFGE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFGT: u8 = opcodes::IFGT + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFLE: u8 = opcodes::IFLE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPEQ: u8 = opcodes::IF_ICMPEQ + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPNE: u8 = opcodes::IF_ICMPNE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPLT: u8 = opcodes::IF_ICMPLT + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPGE: u8 = opcodes::IF_ICMPGE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPGT: u8 = opcodes::IF_ICMPGT + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ICMPLE: u8 = opcodes::IF_ICMPLE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ACMPEQ: u8 = opcodes::IF_ACMPEQ + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IF_ACMPNE: u8 = opcodes::IF_ACMPNE + ASM_OPCODE_DELTA;
-pub(crate) const ASM_GOTO: u8 = opcodes::GOTO + ASM_OPCODE_DELTA;
-pub(crate) const ASM_JSR: u8 = opcodes::JSR + ASM_OPCODE_DELTA;
-pub(crate) const ASM_IFNULL: u8 = opcodes::IFNULL + ASM_IFNULL_OPCODE_DELTA;
-pub(crate) const ASM_IFNONNULL: u8 = opcodes::IFNONNULL + ASM_IFNULL_OPCODE_DELTA;
-pub(crate) const ASM_GOTO_W: u8 = 220;
-
-macro_rules! impl_constant_object {
-    ($($target:tt)*) => {
-        impl ConstantObject for $($target)* {
-            fn as_any(&self) -> &dyn Any {
-                self
-            }
-
-            fn eqauls(&self, other: &dyn ConstantObject) -> bool {
-                other
-                    .as_any()
-                    .downcast_ref::<$($target)*>()
-                    .map_or(false, |other| self == other)
-            }
-        }
-    };
-}
-
-pub trait ConstantObject: Debug {
-    fn as_any(&self) -> &dyn Any;
-
-    fn eqauls(&self, other: &dyn ConstantObject) -> bool;
-}
-
-impl PartialEq for dyn ConstantObject + '_ {
-    fn eq(&self, other: &Self) -> bool {
-        self.eqauls(other)
-    }
-}
-
-impl Eq for dyn ConstantObject + '_ {}
-
-impl_constant_object!(i32);
-impl_constant_object!(i64);
-impl_constant_object!(f32);
-impl_constant_object!(f64);
-impl_constant_object!(String);
-impl_constant_object!(Rc<String>);
-impl_constant_object!(Handle);
-impl_constant_object!(Type);
-impl_constant_object!(Box<ConstantDynamic>);
-impl_constant_object!(Rc<ConstantDynamic>);
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct ConstantDynamic {
-    pub name: String,
-    pub descriptor: String,
-    pub bootstrap_method: Handle,
-    pub(crate) bootstrap_method_arguments: Vec<Box<dyn ConstantObject>>,
-}
-
-impl ConstantDynamic {
-    pub const fn new(
-        name: String,
-        descriptor: String,
-        bootstrap_method: Handle,
-        bootstrap_method_arguments: Vec<Box<dyn ConstantObject>>,
-    ) -> Self {
-        Self {
-            name,
-            descriptor,
-            bootstrap_method,
-            bootstrap_method_arguments,
-        }
-    }
-
-    pub fn argument_len(&self) -> usize {
-        self.bootstrap_method_arguments.len()
-    }
-
-    pub fn get_argument(&self, index: usize) -> Option<&Box<dyn ConstantObject>> {
-        self.bootstrap_method_arguments.get(index)
-    }
-
-    pub fn size(&self) -> KapiResult<usize> {
-        let first_descriptor_char = self.descriptor.chars().next().ok_or(KapiError::StateError(
-            "ConstantDynamic descriptor must not be empty",
-        ))?;
-        match first_descriptor_char {
-            'J' | 'D' => Ok(2),
-            _ => Ok(1),
-        }
-    }
-}

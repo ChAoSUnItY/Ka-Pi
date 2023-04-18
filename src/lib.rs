@@ -7,4 +7,3 @@
 #[allow(unused)]
 pub mod asm;
 pub mod error;
-mod utils;
