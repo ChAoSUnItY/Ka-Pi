@@ -193,6 +193,12 @@ impl MethodWriter {
                 self.code_byte_vec.put_be(constant_index);
                 self.inc_stack();
             }
+            Instruction::LDC_W(constants) => {
+                
+            }
+            Instruction::LDC2_W(constants) => {
+                
+            }
             Instruction::ILOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
@@ -504,14 +510,28 @@ impl MethodWriter {
     where
         C: Into<ConstantObject>,
     {
-        self.put_opcode(Opcode::LDC);
-
+        let constant_object = constant_object.into();
         let constant_index = self
             .symbol_table
             .borrow_mut()
-            .add_constant_object(&constant_object.into());
-
-        self.byte_vec.borrow_mut().put_be(constant_index);
+            .add_constant_object(&constant_object);
+        
+        match constant_object {
+            ConstantObject::Long(_) | ConstantObject::Double(_) => {
+                self.put_opcode(Opcode::LDC2_W);
+                self.code_byte_vec.put_be(constant_index);
+            }
+            _ => {
+                if constant_index > u8::MAX as u16 {
+                    self.put_opcode(Opcode::LDC_W);
+                    self.code_byte_vec.put_be(constant_index);
+                } else {
+                    self.put_opcode(Opcode::LDC);
+                    self.code_byte_vec.put_be(constant_index as u8);
+                }
+            }
+        }
+        
         self.inc_stack();
     }
 

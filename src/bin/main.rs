@@ -41,6 +41,18 @@ fn main() -> KapiResult<()> {
         method_writer.visit_end();
     }
 
+    {
+        let mut method_writer = class_writer.visit_method(
+            vec![MethodAccessFlag::Public],
+            "getMain",
+            "()I"
+        )?;
+        
+        method_writer.visit_ldc(1);
+        method_writer.visit_return(Opcode::IRETURN);
+        method_writer.visit_end();
+    }
+
     class_writer.visit_end();
 
     let bytecode = class_writer.bytecode();
