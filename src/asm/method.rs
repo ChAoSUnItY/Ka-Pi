@@ -1,13 +1,13 @@
 use std::cell::{RefCell, RefMut};
 use std::cmp::max;
-use std::ops::BitOr;
 use std::rc::Rc;
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::constants;
 use crate::asm::label::Label;
 use crate::asm::opcodes::{AccessFlag, ConstantObject, Instruction, MethodAccessFlag, Opcode};
 use crate::asm::symbol::SymbolTable;
-use crate::asm::{constants, types};
+use crate::asm::types::Type;
 use crate::error::KapiResult;
 
 pub trait MethodVisitor {
@@ -20,15 +20,18 @@ pub struct MethodVisitorImpl {}
 impl MethodVisitor for MethodVisitorImpl {}
 
 pub struct MethodWriter {
+    // Internal writing buffers
     byte_vec: Rc<RefCell<ByteVecImpl>>,
     symbol_table: Rc<RefCell<SymbolTable>>,
+    code_byte_vec: ByteVecImpl,
+    // Class file format defined fields
     access_flags: Vec<MethodAccessFlag>,
     name_index: u16,
     descriptor_index: u16,
-    code_byte_vec: ByteVecImpl,
     max_stack: usize,
-    current_stack: usize,
     max_locals: usize,
+    // State utilities
+    current_stack: usize,
     current_locals: usize,
     labels: Vec<(u32, Rc<RefCell<Label>>)>,
 }
@@ -48,10 +51,10 @@ impl MethodWriter {
         let name_index = symbol_table.borrow_mut().add_utf8(name);
         let descriptor_index = symbol_table.borrow_mut().add_utf8(descriptor);
 
-        let mut initial_locals = types::get_arguments_and_return_types(descriptor)?
+        let mut initial_locals = Type::from_method_descriptor(descriptor)?
             .0
             .iter()
-            .map(|(_, size)| *size)
+            .map(Type::size)
             .sum::<usize>();
         if !access_flags.contains(&MethodAccessFlag::Static) {
             initial_locals += 1;
@@ -193,12 +196,8 @@ impl MethodWriter {
                 self.code_byte_vec.put_be(constant_index);
                 self.inc_stack();
             }
-            Instruction::LDC_W(constants) => {
-                
-            }
-            Instruction::LDC2_W(constants) => {
-                
-            }
+            Instruction::LDC_W(constants) => {}
+            Instruction::LDC2_W(constants) => {}
             Instruction::ILOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
@@ -515,7 +514,7 @@ impl MethodWriter {
             .symbol_table
             .borrow_mut()
             .add_constant_object(&constant_object);
-        
+
         match constant_object {
             ConstantObject::Long(_) | ConstantObject::Double(_) => {
                 self.put_opcode(Opcode::LDC2_W);
@@ -531,16 +530,18 @@ impl MethodWriter {
                 }
             }
         }
-        
+
         self.inc_stack();
     }
 
-    pub fn visit_return(&mut self, return_opcode: Opcode) {
+    pub fn visit_return(&mut self, return_opcode: Opcode) -> KapiResult<()> {
         self.put_opcode(return_opcode);
 
         if return_opcode != Opcode::RETURN {
             self.dec_stack();
         }
+
+        Ok(())
     }
 
     pub(crate) fn visit_jmp(&mut self, jmp_opcode: Opcode, destination_label: &Rc<RefCell<Label>>) {
@@ -565,13 +566,13 @@ impl MethodVisitor for MethodWriter {
         let Self {
             byte_vec,
             symbol_table,
+            code_byte_vec,
             access_flags,
             name_index,
             descriptor_index,
-            code_byte_vec,
             max_stack,
-            current_stack: _,
             max_locals,
+            current_stack: _,
             current_locals: _,
             labels,
         } = self;

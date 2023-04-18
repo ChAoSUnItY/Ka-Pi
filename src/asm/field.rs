@@ -5,7 +5,7 @@ use crate::asm::attribute::{Attribute, ConstantValue};
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::opcodes::{AccessFlag, FieldAccessFlag};
 use crate::asm::symbol::SymbolTable;
-use crate::asm::types::get_type;
+use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
 
 #[allow(unused_variables)]
@@ -18,12 +18,16 @@ pub trait FieldVisitor {
 }
 
 pub struct FieldWriter {
+    // Internal writing buffers
     byte_vec: Rc<RefCell<ByteVecImpl>>,
     symbol_table: Rc<RefCell<SymbolTable>>,
     field_symbol_table: SymbolTable,
+    // Class file format defined fields
     access_flags: Vec<FieldAccessFlag>,
     name_index: u16,
     descriptor_index: u16,
+    // State utilities
+    expected_field_type: Type,
 }
 
 impl FieldWriter {
@@ -39,7 +43,6 @@ impl FieldWriter {
     {
         let name_index = symbol_table.borrow_mut().add_utf8(name);
         let descriptor_index = symbol_table.borrow_mut().add_utf8(descriptor);
-        get_type(descriptor)?;
 
         Ok(Self {
             byte_vec: byte_vec.clone(),
@@ -48,6 +51,7 @@ impl FieldWriter {
             access_flags: access_flags.into_iter().collect(),
             name_index,
             descriptor_index,
+            expected_field_type: Type::from_descriptor_no_void(descriptor)?,
         })
     }
 }
@@ -63,8 +67,26 @@ impl FieldVisitor for FieldWriter {
         let symbol_table = self.symbol_table.borrow();
         let descriptor = symbol_table.get_utf8(self.descriptor_index).unwrap();
 
-        match descriptor.chars().next().unwrap() {
-            'I' | 'S' | 'C' | 'B' | 'Z' => {
+        match self.expected_field_type {
+            Type::Boolean => {
+                match constant_value {
+                    ConstantValue::Int(value) if value == 0 || value == 1 => {}
+                    ConstantValue::Int(value) if value != 0 && value != 1 => {
+                        return Err(KapiError::ArgError(format!(
+                            "Field has type {} which can only have int type with value 0 or 1, but got {}",
+                            descriptor,
+                            value,
+                        )))
+                    }
+                    _ => {
+                        return Err(KapiError::ArgError(format!(
+                            "Field has type {} which can only have int type with value 0 or 1",
+                            descriptor,
+                        )))
+                    }
+                }
+            }
+            Type::Byte | Type::Short | Type::Char | Type::Int => {
                 if !matches!(constant_value, ConstantValue::Int(_)) {
                     return Err(KapiError::ArgError(format!(
                         "Field has type {} which can only have int type",
@@ -72,21 +94,21 @@ impl FieldVisitor for FieldWriter {
                     )))
                 }
             }
-            'F' => {
+            Type::Float => {
                 if !matches!(constant_value, ConstantValue::Float(_)) {
                     return Err(KapiError::ArgError(format!(
                         "Field has type F which can only have float type",
                     )))
                 }
             }
-            'J' => {
+            Type::Long => {
                 if !matches!(constant_value, ConstantValue::Long(_)) {
                     return Err(KapiError::ArgError(format!(
                         "Field has type J which can only have long type",
                     )))
                 }
             }
-            'D' => {
+            Type::Double => {
                 if !matches!(constant_value, ConstantValue::Double(_)) {
                     return Err(KapiError::ArgError(format!(
                         "Field has type D which can only have double type",
@@ -115,6 +137,7 @@ impl FieldVisitor for FieldWriter {
             access_flags,
             name_index,
             descriptor_index,
+            expected_field_type: _,
         } = self;
 
         let mut byte_vec = byte_vec.borrow_mut();
