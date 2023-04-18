@@ -67,21 +67,19 @@ impl FieldVisitor for FieldWriter {
         let symbol_table = self.symbol_table.borrow();
         let descriptor = symbol_table.get_utf8(self.descriptor_index).unwrap();
 
-        match self.expected_field_type {
+        match &self.expected_field_type {
             Type::Boolean => {
                 match constant_value {
                     ConstantValue::Int(value) if value == 0 || value == 1 => {}
                     ConstantValue::Int(value) if value != 0 && value != 1 => {
                         return Err(KapiError::ArgError(format!(
-                            "Field has type {} which can only have int type with value 0 or 1, but got {}",
-                            descriptor,
+                            "Field has type `I` which can only have int type with value 0 or 1, but got {}",
                             value,
                         )))
                     }
                     _ => {
                         return Err(KapiError::ArgError(format!(
-                            "Field has type {} which can only have int type with value 0 or 1",
-                            descriptor,
+                            "Field has type `I` which can only have int type with value 0 or 1"
                         )))
                     }
                 }
@@ -89,7 +87,7 @@ impl FieldVisitor for FieldWriter {
             Type::Byte | Type::Short | Type::Char | Type::Int => {
                 if !matches!(constant_value, ConstantValue::Int(_)) {
                     return Err(KapiError::ArgError(format!(
-                        "Field has type {} which can only have int type",
+                        "Field has type `{}` which can only have int type",
                         descriptor,
                     )))
                 }
@@ -97,21 +95,28 @@ impl FieldVisitor for FieldWriter {
             Type::Float => {
                 if !matches!(constant_value, ConstantValue::Float(_)) {
                     return Err(KapiError::ArgError(format!(
-                        "Field has type F which can only have float type",
+                        "Field has type `F` which can only have float type",
                     )))
                 }
             }
             Type::Long => {
                 if !matches!(constant_value, ConstantValue::Long(_)) {
                     return Err(KapiError::ArgError(format!(
-                        "Field has type J which can only have long type",
+                        "Field has type `J` which can only have long type",
                     )))
                 }
             }
             Type::Double => {
                 if !matches!(constant_value, ConstantValue::Double(_)) {
                     return Err(KapiError::ArgError(format!(
-                        "Field has type D which can only have double type",
+                        "Field has type `D` which can only have double type",
+                    )))
+                }
+            }
+            Type::ObjectRef(object_ref_type) if object_ref_type.as_str() == "java/lang/String" => {
+                if !matches!(constant_value, ConstantValue::String(_)) {
+                    return Err(KapiError::ArgError(format!(
+                        "Field has type `java/lang/String` which can only have String type",
                     )))
                 }
             }

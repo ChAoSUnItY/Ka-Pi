@@ -49,7 +49,7 @@ impl Type {
         }
 
         let return_type =
-            Self::from_descriptor_iter(method_descriptor, &mut descriptor_iter, false, false)?;
+            Self::from_descriptor_iter(method_descriptor, &mut descriptor_iter, true, false)?;
 
         if descriptor_iter.next().is_some() {
             Err(KapiError::StateError(format!(
@@ -86,7 +86,7 @@ impl Type {
         let mut array_dim = 0;
         let mut result_type = None;
 
-        while descriptor_iter.peek().is_some() {
+        while result_type.is_none() || (!streaming && descriptor_iter.peek().is_some()) {
             let current_char = descriptor_iter.next();
 
             if let None = current_char {
@@ -120,6 +120,7 @@ impl Type {
                 }
                 '[' => {
                     array_dim += 1;
+                    continue; // we ignore while's condition since the type is not fully resolved yet
                 }
                 'L' => {
                     let object_ref_type = descriptor_iter

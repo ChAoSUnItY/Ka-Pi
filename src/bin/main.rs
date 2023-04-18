@@ -23,10 +23,10 @@ fn main() -> KapiResult<()> {
         let mut field_writer = class_writer.visit_field(
             vec![FieldAccessFlag::Public, FieldAccessFlag::Static],
             "main",
-            "I",
+            "Ljava/lang/String;",
         )?;
 
-        field_writer.visit_constant(1)?;
+        field_writer.visit_constant("String")?;
         field_writer.visit_end();
     }
 
@@ -42,12 +42,9 @@ fn main() -> KapiResult<()> {
     }
 
     {
-        let mut method_writer = class_writer.visit_method(
-            vec![MethodAccessFlag::Public],
-            "getMain",
-            "()I"
-        )?;
-        
+        let mut method_writer =
+            class_writer.visit_method(vec![MethodAccessFlag::Public], "getMain", "()I")?;
+
         method_writer.visit_ldc(1);
         method_writer.visit_return(Opcode::IRETURN);
         method_writer.visit_end();
