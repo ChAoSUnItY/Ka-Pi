@@ -22,9 +22,26 @@ pub enum Type {
     Double,
     Array(Box<Type>),
     ObjectRef(String),
+    /// [Type::Null] should not be ever used to emit bytecode, it's intended for stack validation usage
+    Null,
 }
 
 impl Type {
+    pub fn array_type(depth: usize, inner_type: Self) -> Self {
+        let mut depth = depth - 1;
+        let mut array_type = Type::Array(Box::new(inner_type));
+        
+        while depth >= 1 {
+            array_type = Type::Array(Box::new(array_type));
+        }
+
+        array_type
+    }
+    
+    pub fn object_type() -> Self {
+        Self::ObjectRef("java.lang.Object".into())
+    }
+    
     pub(crate) fn from_method_descriptor(method_descriptor: &str) -> KapiResult<(Vec<Self>, Self)> {
         let mut descriptor_iter = method_descriptor.chars().peekable();
         let mut argument_types = Vec::new();
@@ -168,6 +185,25 @@ impl Type {
         match self {
             Self::Long | Self::Double => 2,
             _ => 1,
+        }
+    }
+}
+
+impl ToString for Type {
+    fn to_string(&self) -> String {
+        match self {
+            Type::Void => "void".into(),
+            Type::Boolean => "boolean".into(),
+            Type::Char => "char".into(),
+            Type::Byte => "byte".into(),
+            Type::Short => "short".into(),
+            Type::Int => "int".into(),
+            Type::Float => "float".into(),
+            Type::Long => "long".into(),
+            Type::Double => "double".into(),
+            Type::Array(inner_typ) => format!("{}[]", inner_typ.to_string()),
+            Type::ObjectRef(type_ref) => type_ref.clone(),
+            Type::Null => "null".into(),
         }
     }
 }
