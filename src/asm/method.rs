@@ -1,5 +1,6 @@
 use std::cell::{RefCell, RefMut};
 use std::cmp::max;
+use std::collections::VecDeque;
 use std::rc::Rc;
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
@@ -8,7 +9,7 @@ use crate::asm::label::Label;
 use crate::asm::opcodes::{AccessFlag, ConstantObject, Instruction, MethodAccessFlag, Opcode};
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::Type;
-use crate::error::KapiResult;
+use crate::error::{KapiError, KapiResult};
 
 pub trait MethodVisitor {
     fn visit_end(&mut self) {}
@@ -31,8 +32,8 @@ pub struct MethodWriter {
     max_stack: usize,
     max_locals: usize,
     // State utilities
-    current_stack: usize,
-    current_locals: usize,
+    locals: VecDeque<Type>,
+    stack_status: VecDeque<Type>,
     labels: Vec<(u32, Rc<RefCell<Label>>)>,
 }
 
@@ -68,29 +69,47 @@ impl MethodWriter {
             descriptor_index,
             code_byte_vec: ByteVecImpl::default(),
             max_stack: 0,
-            current_stack: 0,
             max_locals: initial_locals,
-            current_locals: 0,
+            locals: VecDeque::new(),
+            stack_status: VecDeque::new(),
             labels: Vec::new(),
         })
     }
 
-    fn inc_stack(&mut self) {
-        self.current_stack += 1;
-        self.max_stack = max(self.current_stack, self.max_stack);
+    fn inc_stack(&mut self, item_type: Type) -> usize {
+        self.stack_status.push_back(item_type);
+        self.max_stack = max(self.stack_status.len(), self.max_stack);
+        self.stack_status.len() - 1
     }
 
-    fn dec_stack(&mut self) {
-        self.current_stack -= 1;
-    }
-
-    fn inc_locals(&mut self) {
-        self.current_locals += 1;
-        self.max_stack = max(self.current_locals, self.max_locals);
+    fn dec_stack(&mut self, expected_item_type: Type) -> KapiResult<()> {
+        if let Some(typ) = self.stack_status.pop_back() {
+            if expected_item_type != typ {
+                Err(KapiError::StateError(format!(
+                    "Unexpected type `{}` on stack while expects type `{}` on stack to be popped",
+                    typ.to_string(),
+                    expected_item_type.to_string()
+                )))
+            } else {
+                Ok(())
+            }
+        } else {
+            Err(KapiError::StateError(format!(
+                "Illegal access to top stack, no local variables persist at this moment"
+            )))
+        }
     }
 
     fn put_opcode(&mut self, opcode: Opcode) {
         self.code_byte_vec.put_be(opcode as u8);
+    }
+
+    fn get_local(&self, index: usize) -> KapiResult<Type> {
+        if let Some(typ) = self.locals.get(index as usize) {
+            Ok(typ.clone())
+        } else {
+            Err(KapiError::StateError(format!("Illegal access to local variable at index {}, only {} local variables persist at this moment", index, self.locals.len())))
+        }
     }
 
     /// Emit opcode with a [Opcode], following by the companion data which has dynamic length
@@ -122,210 +141,228 @@ impl MethodWriter {
             }
             Instruction::ACONST_NULL => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Null);
             }
             Instruction::ICONST_M1 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::ICONST_0 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::ICONST_1 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::ICONST_2 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::ICONST_3 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::ICONST_4 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::ICONST_5 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::LCONST_0 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Long);
+                self.inc_stack(Type::Long);
             }
             Instruction::LCONST_1 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Long);
+                self.inc_stack(Type::Long);
             }
             Instruction::FCONST_0 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Float);
+                self.inc_stack(Type::Float);
             }
             Instruction::FCONST_1 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Float);
+                self.inc_stack(Type::Float);
             }
             Instruction::FCONST_2 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Float);
+                self.inc_stack(Type::Float);
             }
             Instruction::DCONST_0 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Double);
+                self.inc_stack(Type::Double);
             }
             Instruction::DCONST_1 => {
                 self.put_opcode(inst.opcode());
-                self.inc_stack();
+                self.inc_stack(Type::Double);
+                self.inc_stack(Type::Double);
             }
             Instruction::BIPUSH(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
+                self.inc_stack(Type::Byte);
             }
             Instruction::SIPUSH(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
+                self.inc_stack(Type::Short);
             }
             Instruction::LDC(constant) => {
-                self.put_opcode(inst.opcode());
-
-                let constant_index = self.symbol_table.borrow_mut().add_constant_object(constant);
-
-                self.code_byte_vec.put_be(constant_index);
-                self.inc_stack();
+                self.visit_ldc(constant.to_owned());
             }
-            Instruction::LDC_W(constants) => {}
-            Instruction::LDC2_W(constants) => {}
+            Instruction::LDC_W(constant) => {
+                self.visit_ldc(constant.to_owned());
+            }
+            Instruction::LDC2_W(constant) => {
+                self.visit_ldc(constant.to_owned());
+            }
             Instruction::ILOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::LLOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack();
+                self.inc_stack(Type::Long);
+                self.inc_stack(Type::Long);
             }
             Instruction::FLOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack();
+                self.inc_stack(Type::Float);
             }
             Instruction::DLOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack();
+                self.inc_stack(Type::Double);
+                self.inc_stack(Type::Double);
             }
             Instruction::ALOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack();
+                self.inc_stack(self.get_local(*val as usize)?);
             }
             Instruction::ILOAD_0 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(0);
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::ILOAD_1 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(1);
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::ILOAD_2 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(2);
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::ILOAD_3 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(3);
-                self.inc_stack();
+                self.inc_stack(Type::Int);
             }
             Instruction::LLOAD_0 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(0);
-                self.inc_stack();
+                self.inc_stack(Type::Long);
+                self.inc_stack(Type::Long);
             }
             Instruction::LLOAD_1 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(1);
-                self.inc_stack();
+                self.inc_stack(Type::Long);
+                self.inc_stack(Type::Long);
             }
             Instruction::LLOAD_2 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(2);
-                self.inc_stack();
+                self.inc_stack(Type::Long);
+                self.inc_stack(Type::Long);
             }
             Instruction::LLOAD_3 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(3);
-                self.inc_stack();
+                self.inc_stack(Type::Long);
+                self.inc_stack(Type::Long);
             }
             Instruction::FLOAD_0 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(0);
-                self.inc_stack();
+                self.inc_stack(Type::Float);
             }
             Instruction::FLOAD_1 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(1);
-                self.inc_stack();
+                self.inc_stack(Type::Float);
             }
             Instruction::FLOAD_2 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(2);
-                self.inc_stack();
+                self.inc_stack(Type::Float);
             }
             Instruction::FLOAD_3 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(3);
-                self.inc_stack();
+                self.inc_stack(Type::Float);
             }
             Instruction::DLOAD_0 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(0);
-                self.inc_stack();
+                self.inc_stack(Type::Double);
+                self.inc_stack(Type::Double);
             }
             Instruction::DLOAD_1 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(1);
-                self.inc_stack();
+                self.inc_stack(Type::Double);
+                self.inc_stack(Type::Double);
             }
             Instruction::DLOAD_2 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(2);
-                self.inc_stack();
+                self.inc_stack(Type::Double);
+                self.inc_stack(Type::Double);
             }
             Instruction::DLOAD_3 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(3);
-                self.inc_stack();
+                self.inc_stack(Type::Double);
+                self.inc_stack(Type::Double);
             }
             Instruction::ALOAD_0 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(0);
-                self.inc_stack();
+                self.inc_stack(self.get_local(0)?);
             }
             Instruction::ALOAD_1 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(1);
-                self.inc_stack();
+                self.inc_stack(self.get_local(1)?);
             }
             Instruction::ALOAD_2 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(2);
-                self.inc_stack();
+                self.inc_stack(self.get_local(2)?);
             }
             Instruction::ALOAD_3 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(3);
-                self.inc_stack();
+                self.inc_stack(self.get_local(3)?);
             }
             Instruction::IALOAD => {
                 self.put_opcode(inst.opcode());
-                self.dec_stack();
+                self.dec_stack(Type::Array(Box::new(Type::Int)))?;
             }
             Instruction::LALOAD => {
                 self.put_opcode(inst.opcode());
@@ -553,7 +590,7 @@ impl MethodWriter {
 
     pub(crate) fn visit_label(&mut self, destination_label: Rc<RefCell<Label>>) -> KapiResult<()> {
         RefMut::map(destination_label.borrow_mut(), |label| {
-            *label = Label((self.code_byte_vec.len()) as u32);
+            label.set_offset((self.code_byte_vec.len()) as u32);
             label
         });
 
@@ -572,8 +609,8 @@ impl MethodVisitor for MethodWriter {
             descriptor_index,
             max_stack,
             max_locals,
-            current_stack: _,
-            current_locals: _,
+            locals: _,
+            stack_status: _,
             labels,
         } = self;
 
@@ -586,8 +623,9 @@ impl MethodVisitor for MethodWriter {
                 let index = *start_index as usize;
                 let label = label.borrow();
 
-                code_byte_vec[index + 1..=index + 2]
-                    .swap_with_slice(&mut ((label.0 - *start_index) as i16).to_be_bytes());
+                code_byte_vec[index + 1..=index + 2].swap_with_slice(
+                    &mut ((label.destination_pos - *start_index) as i16).to_be_bytes(),
+                );
             }
         }
 

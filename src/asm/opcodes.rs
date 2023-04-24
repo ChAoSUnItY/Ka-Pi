@@ -9,6 +9,7 @@ use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::handle::Handle;
+use crate::asm::types::Type;
 
 // Java ClassFile versions (the minor version is stored in the 16 most significant bits, and the
 // major version in the 16 least significant bits).
@@ -935,6 +936,20 @@ impl ConstantObject {
         match self {
             ConstantObject::Long(..) | ConstantObject::Double(..) => true,
             _ => false,
+        }
+    }
+    
+    pub(crate) const fn constant_type(&self) -> Type {
+        match self {
+            ConstantObject::String(_) => Type::ObjectRef("java/lang/String".to_string()),
+            ConstantObject::Int(_) => Type::Int,
+            ConstantObject::Float(_) => Type::Float,
+            ConstantObject::Long(_) => Type::Long,
+            ConstantObject::Double(_) => Type::Double,
+            ConstantObject::Class(_) => Type::ObjectRef("java/lang/Class".to_string()),
+            ConstantObject::MethodHandle(_, _, _, _) => Type::ObjectRef("java/lang/invoke/MethodHandle".to_string()),
+            ConstantObject::MethodType(_) => Type::ObjectRef("java/lang/invoke/MethodType".to_string()),
+            ConstantObject::ConstantDynamic(_, _, _, _) => {}
         }
     }
 }
