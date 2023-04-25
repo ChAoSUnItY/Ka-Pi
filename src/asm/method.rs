@@ -164,7 +164,7 @@ impl MethodWriter {
             error_message.push_str(format!("Illegal access to local variable at index {}, only {} local variables persist at this moment", index, self.locals.len()).as_str());
             error_message.push_str("Locals\n");
 
-            for (index, typ) in self.locals.iter().sorted_by_key(|(index, _)| index) {
+            for (index, typ) in self.locals.iter().sorted_by_key(|(index, _)| **index) {
                 error_message.push_str(format!("{:<6}| {}\n", index, typ.to_string()).as_str());
 
                 if matches!(typ, Type::Long | Type::Double) {

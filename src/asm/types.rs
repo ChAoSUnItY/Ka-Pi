@@ -28,24 +28,29 @@ pub enum Type {
 }
 
 impl Type {
-    pub(crate) const OBJECT_TYPE: Self = Self::ObjectRef("java/lang/Object".to_string());
-    pub(crate) const STRING_TYPE: Self = Self::ObjectRef("java/lang/String".to_string());
-    
     pub fn array_type(depth: usize, inner_type: Self) -> Self {
         let mut depth = depth - 1;
         let mut array_type = Type::Array(Box::new(inner_type));
-        
+
         while depth >= 1 {
             array_type = Type::Array(Box::new(array_type));
         }
 
         array_type
     }
-    
+
     pub fn object_type() -> Self {
-        Self::OBJECT_TYPE
+        static OBJECT_TYPE: Type = Type::ObjectRef("java/lang/Object".to_string());
+
+        OBJECT_TYPE.clone()
     }
-    
+
+    pub fn string_type() -> Self {
+        static STRING_TYPE: Type = Type::ObjectRef("java/lang/String".to_string());
+
+        STRING_TYPE.clone()
+    }
+
     pub(crate) fn from_method_descriptor(method_descriptor: &str) -> KapiResult<(Vec<Self>, Self)> {
         let mut descriptor_iter = method_descriptor.chars().peekable();
         let mut argument_types = Vec::new();
@@ -189,6 +194,23 @@ impl Type {
         match self {
             Self::Long | Self::Double => 2,
             _ => 1,
+        }
+    }
+
+    pub fn descriptor(&self) -> String {
+        match self {
+            Type::Void => "V".into(),
+            Type::Boolean => "Z".into(),
+            Type::Char => "C".into(),
+            Type::Byte => "B".into(),
+            Type::Short => "S".into(),
+            Type::Int => "I".into(),
+            Type::Float => "F".into(),
+            Type::Long => "J".into(),
+            Type::Double => "D".into(),
+            Type::Array(inner_type) => format!("[{}", inner_type.descriptor()),
+            Type::ObjectRef(type_ref) => format!("L{};", type_ref),
+            Type::Null => unreachable!(),
         }
     }
 }

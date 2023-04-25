@@ -924,10 +924,10 @@ pub enum ConstantObject {
     MethodType(String),
     /// # Arguments
     /// - [String]: method name
-    /// - [String]: method descriptor
+    /// - [Type]: field descriptor
     /// - [Handle]: bootstrap method handle
     /// - [Vec<ConstantObject>]: bootstrap method arguments
-    ConstantDynamic(String, String, Handle, Vec<ConstantObject>),
+    ConstantDynamic(String, Type, Handle, Vec<ConstantObject>),
 }
 
 impl ConstantObject {
@@ -938,18 +938,22 @@ impl ConstantObject {
             _ => false,
         }
     }
-    
-    pub(crate) const fn constant_type(&self) -> Type {
+
+    pub(crate) fn constant_type(&self) -> Type {
         match self {
-            ConstantObject::String(_) => Type::ObjectRef("java/lang/String".to_string()),
+            ConstantObject::String(_) => Type::string_type(),
             ConstantObject::Int(_) => Type::Int,
             ConstantObject::Float(_) => Type::Float,
             ConstantObject::Long(_) => Type::Long,
             ConstantObject::Double(_) => Type::Double,
             ConstantObject::Class(_) => Type::ObjectRef("java/lang/Class".to_string()),
-            ConstantObject::MethodHandle(_, _, _, _) => Type::ObjectRef("java/lang/invoke/MethodHandle".to_string()),
-            ConstantObject::MethodType(_) => Type::ObjectRef("java/lang/invoke/MethodType".to_string()),
-            ConstantObject::ConstantDynamic(_, _, _, _) => {}
+            ConstantObject::MethodHandle(_, _, _, _) => {
+                Type::ObjectRef("java/lang/invoke/MethodHandle".to_string())
+            }
+            ConstantObject::MethodType(_) => {
+                Type::ObjectRef("java/lang/invoke/MethodType".to_string())
+            }
+            ConstantObject::ConstantDynamic(_, typ, _, _) => typ.clone(),
         }
     }
 }
