@@ -1,6 +1,7 @@
 use std::iter::Peekable;
 use std::str::Chars;
 use std::str::FromStr;
+use std::string::ToString;
 
 use itertools::{Itertools, PeekingNext};
 use serde::{Deserialize, Serialize};
@@ -27,6 +28,9 @@ pub enum Type {
 }
 
 impl Type {
+    pub(crate) const OBJECT_TYPE: Self = Self::ObjectRef("java/lang/Object".to_string());
+    pub(crate) const STRING_TYPE: Self = Self::ObjectRef("java/lang/String".to_string());
+    
     pub fn array_type(depth: usize, inner_type: Self) -> Self {
         let mut depth = depth - 1;
         let mut array_type = Type::Array(Box::new(inner_type));
@@ -39,7 +43,7 @@ impl Type {
     }
     
     pub fn object_type() -> Self {
-        Self::ObjectRef("java.lang.Object".into())
+        Self::OBJECT_TYPE
     }
     
     pub(crate) fn from_method_descriptor(method_descriptor: &str) -> KapiResult<(Vec<Self>, Self)> {

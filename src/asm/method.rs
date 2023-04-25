@@ -1,7 +1,9 @@
 use std::cell::{RefCell, RefMut};
 use std::cmp::max;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
+
+use itertools::Itertools;
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::constants;
@@ -32,7 +34,7 @@ pub struct MethodWriter {
     max_stack: usize,
     max_locals: usize,
     // State utilities
-    locals: VecDeque<Type>,
+    locals: HashMap<usize, Type>,
     stack_status: VecDeque<Type>,
     labels: Vec<(u32, Rc<RefCell<Label>>)>,
 }
@@ -70,7 +72,7 @@ impl MethodWriter {
             code_byte_vec: ByteVecImpl::default(),
             max_stack: 0,
             max_locals: initial_locals,
-            locals: VecDeque::new(),
+            locals: HashMap::new(),
             stack_status: VecDeque::new(),
             labels: Vec::new(),
         })
@@ -95,7 +97,41 @@ impl MethodWriter {
             }
         } else {
             Err(KapiError::StateError(format!(
-                "Illegal access to top stack, no local variables persist at this moment"
+                "Illegal access to top stack, no stack items persist at this moment"
+            )))
+        }
+    }
+
+    fn dec_array_stack(&mut self) -> KapiResult<Type> {
+        if let Some(typ) = self.stack_status.pop_back() {
+            if let Type::Array(inner_type) = typ {
+                Ok(*inner_type.clone())
+            } else {
+                Err(KapiError::StateError(format!(
+                    "Unexpected type `{}` on stack while expects array type on stack to be popped",
+                    typ.to_string(),
+                )))
+            }
+        } else {
+            Err(KapiError::StateError(format!(
+                "Illegal access to top stack, no stack items persist at this moment"
+            )))
+        }
+    }
+
+    fn dec_object_stack(&mut self) -> KapiResult<()> {
+        if let Some(typ) = self.stack_status.pop_back() {
+            if matches!(typ, Type::ObjectRef(_) | Type::Array(_)) {
+                Ok(())
+            } else {
+                Err(KapiError::StateError(format!(
+                    "Unexpected type `{}` on stack while expects object type on stack to be popped",
+                    typ.to_string(),
+                )))
+            }
+        } else {
+            Err(KapiError::StateError(format!(
+                "Illegal access to top stack, no stack items persist at this moment"
             )))
         }
     }
@@ -104,12 +140,48 @@ impl MethodWriter {
         self.code_byte_vec.put_be(opcode as u8);
     }
 
-    fn get_local(&self, index: usize) -> KapiResult<Type> {
-        if let Some(typ) = self.locals.get(index as usize) {
-            Ok(typ.clone())
+    fn get_local(&self, index: usize, expected_local_type: Type) -> KapiResult<Type> {
+        if let Some(typ) = self.locals.get(&(index as usize)) {
+            let typ = typ.clone();
+
+            // Ignore object casting check
+            if matches!(typ, Type::ObjectRef(_) if matches!(expected_local_type, Type::ObjectRef(_)))
+                || typ == expected_local_type
+            {
+                Ok(typ)
+            } else {
+                Err(KapiError::StateError(format!(
+                    "Expects local variable at index {} with type `{}` but got type `{}`",
+                    index,
+                    expected_local_type.to_string(),
+                    typ.to_string()
+                )))
+            }
         } else {
-            Err(KapiError::StateError(format!("Illegal access to local variable at index {}, only {} local variables persist at this moment", index, self.locals.len())))
+            // Build local stack graph
+            let mut error_message = String::with_capacity(self.locals.len() * 4);
+
+            error_message.push_str(format!("Illegal access to local variable at index {}, only {} local variables persist at this moment", index, self.locals.len()).as_str());
+            error_message.push_str("Locals\n");
+
+            for (index, typ) in self.locals.iter().sorted_by_key(|(index, _)| index) {
+                error_message.push_str(format!("{:<6}| {}\n", index, typ.to_string()).as_str());
+
+                if matches!(typ, Type::Long | Type::Double) {
+                    error_message.push_str(
+                        format!("{:<6}| {}\n", format!("({})", index), typ.to_string()).as_str(),
+                    );
+                }
+            }
+
+            Err(KapiError::StateError(error_message))
         }
+    }
+
+    fn load_local(&mut self, index: usize, expected_local_type: Type) -> KapiResult<()> {
+        self.inc_stack(self.get_local(index, expected_local_type)?);
+
+        Ok(())
     }
 
     /// Emit opcode with a [Opcode], following by the companion data which has dynamic length
@@ -228,169 +300,159 @@ impl MethodWriter {
             Instruction::ILOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack(Type::Int);
+                self.load_local(*val as usize, Type::Int)?;
             }
             Instruction::LLOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack(Type::Long);
-                self.inc_stack(Type::Long);
+                self.load_local(*val as usize, Type::Long)?;
             }
             Instruction::FLOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack(Type::Float);
+                self.load_local(*val as usize, Type::Float)?;
             }
             Instruction::DLOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack(Type::Double);
-                self.inc_stack(Type::Double);
+                self.load_local(*val as usize, Type::Double)?;
             }
             Instruction::ALOAD(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.inc_stack(self.get_local(*val as usize)?);
+                self.load_local(*val as usize, Type::object_type())?;
             }
             Instruction::ILOAD_0 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(0);
-                self.inc_stack(Type::Int);
+                self.load_local(0, Type::Int)?;
             }
             Instruction::ILOAD_1 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(1);
-                self.inc_stack(Type::Int);
+                self.load_local(1, Type::Int)?;
             }
             Instruction::ILOAD_2 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(2);
-                self.inc_stack(Type::Int);
+                self.load_local(2, Type::Int)?;
             }
             Instruction::ILOAD_3 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(3);
-                self.inc_stack(Type::Int);
+                self.load_local(3, Type::Int)?;
             }
             Instruction::LLOAD_0 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(0);
-                self.inc_stack(Type::Long);
-                self.inc_stack(Type::Long);
+                self.load_local(0, Type::Long)?;
             }
             Instruction::LLOAD_1 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(1);
-                self.inc_stack(Type::Long);
-                self.inc_stack(Type::Long);
+                self.load_local(1, Type::Long)?;
             }
             Instruction::LLOAD_2 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(2);
-                self.inc_stack(Type::Long);
-                self.inc_stack(Type::Long);
+                self.load_local(2, Type::Long)?;
             }
             Instruction::LLOAD_3 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(3);
-                self.inc_stack(Type::Long);
-                self.inc_stack(Type::Long);
+                self.load_local(3, Type::Long)?;
             }
             Instruction::FLOAD_0 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(0);
-                self.inc_stack(Type::Float);
+                self.load_local(0, Type::Float)?;
             }
             Instruction::FLOAD_1 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(1);
-                self.inc_stack(Type::Float);
+                self.load_local(0, Type::Float)?;
             }
             Instruction::FLOAD_2 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(2);
-                self.inc_stack(Type::Float);
+                self.load_local(0, Type::Float)?;
             }
             Instruction::FLOAD_3 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(3);
-                self.inc_stack(Type::Float);
+                self.load_local(0, Type::Float)?;
             }
             Instruction::DLOAD_0 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(0);
-                self.inc_stack(Type::Double);
-                self.inc_stack(Type::Double);
+                self.load_local(0, Type::Double)?;
             }
             Instruction::DLOAD_1 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(1);
-                self.inc_stack(Type::Double);
-                self.inc_stack(Type::Double);
+                self.load_local(1, Type::Double)?;
             }
             Instruction::DLOAD_2 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(2);
-                self.inc_stack(Type::Double);
-                self.inc_stack(Type::Double);
+                self.load_local(2, Type::Double)?;
             }
             Instruction::DLOAD_3 => {
                 self.put_opcode(inst.opcode());
-                self.code_byte_vec.put_be(3);
-                self.inc_stack(Type::Double);
-                self.inc_stack(Type::Double);
+                self.load_local(3, Type::Double)?;
             }
             Instruction::ALOAD_0 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(0);
-                self.inc_stack(self.get_local(0)?);
+                self.load_local(0, Type::object_type())?;
             }
             Instruction::ALOAD_1 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(1);
-                self.inc_stack(self.get_local(1)?);
+                self.load_local(0, Type::object_type())?;
             }
             Instruction::ALOAD_2 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(2);
-                self.inc_stack(self.get_local(2)?);
+                self.load_local(0, Type::object_type())?;
             }
             Instruction::ALOAD_3 => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(3);
-                self.inc_stack(self.get_local(3)?);
+                self.load_local(0, Type::object_type())?;
             }
             Instruction::IALOAD => {
                 self.put_opcode(inst.opcode());
                 self.dec_stack(Type::Array(Box::new(Type::Int)))?;
+                self.dec_stack(Type::Int)?;
+                self.inc_stack(Type::Int);
             }
             Instruction::LALOAD => {
                 self.put_opcode(inst.opcode());
-                self.dec_stack();
+                self.dec_stack(Type::Array(Box::new(Type::Long)))?;
+                self.dec_stack(Type::Int)?;
+                self.inc_stack(Type::Long);
             }
             Instruction::FALOAD => {
                 self.put_opcode(inst.opcode());
-                self.dec_stack();
+                self.dec_stack(Type::Array(Box::new(Type::Float)))?;
+                self.dec_stack(Type::Int)?;
+                self.inc_stack(Type::Float);
             }
             Instruction::DALOAD => {
                 self.put_opcode(inst.opcode());
-                self.dec_stack();
+                self.dec_stack(Type::Array(Box::new(Type::Double)))?;
+                self.dec_stack(Type::Int)?;
+                self.inc_stack(Type::Double);
             }
             Instruction::AALOAD => {
                 self.put_opcode(inst.opcode());
-                self.dec_stack();
+                let array_inner_type = self.dec_array_stack()?;
+                self.dec_stack(Type::Int)?;
+                self.inc_stack(array_inner_type);
             }
             Instruction::BALOAD => {
                 self.put_opcode(inst.opcode());
-                self.dec_stack();
+                self.dec_stack(Type::Array(Box::new(Type::Byte)))?;
+                self.dec_stack(Type::Int)?;
+                self.inc_stack(Type::Byte);
             }
             Instruction::CALOAD => {
                 self.put_opcode(inst.opcode());
-                self.dec_stack();
+                self.dec_stack(Type::Array(Box::new(Type::Char)))?;
+                self.dec_stack(Type::Int)?;
+                self.inc_stack(Type::Char);
             }
             Instruction::SALOAD => {
                 self.put_opcode(inst.opcode());
-                self.dec_stack();
+                self.dec_stack(Type::Array(Box::new(Type::Short)))?;
+                self.dec_stack(Type::Int)?;
+                self.inc_stack(Type::Short);
             }
             Instruction::ISTORE(_) => {}
             Instruction::LSTORE(_) => {}
@@ -568,14 +630,35 @@ impl MethodWriter {
             }
         }
 
-        self.inc_stack();
+        self.inc_stack(constant_object.constant_type());
     }
 
     pub fn visit_return(&mut self, return_opcode: Opcode) -> KapiResult<()> {
         self.put_opcode(return_opcode);
 
-        if return_opcode != Opcode::RETURN {
-            self.dec_stack();
+        match return_opcode {
+            Opcode::RETURN => {}
+            Opcode::IRETURN => {
+                self.dec_stack(Type::Int)?;
+            }
+            Opcode::FRETURN => {
+                self.dec_stack(Type::Float)?;
+            }
+            Opcode::LRETURN => {
+                self.dec_stack(Type::Long)?;
+            }
+            Opcode::DRETURN => {
+                self.dec_stack(Type::Double)?;
+            }
+            Opcode::ARETURN => {
+                self.dec_object_stack()?;
+            }
+            _ => {
+                return Err(KapiError::ArgError(format!(
+                    "Invalid return opcode `{:#04x}`",
+                    return_opcode as u8
+                )));
+            }
         }
 
         Ok(())
