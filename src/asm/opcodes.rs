@@ -923,7 +923,7 @@ pub enum ConstantObject {
     MethodHandle(RefKind, String, String, String),
     MethodType(String),
     /// # Arguments
-    /// - [String]: method name
+    /// - [String]: constant name
     /// - [Type]: field descriptor
     /// - [Handle]: bootstrap method handle
     /// - [Vec<ConstantObject>]: bootstrap method arguments

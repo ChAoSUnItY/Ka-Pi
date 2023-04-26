@@ -14,7 +14,9 @@ use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
 
 pub trait MethodVisitor {
-    fn visit_end(&mut self) {}
+    fn visit_end(&mut self) -> KapiResult<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Default)]
@@ -90,7 +92,7 @@ impl MethodWriter {
                 Err(KapiError::StateError(format!(
                     "Unexpected type `{}` on stack while expects type `{}` on stack to be popped",
                     typ.to_string(),
-                    expected_item_type.to_string()
+                    expected_item_type.descriptor()
                 )))
             } else {
                 Ok(())
@@ -109,7 +111,7 @@ impl MethodWriter {
             } else {
                 Err(KapiError::StateError(format!(
                     "Unexpected type `{}` on stack while expects array type on stack to be popped",
-                    typ.to_string(),
+                    typ.descriptor(),
                 )))
             }
         } else {
@@ -126,7 +128,7 @@ impl MethodWriter {
             } else {
                 Err(KapiError::StateError(format!(
                     "Unexpected type `{}` on stack while expects object type on stack to be popped",
-                    typ.to_string(),
+                    typ.descriptor(),
                 )))
             }
         } else {
@@ -153,8 +155,8 @@ impl MethodWriter {
                 Err(KapiError::StateError(format!(
                     "Expects local variable at index {} with type `{}` but got type `{}`",
                     index,
-                    expected_local_type.to_string(),
-                    typ.to_string()
+                    expected_local_type.descriptor(),
+                    typ.descriptor()
                 )))
             }
         } else {
@@ -165,11 +167,11 @@ impl MethodWriter {
             error_message.push_str("Locals\n");
 
             for (index, typ) in self.locals.iter().sorted_by_key(|(index, _)| **index) {
-                error_message.push_str(format!("{:<6}| {}\n", index, typ.to_string()).as_str());
+                error_message.push_str(format!("{:<6}| {}\n", index, typ.descriptor()).as_str());
 
                 if matches!(typ, Type::Long | Type::Double) {
                     error_message.push_str(
-                        format!("{:<6}| {}\n", format!("({})", index), typ.to_string()).as_str(),
+                        format!("{:<6}| {}\n", format!("({})", index), typ.descriptor()).as_str(),
                     );
                 }
             }
@@ -182,6 +184,21 @@ impl MethodWriter {
         self.inc_stack(self.get_local(index, expected_local_type)?);
 
         Ok(())
+    }
+    
+    fn store_local(&mut self, index: usize, load_type: Type) -> KapiResult<()> {
+        if let Some(exists_type) = self.locals.get(&index) {
+            // Attempt to store into exist type, if load_type is not same as exists_type, then return
+            // error.
+            if exists_type.implicit_cmp(&load_type) {
+                Ok(())
+            } else {
+                // Type mismatch
+                Err(KapiError::StateError(format!("Attempt to store local variable with type `{}` to index {} but local variable is already persisted with type `{}`", load_type.descriptor(), index, exists_type.descriptor())))
+            }
+        } else {
+            Ok(())
+        }
     }
 
     /// Emit opcode with a [Opcode], following by the companion data which has dynamic length
@@ -454,11 +471,31 @@ impl MethodWriter {
                 self.dec_stack(Type::Int)?;
                 self.inc_stack(Type::Short);
             }
-            Instruction::ISTORE(_) => {}
-            Instruction::LSTORE(_) => {}
-            Instruction::FSTORE(_) => {}
-            Instruction::DSTORE(_) => {}
-            Instruction::ASTORE(_) => {}
+            Instruction::ISTORE(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.store_local(*val as usize, Type::Int)?;
+            }
+            Instruction::LSTORE(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.store_local(*val as usize, Type::Long)?;
+            }
+            Instruction::FSTORE(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.store_local(*val as usize, Type::Float)?;
+            }
+            Instruction::DSTORE(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.store_local(*val as usize, Type::Double)?;
+            }
+            Instruction::ASTORE(val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*val);
+                self.store_local(*val as usize, Type::object_type())?;
+            }
             Instruction::ISTORE_0 => {}
             Instruction::ISTORE_1 => {}
             Instruction::ISTORE_2 => {}
@@ -682,7 +719,7 @@ impl MethodWriter {
 }
 
 impl MethodVisitor for MethodWriter {
-    fn visit_end(&mut self) {
+    fn visit_end(&mut self) -> KapiResult<()> {
         let Self {
             byte_vec,
             symbol_table,
@@ -744,5 +781,7 @@ impl MethodVisitor for MethodWriter {
             byte_vec.put_be(0u16);
             // TODO_END
         }
+        
+        Ok(())
     }
 }

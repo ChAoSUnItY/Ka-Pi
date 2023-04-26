@@ -40,15 +40,11 @@ impl Type {
     }
 
     pub fn object_type() -> Self {
-        static OBJECT_TYPE: Type = Type::ObjectRef("java/lang/Object".to_string());
-
-        OBJECT_TYPE.clone()
+        Type::ObjectRef("java/lang/Object".to_string())
     }
 
     pub fn string_type() -> Self {
-        static STRING_TYPE: Type = Type::ObjectRef("java/lang/String".to_string());
-
-        STRING_TYPE.clone()
+        Type::ObjectRef("java/lang/String".to_string())
     }
 
     pub(crate) fn from_method_descriptor(method_descriptor: &str) -> KapiResult<(Vec<Self>, Self)> {
@@ -211,6 +207,20 @@ impl Type {
             Type::Array(inner_type) => format!("[{}", inner_type.descriptor()),
             Type::ObjectRef(type_ref) => format!("L{};", type_ref),
             Type::Null => unreachable!(),
+        }
+    }
+    
+    pub fn implicit_cmp(&self, other: &Self) -> bool {
+        if let Self::ObjectRef(_) = self {
+            matches!(other, Self::ObjectRef(_))
+        } else if let Self::Array(inner_type) = self {
+            if let Self::Array(other_inner_type) = self {
+                inner_type.implicit_cmp(other_inner_type)
+            } else {
+                false
+            }
+        } else {
+            self == other
         }
     }
 }
