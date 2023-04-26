@@ -86,16 +86,16 @@ impl MethodWriter {
         self.stack_status.len() - 1
     }
 
-    fn dec_stack(&mut self, expected_item_type: Type) -> KapiResult<()> {
+    fn dec_stack(&mut self, expected_item_type: Type) -> KapiResult<Type> {
         if let Some(typ) = self.stack_status.pop_back() {
-            if expected_item_type != typ {
+            if expected_item_type.implicit_cmp(&typ) {
                 Err(KapiError::StateError(format!(
                     "Unexpected type `{}` on stack while expects type `{}` on stack to be popped",
                     typ.to_string(),
                     expected_item_type.descriptor()
                 )))
             } else {
-                Ok(())
+                Ok(typ)
             }
         } else {
             Err(KapiError::StateError(format!(
@@ -185,7 +185,7 @@ impl MethodWriter {
 
         Ok(())
     }
-    
+
     fn store_local(&mut self, index: usize, load_type: Type) -> KapiResult<()> {
         if let Some(exists_type) = self.locals.get(&index) {
             // Attempt to store into exist type, if load_type is not same as exists_type, then return
@@ -474,48 +474,133 @@ impl MethodWriter {
             Instruction::ISTORE(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
+                self.dec_stack(Type::Int)?;
                 self.store_local(*val as usize, Type::Int)?;
             }
             Instruction::LSTORE(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
+                self.dec_stack(Type::Long)?;
                 self.store_local(*val as usize, Type::Long)?;
             }
             Instruction::FSTORE(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
+                self.dec_stack(Type::Float)?;
                 self.store_local(*val as usize, Type::Float)?;
             }
             Instruction::DSTORE(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
+                self.dec_stack(Type::Double)?;
                 self.store_local(*val as usize, Type::Double)?;
             }
             Instruction::ASTORE(val) => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*val);
-                self.store_local(*val as usize, Type::object_type())?;
+                let popped_object_type = self.dec_stack(Type::object_type())?;
+                self.store_local(*val as usize, popped_object_type)?;
             }
-            Instruction::ISTORE_0 => {}
-            Instruction::ISTORE_1 => {}
-            Instruction::ISTORE_2 => {}
-            Instruction::ISTORE_3 => {}
-            Instruction::LSTORE_0 => {}
-            Instruction::LSTORE_1 => {}
-            Instruction::LSTORE_2 => {}
-            Instruction::LSTORE_3 => {}
-            Instruction::FSTORE_0 => {}
-            Instruction::FSTORE_1 => {}
-            Instruction::FSTORE_2 => {}
-            Instruction::FSTORE_3 => {}
-            Instruction::DSTORE_0 => {}
-            Instruction::DSTORE_1 => {}
-            Instruction::DSTORE_2 => {}
-            Instruction::DSTORE_3 => {}
-            Instruction::ASTORE_0 => {}
-            Instruction::ASTORE_1 => {}
-            Instruction::ASTORE_2 => {}
-            Instruction::ASTORE_3 => {}
+            Instruction::ISTORE_0 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Int)?;
+                self.store_local(0, Type::Int)?;
+            }
+            Instruction::ISTORE_1 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Int)?;
+                self.store_local(1, Type::Int)?;
+            }
+            Instruction::ISTORE_2 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Int)?;
+                self.store_local(2, Type::Int)?;
+            }
+            Instruction::ISTORE_3 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Int)?;
+                self.store_local(3, Type::Int)?;
+            }
+            Instruction::LSTORE_0 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Long)?;
+                self.store_local(0, Type::Long)?;
+            }
+            Instruction::LSTORE_1 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Long)?;
+                self.store_local(1, Type::Long)?;
+            }
+            Instruction::LSTORE_2 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Long)?;
+                self.store_local(2, Type::Long)?;
+            }
+            Instruction::LSTORE_3 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Long)?;
+                self.store_local(3, Type::Long)?;
+            }
+            Instruction::FSTORE_0 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Float)?;
+                self.store_local(0, Type::Float)?;
+            }
+            Instruction::FSTORE_1 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Float)?;
+                self.store_local(1, Type::Float)?;
+            }
+            Instruction::FSTORE_2 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Float)?;
+                self.store_local(2, Type::Float)?;
+            }
+            Instruction::FSTORE_3 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Float)?;
+                self.store_local(3, Type::Float)?;
+            }
+            Instruction::DSTORE_0 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Double)?;
+                self.store_local(0, Type::Double)?;
+            }
+            Instruction::DSTORE_1 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Double)?;
+                self.store_local(1, Type::Double)?;
+            }
+            Instruction::DSTORE_2 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Double)?;
+                self.store_local(2, Type::Double)?;
+            }
+            Instruction::DSTORE_3 => {
+                self.put_opcode(inst.opcode());
+                self.dec_stack(Type::Double)?;
+                self.store_local(3, Type::Double)?;
+            }
+            Instruction::ASTORE_0 => {
+                self.put_opcode(inst.opcode());
+                let popped_object_type = self.dec_stack(Type::object_type())?;
+                self.store_local(0, popped_object_type)?;
+            }
+            Instruction::ASTORE_1 => {
+                self.put_opcode(inst.opcode());
+                let popped_object_type = self.dec_stack(Type::object_type())?;
+                self.store_local(1, popped_object_type)?;
+            }
+            Instruction::ASTORE_2 => {
+                self.put_opcode(inst.opcode());
+                let popped_object_type = self.dec_stack(Type::object_type())?;
+                self.store_local(2, popped_object_type)?;
+            }
+            Instruction::ASTORE_3 => {
+                self.put_opcode(inst.opcode());
+                let popped_object_type = self.dec_stack(Type::object_type())?;
+                self.store_local(3, popped_object_type)?;
+            }
             Instruction::IASTORE => {}
             Instruction::LASTORE => {}
             Instruction::FASTORE => {}
@@ -781,7 +866,7 @@ impl MethodVisitor for MethodWriter {
             byte_vec.put_be(0u16);
             // TODO_END
         }
-        
+
         Ok(())
     }
 }
