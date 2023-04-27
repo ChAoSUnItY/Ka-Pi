@@ -806,78 +806,410 @@ impl MethodWriter {
                 self.push_stack_raw(value1);
                 self.push_stack_raw(value2);
             }
-            Instruction::IADD => {}
-            Instruction::LADD => {}
-            Instruction::FADD => {}
-            Instruction::DADD => {}
-            Instruction::ISUB => {}
-            Instruction::LSUB => {}
-            Instruction::FSUB => {}
-            Instruction::DSUB => {}
-            Instruction::IMUL => {}
-            Instruction::LMUL => {}
-            Instruction::FMUL => {}
-            Instruction::DMUL => {}
-            Instruction::IDIV => {}
-            Instruction::LDIV => {}
-            Instruction::FDIV => {}
-            Instruction::DDIV => {}
-            Instruction::IREM => {}
-            Instruction::LREM => {}
-            Instruction::FREM => {}
-            Instruction::DREM => {}
-            Instruction::INEG => {}
-            Instruction::LNEG => {}
-            Instruction::FNEG => {}
-            Instruction::DNEG => {}
-            Instruction::ISHL => {}
-            Instruction::LSHL => {}
-            Instruction::ISHR => {}
-            Instruction::LSHR => {}
-            Instruction::IUSHR => {}
-            Instruction::LUSHR => {}
-            Instruction::IAND => {}
-            Instruction::LAND => {}
-            Instruction::IOR => {}
-            Instruction::LOR => {}
-            Instruction::IXOR => {}
-            Instruction::LXOR => {}
-            Instruction::IINC(_, _) => {}
-            Instruction::I2L => {}
-            Instruction::I2F => {}
-            Instruction::I2D => {}
-            Instruction::L2I => {}
-            Instruction::L2F => {}
-            Instruction::L2D => {}
-            Instruction::F2I => {}
-            Instruction::F2L => {}
-            Instruction::F2D => {}
-            Instruction::D2I => {}
-            Instruction::D2L => {}
-            Instruction::D2F => {}
-            Instruction::I2B => {}
-            Instruction::I2C => {}
-            Instruction::I2S => {}
-            Instruction::LCMP => {}
-            Instruction::FCMPL => {}
-            Instruction::FCMPG => {}
-            Instruction::DCMPL => {}
-            Instruction::DCMPG => {}
-            Instruction::IFEQ(_) => {}
-            Instruction::IFNE(_) => {}
-            Instruction::IFLT(_) => {}
-            Instruction::IFGE(_) => {}
-            Instruction::IFGT(_) => {}
-            Instruction::IFLE(_) => {}
-            Instruction::IF_ICMPEQ(_) => {}
-            Instruction::IF_ICMPNE(_) => {}
-            Instruction::IF_ICMPLT(_) => {}
-            Instruction::IF_ICMPGE(_) => {}
-            Instruction::IF_ICMPGT(_) => {}
-            Instruction::IF_ICMPLE(_) => {}
-            Instruction::IF_ACMPEQ(_) => {}
-            Instruction::IF_ACMPNE(_) => {}
-            Instruction::GOTO(_) => {}
+            Instruction::IADD => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LADD => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::FADD => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Float);
+            }
+            Instruction::DADD => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Double);
+            }
+            Instruction::ISUB => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LSUB => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::FSUB => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Float);
+            }
+            Instruction::DSUB => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Double);
+            }
+            Instruction::IMUL => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LMUL => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::FMUL => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Float);
+            }
+            Instruction::DMUL => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Double);
+            }
+            Instruction::IDIV => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LDIV => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::FDIV => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Float);
+            }
+            Instruction::DDIV => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Double);
+            }
+            Instruction::IREM => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LREM => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::FREM => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Float);
+            }
+            Instruction::DREM => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Double);
+            }
+            Instruction::INEG => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LNEG => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::FNEG => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Float);
+            }
+            Instruction::DNEG => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Double);
+            }
+            Instruction::ISHL => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LSHL => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::ISHR => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LSHR => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::IUSHR => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::LUSHR => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::IAND => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LAND => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::IOR => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LOR => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::IXOR => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::LXOR => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::IINC(index, val) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*index);
+                self.code_byte_vec.put_be(*val);
+            }
+            Instruction::I2L => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::I2F => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Float);
+            }
+            Instruction::I2D => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Double);
+            }
+            Instruction::L2I => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::L2F => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Float);
+            }
+            Instruction::L2D => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Double);
+            }
+            Instruction::F2I => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::F2L => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::F2D => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Double);
+            }
+            Instruction::D2I => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::D2L => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Long);
+            }
+            Instruction::D2F => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Float);
+            }
+            Instruction::I2B => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Byte);
+            }
+            Instruction::I2C => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Char);
+            }
+            Instruction::I2S => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Int)?;
+                self.push_stack(Type::Short);
+            }
+            Instruction::LCMP => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Long)?;
+                self.pop_stack_expect(Type::Long)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::FCMPL => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::FCMPG => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Float)?;
+                self.pop_stack_expect(Type::Float)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::DCMPL => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::DCMPG => {
+                self.put_opcode(inst.opcode());
+                self.pop_stack_expect(Type::Double)?;
+                self.pop_stack_expect(Type::Double)?;
+                self.push_stack(Type::Int);
+            }
+            Instruction::IFEQ(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IFNE(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IFLT(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IFGE(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IFGT(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IFLE(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IF_ICMPEQ(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IF_ICMPNE(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IF_ICMPLT(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IF_ICMPGE(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IF_ICMPGT(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IF_ICMPLE(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::Int)?;
+                self.pop_stack_expect(Type::Int)?;
+            }
+            Instruction::IF_ACMPEQ(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::object_type())?;
+                self.pop_stack_expect(Type::object_type())?;
+            }
+            Instruction::IF_ACMPNE(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+                self.pop_stack_expect(Type::object_type())?;
+                self.pop_stack_expect(Type::object_type())?;
+            }
+            Instruction::GOTO(branch_offset) => {
+                self.put_opcode(inst.opcode());
+                self.code_byte_vec.put_be(*branch_offset);
+            }
             Instruction::JSR(_) => {}
             Instruction::RET(_) => {}
             Instruction::TABLESWITCH => {}
