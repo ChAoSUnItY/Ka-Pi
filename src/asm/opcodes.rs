@@ -5,8 +5,9 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::BitOr;
 
-use num_enum::IntoPrimitive;
+use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
+use strum::{EnumIter, IntoEnumIterator};
 
 use crate::asm::handle::Handle;
 
@@ -14,7 +15,9 @@ use crate::asm::handle::Handle;
 // major version in the 16 least significant bits).
 
 #[repr(u32)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, TryFromPrimitive,
+)]
 pub enum JavaVersion {
     V1_1 = 3 << 16 | 45,
     V1_2 = 0 << 16 | 46,
@@ -74,7 +77,7 @@ pub const V_PREVIEW: u32 = 0xFFFF0000;
 
 pub(crate) trait AccessFlag<'a, T>
 where
-    T: Into<u16> + Copy + 'a,
+    T: Into<u16> + Copy + IntoEnumIterator + 'a,
     Self: IntoIterator<Item = &'a T> + Sized,
 {
     fn fold_flags(self) -> u16 {
@@ -86,7 +89,17 @@ where
 
 #[repr(u16)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize,
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    IntoPrimitive,
+    Serialize,
+    Deserialize,
+    EnumIter,
 )]
 pub enum ClassAccessFlag {
     Public = 0x0001,
@@ -105,7 +118,17 @@ impl<'a> AccessFlag<'a, ClassAccessFlag> for &'a Vec<ClassAccessFlag> {}
 
 #[repr(u16)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize,
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    IntoPrimitive,
+    Serialize,
+    Deserialize,
+    EnumIter,
 )]
 pub enum FieldAccessFlag {
     Public = 0x0001,
@@ -124,7 +147,17 @@ impl<'a> AccessFlag<'a, FieldAccessFlag> for &'a Vec<FieldAccessFlag> {}
 
 #[repr(u16)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, IntoPrimitive, Serialize, Deserialize,
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    IntoPrimitive,
+    Serialize,
+    Deserialize,
+    EnumIter,
 )]
 pub enum MethodAccessFlag {
     Public = 0x0001,
@@ -195,7 +228,9 @@ pub const ACC_MODULE: u32 = 0x8000;
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
 
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, TryFromPrimitive,
+)]
 pub enum ArrayType {
     Boolean = 4,
     Char = 5,
@@ -220,7 +255,9 @@ pub const T_LONG: u8 = 11;
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.4.8.
 
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, TryFromPrimitive,
+)]
 pub enum RefKind {
     GetField = 1,
     GetStatic = 2,
@@ -288,7 +325,9 @@ pub const F_SAME1: i8 = 4;
 // noinspection SpellCheckingInspection
 /// [Opcode] represents low level JVM bytecode opcodes without any accompany data.
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, TryFromPrimitive,
+)]
 #[allow(non_camel_case_types)]
 pub enum Opcode {
     NOP = 0,
