@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::node::types::BaseType;
 
@@ -27,7 +29,7 @@ pub trait RuntimeAnnotationVisitor {
         &mut self,
         descriptor: &str,
     ) -> Box<dyn InnerRuntimeAnnotationVisitor + '_> {
-        Box::new(AnnotationVisitorImpl::default())
+        Box::<AnnotationVisitorImpl>::default()
     }
 
     fn visit_end(&mut self) {}
@@ -36,7 +38,7 @@ pub trait RuntimeAnnotationVisitor {
 #[allow(unused_variables)]
 pub trait RuntimeAnnotationParameterVisitor {
     fn visit_parameter(&mut self) -> Box<dyn ParameterVisitor + '_> {
-        Box::new(AnnotationVisitorImpl::default())
+        Box::<AnnotationVisitorImpl>::default()
     }
 
     fn visit_end(&mut self) {}
@@ -48,7 +50,7 @@ pub trait ParameterVisitor {
         &mut self,
         descriptor: &str,
     ) -> Box<dyn InnerRuntimeAnnotationVisitor + '_> {
-        Box::new(AnnotationVisitorImpl::default())
+        Box::<AnnotationVisitorImpl>::default()
     }
 
     fn visit_end(&mut self) {}
@@ -63,7 +65,7 @@ pub trait InnerRuntimeAnnotationVisitor {
     fn visit_class(&mut self, descriptor: &str) {}
 
     fn visit_annotation(&mut self) -> Box<dyn RuntimeAnnotationVisitor + '_> {
-        Box::new(AnnotationVisitorImpl::default())
+        Box::<AnnotationVisitorImpl>::default()
     }
 
     fn visit_array(&mut self, len: usize) {}
@@ -81,69 +83,71 @@ impl ParameterVisitor for AnnotationVisitorImpl {}
 impl InnerRuntimeAnnotationVisitor for AnnotationVisitorImpl {}
 
 #[derive(Debug)]
-struct AnnotationWriter<'output, BV> where BV: ByteVec {
-    output: &'output mut BV,
+struct AnnotationWriter {
+    output: Rc<RefCell<ByteVecImpl>>
 }
 
-impl<'output, BV> AnnotationWriter<'output, BV> where BV: ByteVec {
-    pub(crate) fn new(output: &'output mut BV) -> Self {
+impl AnnotationWriter {
+    pub(crate) fn new(output: &Rc<RefCell<ByteVecImpl>>) -> Self {
         Self {
-            output,
+            output: output.clone(),
         }
     }
 }
 
-impl<'output, BV> AnnotationVisitor for AnnotationWriter<'output, BV> where BV: ByteVec {
+impl AnnotationVisitor for AnnotationWriter {
     fn visit_runtime_annotation(&mut self, visible: bool) -> Box<dyn RuntimeAnnotationVisitor + '_> {
-        Box::new(RuntimeAnnotationWriter::new(self.output, visible))
+        Box::new(RuntimeAnnotationWriter::new(&self.output, visible))
     }
 }
 
-struct RuntimeAnnotationWriter<'output, BV> where BV: ByteVec {
-    output: &'output mut BV,
+struct RuntimeAnnotationWriter {
+    output: Rc<RefCell<ByteVecImpl>>,
     visible: bool,
 }
 
-impl<'output, BV> RuntimeAnnotationWriter<'output, BV> where BV: ByteVec {
-    pub(crate) fn new(output: &'output mut BV, visible: bool) -> Self {
+impl RuntimeAnnotationWriter {
+    pub(crate) fn new(output: &Rc<RefCell<ByteVecImpl>>, visible: bool) -> Self {
         Self {
-            output,
+            output: output.clone(),
             visible
         }
     }
 }
 
-impl<'output, BV> RuntimeAnnotationVisitor for RuntimeAnnotationWriter<'output, BV> where BV: ByteVec {
+impl RuntimeAnnotationVisitor for RuntimeAnnotationWriter {
     fn visit_annotation(&mut self, descriptor: &str) -> Box<dyn InnerRuntimeAnnotationVisitor + '_> {
-        Box::new(InnerRuntimeAnnotationWriter::new(self.output))
+        Box::new(InnerRuntimeAnnotationWriter::new(&self.output))
     }
 }
 
-struct InnerRuntimeAnnotationWriter<'output, BV> where BV: ByteVec {
-    output: &'output mut BV,
+struct InnerRuntimeAnnotationWriter {
+    output: Rc<RefCell<ByteVecImpl>>,
 }
 
-impl<'output, BV> InnerRuntimeAnnotationWriter<'output, BV> where BV: ByteVec {
-    pub(crate) fn new(output: &'output mut BV) -> Self {
+impl InnerRuntimeAnnotationWriter {
+    pub(crate) fn new(output: &Rc<RefCell<ByteVecImpl>>) -> Self {
         Self {
-            output
+            output: output.clone()
         }
     }
 }
 
-impl<'output, BV> InnerRuntimeAnnotationVisitor for InnerRuntimeAnnotationWriter<'output, BV> where BV: ByteVec {
+impl InnerRuntimeAnnotationVisitor for InnerRuntimeAnnotationWriter {
     
 }
 
 #[cfg(test)]
 mod test {
+    use std::cell::RefCell;
+    use std::rc::Rc;
     use crate::asm::annotation::AnnotationWriter;
     use crate::asm::byte_vec::ByteVecImpl;
 
     #[test]
     fn test_annotation_writer() {
-        let mut output = ByteVecImpl::with_capacity(32);
-        let mut writer = AnnotationWriter::new(&mut output); 
+        let mut output = Rc::new(RefCell::new(ByteVecImpl::with_capacity(32)));
+        let mut writer = AnnotationWriter::new(&output);
         
         println!("{:?}", output);
     }    
