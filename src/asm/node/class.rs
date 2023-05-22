@@ -9,8 +9,8 @@ use nom::number::complete::{be_u16, be_u32, be_u8};
 use nom::sequence::{pair, tuple};
 use nom::{IResult, Parser};
 use strum::IntoEnumIterator;
-use crate::asm::node::utils::mask_access_flags;
 
+use crate::asm::node::utils::mask_access_flags;
 use crate::asm::opcodes::{ClassAccessFlag, JavaVersion};
 use crate::asm::symbol::{Constant, ConstantTag};
 use crate::error::{KapiError, KapiResult};
@@ -20,6 +20,9 @@ pub struct Class {
     java_version: JavaVersion,
     constant_pool: Vec<Constant>,
     access_flags: Vec<ClassAccessFlag>,
+    this_class: u16,
+    super_class: u16,
+    interfaces: Vec<u16>,
 }
 
 pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
@@ -46,6 +49,7 @@ pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
 
     match class(&class_bytes[..]) {
         Ok((remain, class)) => {
+            // TODO: uncomment this when class parser is done
             // if !remain.is_empty() {
             //     Err(KapiError::ClassParseError(format!("Unable to parse class file {}, reason: class is fully parsed but there are {} bytes left", class_path.display(), remain.len())))
             // } else {
@@ -63,10 +67,13 @@ pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
 }
 
 fn class(input: &[u8]) -> IResult<&[u8], Class> {
-    let (input, _) = magic_number(input)?;
-    let (input, java_version) = java_version(input)?;
+    let (input, _) = tag(&[0xCA, 0xFE, 0xBA, 0xBE])(input)?;
+    let (input, java_version) = map_res(be_u32, JavaVersion::try_from)(input)?;
     let (input, constant_pool) = constant_pool(input)?;
-    let (input, access_flags) = access_flags(input)?;
+    let (input, access_flags) = map(be_u16, mask_access_flags)(input)?;
+    let (input, this_class) = be_u16(input)?;
+    let (input, super_class) = be_u16(input)?;
+    let (input, interfaces) = interfaces(input)?;
 
     Ok((
         input,
@@ -74,16 +81,11 @@ fn class(input: &[u8]) -> IResult<&[u8], Class> {
             java_version,
             constant_pool,
             access_flags,
+            this_class,
+            super_class,
+            interfaces,
         },
     ))
-}
-
-fn magic_number(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    tag(&[0xCA, 0xFE, 0xBA, 0xBE])(input)
-}
-
-fn java_version(input: &[u8]) -> IResult<&[u8], JavaVersion> {
-    map_res(be_u32, JavaVersion::try_from)(input)
 }
 
 fn constant_pool(input: &[u8]) -> IResult<&[u8], Vec<Constant>> {
@@ -208,8 +210,18 @@ fn constant(input: &[u8]) -> IResult<&[u8], Constant> {
     Ok((input, constant))
 }
 
-fn access_flags(input: &[u8]) -> IResult<&[u8], Vec<ClassAccessFlag>> {
-    map(be_u16, mask_access_flags)(input)
+fn interfaces(input: &[u8]) -> IResult<&[u8], Vec<u16>> {
+    let (mut input, len) = be_u16(input)?;
+    let mut interfaces = Vec::with_capacity(len as usize);
+
+    for _ in 0..len {
+        let (remain, interface_index) = be_u16(input)?;
+
+        interfaces.push(interface_index);
+        input = remain;
+    }
+
+    Ok((input, interfaces))
 }
 
 #[cfg(test)]
