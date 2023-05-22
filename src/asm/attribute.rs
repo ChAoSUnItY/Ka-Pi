@@ -607,9 +607,7 @@ pub enum NestedClassAccessFlag {
     Enum = 0x4000,
 }
 
-impl AccessFlag<NestedClassAccessFlag> for NestedClassAccessFlag {}
-impl<'a> AccessFlags<'a, NestedClassAccessFlag> for &'a [NestedClassAccessFlag] {}
-impl<'a> AccessFlags<'a, NestedClassAccessFlag> for &'a Vec<NestedClassAccessFlag> {}
+impl AccessFlag for NestedClassAccessFlag {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LineNumber {
@@ -724,7 +722,4 @@ pub enum ParameterAccessFlag {
     Synthetic = 0x1000,
 }
 
-
-impl AccessFlag<ParameterAccessFlag> for ParameterAccessFlag {}
-impl<'a> AccessFlags<'a, ParameterAccessFlag> for &'a [ParameterAccessFlag] {}
-impl<'a> AccessFlags<'a, ParameterAccessFlag> for &'a Vec<ParameterAccessFlag> {}
+impl AccessFlag for ParameterAccessFlag {}

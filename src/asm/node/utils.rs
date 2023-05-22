@@ -3,7 +3,7 @@ use strum::IntoEnumIterator;
 
 use crate::asm::opcodes::{AccessFlag, ClassAccessFlag};
 
-pub(crate) fn mask_access_flags<AC: AccessFlag<AC> + Into<u16> + Copy + IntoEnumIterator>(
+pub(crate) fn mask_access_flags<AC: AccessFlag>(
     bytes: u16,
 ) -> Vec<AC> {
     AC::iter()

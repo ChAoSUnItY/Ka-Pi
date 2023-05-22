@@ -75,11 +75,15 @@ pub const V_PREVIEW: u32 = 0xFFFF0000;
 // - https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.6-200-A.1
 // - https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.25
 
-pub(crate) trait AccessFlag<T> where T: Into<u16> + Copy + IntoEnumIterator {}
+pub(crate) trait AccessFlag
+where
+    Self: Into<u16> + Copy + IntoEnumIterator,
+{
+}
 
 pub(crate) trait AccessFlags<'a, T>
 where
-    T: AccessFlag<T> + Into<u16> + Copy + IntoEnumIterator + 'a,
+    T: AccessFlag + 'a,
     Self: IntoIterator<Item = &'a T> + Sized,
 {
     fn fold_flags(self) -> u16 {
@@ -88,6 +92,9 @@ where
             .fold(0, u16::bitor)
     }
 }
+
+impl<'a, T> AccessFlags<'a, T> for &'a [T] where T: AccessFlag {}
+impl<'a, T> AccessFlags<'a, T> for &'a Vec<T> where T: AccessFlag {}
 
 #[repr(u16)]
 #[derive(
@@ -115,9 +122,7 @@ pub enum ClassAccessFlag {
     Module = 0x8000,
 }
 
-impl AccessFlag<ClassAccessFlag> for ClassAccessFlag {}
-impl<'a> AccessFlags<'a, ClassAccessFlag> for &'a [ClassAccessFlag] {}
-impl<'a> AccessFlags<'a, ClassAccessFlag> for &'a Vec<ClassAccessFlag> {}
+impl AccessFlag for ClassAccessFlag {}
 
 #[repr(u16)]
 #[derive(
@@ -145,9 +150,7 @@ pub enum FieldAccessFlag {
     Enum = 0x4000,
 }
 
-impl AccessFlag<FieldAccessFlag> for FieldAccessFlag {}
-impl<'a> AccessFlags<'a, FieldAccessFlag> for &'a [FieldAccessFlag] {}
-impl<'a> AccessFlags<'a, FieldAccessFlag> for &'a Vec<FieldAccessFlag> {}
+impl AccessFlag for FieldAccessFlag {}
 
 #[repr(u16)]
 #[derive(
@@ -178,10 +181,7 @@ pub enum MethodAccessFlag {
     Synthetic = 0x1000,
 }
 
-
-impl AccessFlag<MethodAccessFlag> for MethodAccessFlag {}
-impl<'a> AccessFlags<'a, MethodAccessFlag> for &'a [MethodAccessFlag] {}
-impl<'a> AccessFlags<'a, MethodAccessFlag> for &'a Vec<MethodAccessFlag> {}
+impl AccessFlag for MethodAccessFlag {}
 
 // class, field, method
 pub const ACC_PUBLIC: u32 = 0x0001;
