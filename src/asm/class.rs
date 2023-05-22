@@ -104,6 +104,7 @@ impl ClassVisitor for ClassWriter {
         self.methods.push(method_byte_vec.clone());
 
         MethodWriter::new(
+            &self.version,
             &method_byte_vec,
             &self.symbol_table,
             access_flags,

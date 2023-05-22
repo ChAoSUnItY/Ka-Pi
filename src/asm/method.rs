@@ -8,7 +8,7 @@ use itertools::Itertools;
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::constants;
 use crate::asm::label::Label;
-use crate::asm::opcodes::{AccessFlag, ConstantObject, Instruction, MethodAccessFlag, Opcode};
+use crate::asm::opcodes::{AccessFlag, ConstantObject, Instruction, JavaVersion, MethodAccessFlag, Opcode};
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
@@ -25,6 +25,8 @@ pub struct MethodVisitorImpl {}
 impl MethodVisitor for MethodVisitorImpl {}
 
 pub struct MethodWriter {
+    // Class file predefined info
+    java_version: JavaVersion,
     // Internal writing buffers
     byte_vec: Rc<RefCell<ByteVecImpl>>,
     symbol_table: Rc<RefCell<SymbolTable>>,
@@ -43,6 +45,7 @@ pub struct MethodWriter {
 
 impl MethodWriter {
     pub(crate) fn new<F>(
+        java_version: &JavaVersion,
         byte_vec: &Rc<RefCell<ByteVecImpl>>,
         symbol_table: &Rc<RefCell<SymbolTable>>,
         access_flags: F,
@@ -66,6 +69,7 @@ impl MethodWriter {
         }
 
         Ok(Self {
+            java_version: *java_version,
             byte_vec: byte_vec.clone(),
             symbol_table: symbol_table.clone(),
             access_flags,
@@ -1210,16 +1214,33 @@ impl MethodWriter {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*branch_offset);
             }
-            Instruction::JSR(_) => {}
-            Instruction::RET(_) => {}
+            Instruction::JSR(_) => {
+                if (self.java_version as u32) < (JavaVersion::V1_7 as u32) {
+                    return Err(KapiError::StateError(format!(
+                        "Deprecated opcode JSR should not be used after Java 7"
+                    )));
+                } else {
+                    return Err(KapiError::StateError(format!(
+                        "Opcode JSR is not yet implemented"
+                    )))
+                }
+            }
+            Instruction::RET(_) => {
+                if (self.java_version as u32) < (JavaVersion::V1_7 as u32) {
+                    return Err(KapiError::StateError(format!(
+                        "Deprecated opcode RET should not be used after Java 7"
+                    )));
+                } else {
+                    return Err(KapiError::StateError(format!(
+                        "Opcode RET is not yet implemented"
+                    )))
+                }
+            }
             Instruction::TABLESWITCH => {}
             Instruction::LOOKUPSWITCH => {}
-            Instruction::IRETURN => {}
-            Instruction::LRETURN => {}
-            Instruction::FRETURN => {}
-            Instruction::DRETURN => {}
-            Instruction::ARETURN => {}
-            Instruction::RETURN => {}
+            Instruction::IRETURN | Instruction::LRETURN | Instruction::FRETURN | Instruction::DRETURN | Instruction::ARETURN | Instruction::RETURN => {
+                self.visit_return(inst.opcode())?;
+            }
             Instruction::GETSTATIC => {}
             Instruction::PUTSTATIC => {}
             Instruction::GETFIELD => {}
@@ -1326,6 +1347,7 @@ impl MethodWriter {
 impl MethodVisitor for MethodWriter {
     fn visit_end(&mut self) -> KapiResult<()> {
         let Self {
+            java_version: _,
             byte_vec,
             symbol_table,
             code_byte_vec,
