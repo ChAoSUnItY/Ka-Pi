@@ -5,7 +5,7 @@ use std::rc::Rc;
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::constants;
 use crate::asm::label::Label;
-use crate::asm::opcodes::{AccessFlag, ConstantObject, Instruction, MethodAccessFlag, Opcode};
+use crate::asm::opcodes::{AccessFlags, ConstantObject, Instruction, MethodAccessFlag, Opcode};
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::Type;
 use crate::error::KapiResult;

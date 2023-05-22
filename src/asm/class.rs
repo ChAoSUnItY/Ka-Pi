@@ -5,12 +5,13 @@ use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::field::{FieldVisitor, FieldWriter};
 use crate::asm::method::{MethodVisitor, MethodWriter};
 use crate::asm::opcodes::{
-    AccessFlag, ClassAccessFlag, FieldAccessFlag, JavaVersion, MethodAccessFlag,
+    AccessFlags, ClassAccessFlag, FieldAccessFlag, JavaVersion, MethodAccessFlag,
 };
 use crate::asm::symbol::{Constant, SymbolTable};
 use crate::error::KapiResult;
 
 pub trait ClassVisitor {
+    type Output;
     type MethodVisitor: MethodVisitor + Sized;
     type FieldVisitor: FieldVisitor + Sized;
 
@@ -32,7 +33,7 @@ pub trait ClassVisitor {
     where
         F: IntoIterator<Item = FieldAccessFlag>;
 
-    fn visit_end(&self) {}
+    fn visit_end(self) -> Self::Output;
 }
 
 pub struct ClassWriter {
@@ -80,13 +81,10 @@ impl ClassWriter {
             methods: Vec::new(),
         }
     }
-
-    pub fn bytecode(&self) -> Vec<u8> {
-        self.byte_vec.borrow().clone()
-    }
 }
 
 impl ClassVisitor for ClassWriter {
+    type Output = Vec<u8>;
     type MethodVisitor = MethodWriter;
     type FieldVisitor = FieldWriter;
 
@@ -134,10 +132,7 @@ impl ClassVisitor for ClassWriter {
         )
     }
 
-    fn visit_end(&self)
-    where
-        Self: Sized,
-    {
+    fn visit_end(self) -> Self::Output {
         let Self {
             byte_vec,
             symbol_table,
@@ -154,7 +149,7 @@ impl ClassVisitor for ClassWriter {
         let mut symbol_table = symbol_table.borrow_mut();
 
         byte_vec.put_u8s(&[0xCA, 0xFE, 0xBA, 0xBE]); // magic number
-        byte_vec.put_u8s(&(*version as u32).to_be_bytes()); // major version, minor version
+        byte_vec.put_u8s(&(version as u32).to_be_bytes()); // major version, minor version
 
         byte_vec.put_be(symbol_table.constants.len() as u16 + 1); // constant pool length
         for constant in &symbol_table.constants {
@@ -223,7 +218,7 @@ impl ClassVisitor for ClassWriter {
                     byte_vec.put_be(*reference_kind);
                     byte_vec.put_be(*reference_index);
                 }
-                Constant::MethodType { descriptor } => {
+                Constant::MethodType { descriptor_index: descriptor } => {
                     byte_vec.put_be(*descriptor);
                 }
                 Constant::Dynamic {
@@ -250,12 +245,12 @@ impl ClassVisitor for ClassWriter {
         }
 
         byte_vec.put_be(access_flags.fold_flags()); // access flags
-        byte_vec.put_be(*this_class_index); // this class
-        byte_vec.put_be(*super_class_index); // super class
+        byte_vec.put_be(this_class_index); // this class
+        byte_vec.put_be(super_class_index); // super class
         byte_vec.put_be(interface_indices.len() as u16); // interfaces length
 
         for interface_index in interface_indices {
-            byte_vec.put_be(*interface_index);
+            byte_vec.put_be(interface_index);
         }
 
         byte_vec.put_be(fields.len() as u16); // fields length
@@ -270,5 +265,7 @@ impl ClassVisitor for ClassWriter {
 
         byte_vec.put_be(symbol_table.attributes.len() as u16); // attributes length
                                                                // TODO: implement attributes
+
+        byte_vec.clone()
     }
 }

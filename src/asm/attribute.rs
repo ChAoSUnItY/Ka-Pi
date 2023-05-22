@@ -2,10 +2,11 @@ use std::collections::HashMap;
 
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::constants;
-use crate::asm::opcodes::AccessFlag;
+use crate::asm::opcodes::{AccessFlag, AccessFlags};
 use crate::asm::symbol::SymbolTable;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -580,7 +581,18 @@ impl InnerClass {
 
 #[repr(u16)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, IntoPrimitive, Serialize, Deserialize,
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    IntoPrimitive,
+    Serialize,
+    Deserialize,
+    EnumIter,
 )]
 pub enum NestedClassAccessFlag {
     Public = 0x0001,
@@ -595,8 +607,9 @@ pub enum NestedClassAccessFlag {
     Enum = 0x4000,
 }
 
-impl<'a> AccessFlag<'a, NestedClassAccessFlag> for &'a [NestedClassAccessFlag] {}
-impl<'a> AccessFlag<'a, NestedClassAccessFlag> for &'a Vec<NestedClassAccessFlag> {}
+impl AccessFlag<NestedClassAccessFlag> for NestedClassAccessFlag {}
+impl<'a> AccessFlags<'a, NestedClassAccessFlag> for &'a [NestedClassAccessFlag] {}
+impl<'a> AccessFlags<'a, NestedClassAccessFlag> for &'a Vec<NestedClassAccessFlag> {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LineNumber {
@@ -693,12 +706,25 @@ impl MethodParameter {
 
 #[repr(u16)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, IntoPrimitive, Serialize, Deserialize,
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    IntoPrimitive,
+    Serialize,
+    Deserialize,
+    EnumIter,
 )]
 pub enum ParameterAccessFlag {
     Final = 0x0010,
     Synthetic = 0x1000,
 }
 
-impl<'a> AccessFlag<'a, ParameterAccessFlag> for &'a [ParameterAccessFlag] {}
-impl<'a> AccessFlag<'a, ParameterAccessFlag> for &'a Vec<ParameterAccessFlag> {}
+
+impl AccessFlag<ParameterAccessFlag> for ParameterAccessFlag {}
+impl<'a> AccessFlags<'a, ParameterAccessFlag> for &'a [ParameterAccessFlag] {}
+impl<'a> AccessFlags<'a, ParameterAccessFlag> for &'a Vec<ParameterAccessFlag> {}
