@@ -1,10 +1,7 @@
-use std::fmt::write;
 use std::{
     error::Error,
     fmt::{Debug, Display},
 };
-
-use jni::errors::Error as JniError;
 
 use crate::error::KapiError::*;
 
@@ -25,13 +22,12 @@ where
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum KapiError {
-    StateError(&'static str),
+    StateError(String),
     Utf8Error(&'static str),
     TypeError(&'static str),
     ArgError(String),
     ClassResolveError(&'static str),
     ClassParseError(String),
-    JNIError(String),
 }
 
 impl Display for KapiError {
@@ -43,15 +39,8 @@ impl Display for KapiError {
             ArgError(cause) => write!(f, "{}", cause),
             ClassResolveError(cause) => write!(f, "{}", cause),
             ClassParseError(cause) => write!(f, "{}", cause),
-            JNIError(cause) => write!(f, "{}", cause),
         }
     }
 }
 
 impl Error for KapiError {}
-
-impl From<jni::errors::Error> for KapiError {
-    fn from(value: JniError) -> Self {
-        JNIError(value.to_string())
-    }
-}

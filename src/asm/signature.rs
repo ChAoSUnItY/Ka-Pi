@@ -167,10 +167,15 @@ pub trait TypeVisitor {
 pub struct SignatureVisitorImpl {}
 
 impl ClassSignatureVisitor for SignatureVisitorImpl {}
+
 impl FieldSignatureVisitor for SignatureVisitorImpl {}
+
 impl MethodSignatureVisitor for SignatureVisitorImpl {}
+
 impl FormalTypeParameterVisitable for SignatureVisitorImpl {}
+
 impl FormalTypeParameterVisitor for SignatureVisitorImpl {}
+
 impl TypeVisitor for SignatureVisitorImpl {}
 
 /// Accepts a [`ClassSignatureVisitor`] and visits given signature.
@@ -344,7 +349,7 @@ where
             visitor.visit_array_type();
             signature_iter.next();
             accept_type(signature_iter, visitor)
-        },
+        }
         'T' => {
             signature_iter.next();
             let type_variable = &signature_iter
@@ -433,15 +438,15 @@ where
                         '+' => {
                             visitor.visit_type_argument_wildcard(Wildcard::EXTENDS);
                             accept_class_type(signature_iter, visitor)?;
-                        },
+                        }
                         '-' => {
                             visitor.visit_type_argument_wildcard(Wildcard::SUPER);
                             accept_class_type(signature_iter, visitor)?;
-                        },
+                        }
                         _ => {
                             visitor.visit_type_argument_wildcard(Wildcard::INSTANCEOF);
                             accept_class_type(signature_iter, visitor)?;
-                        },
+                        }
                     }
                 }
             }

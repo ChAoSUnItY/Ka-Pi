@@ -1,5 +1,3 @@
-pub use handle::Handle;
-
 pub mod node;
 
 pub mod annotation;
@@ -7,12 +5,9 @@ mod attribute;
 pub mod byte_vec;
 pub mod class;
 mod constants;
-mod edge;
 pub mod field;
-mod frame;
-mod handle;
-mod handler;
-mod label;
+pub mod handle;
+pub mod label;
 pub mod method;
 pub mod module;
 /// The JVM opcodes, access flags and array type codes. This interface does not define all the JVM

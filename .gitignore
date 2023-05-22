@@ -7,3 +7,5 @@
 
 # JNI logs
 *.log
+
+/output

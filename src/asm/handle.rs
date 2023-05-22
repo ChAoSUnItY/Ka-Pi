@@ -1,22 +1,22 @@
-use super::opcodes;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+use crate::asm::opcodes::RefKind;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Handle {
-    tag: u8,
-    owner: String,
-    name: String,
-    descriptor: String,
-    is_interface: bool,
+    pub tag: RefKind,
+    pub owner: String,
+    pub name: String,
+    pub descriptor: String,
 }
 
 impl Handle {
-    pub const fn new(tag: u8, owner: String, name: String, descriptor: String) -> Self {
+    pub const fn new(tag: RefKind, owner: String, name: String, descriptor: String) -> Self {
         Self {
             tag,
             owner,
             name,
             descriptor,
-            is_interface: tag == opcodes::H_INVOKEINTERFACE,
         }
     }
 }

@@ -11,7 +11,8 @@ place in not only modern society, but also [computer science](https://en.wikiped
 Ka-Pi offers several essential modules relates to JVM ecosystem:
 
 - `asm` - A bytecode manipulation module used to visit JVM bytecode strucutre and generate class file via visitor pattern.
-- `reflect` - A directly interop bridge between Rust and Java reflection library in low communication cost. 
+- ~~`reflect` - A directly interop bridge between Rust and Java reflection library in low communication cost.~~
+- - (Update) `reflect` module has been moved to a separate module [`frape`](https://github.com/ChAoSUnItY/frape).
 
 ### Author
 
