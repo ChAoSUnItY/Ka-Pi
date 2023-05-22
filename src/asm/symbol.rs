@@ -3,16 +3,21 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Index;
+use std::process::Output;
 
 use indexmap::IndexSet;
+use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::attribute::{Attribute, BootstrapMethod, ConstantValue};
 use crate::asm::handle::Handle;
-use crate::asm::opcodes::{ConstantObject, RefKind};
+use crate::asm::opcodes::{ConstantObject, Opcode, RefKind};
+use crate::error::{KapiError, KapiResult};
 
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, TryFromPrimitive,
+)]
 pub enum ConstantTag {
     /** The tag value of CONSTANT_Class_info JVMS structures. */
     Class = 7,
@@ -161,7 +166,7 @@ pub(crate) enum Constant {
     },
     Utf8 {
         /*  Implementation note: This has been merged into a single String type for later table
-         *   implementation usage.
+         *  implementation usage.
          */
         data: String,
     },
@@ -170,7 +175,7 @@ pub(crate) enum Constant {
         reference_index: u16,
     },
     MethodType {
-        descriptor: u16,
+        descriptor_index: u16,
     },
     Dynamic {
         bootstrap_method_attr_index: u16,
