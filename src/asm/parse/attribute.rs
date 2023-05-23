@@ -78,6 +78,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         })(input),
         attribute::CODE => code(input, constant_pool),
         attribute::STACK_MAP_TABLE => stack_map_table(input),
+        attribute::SOURCE_FILE => source_file(input),
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
         _ => Ok((&[], None)), // Discard input data to ignore unrecognized attribute
     }
@@ -242,6 +243,12 @@ fn verification_type(input: &[u8]) -> IResult<&[u8], VerificationType> {
         8 => map(be_u16, |offset| VerificationType::Uninitialized { offset })(input),
         _ => Err(Error(error_position!(input, ErrorKind::OneOf))),
     }
+}
+
+fn source_file(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(be_u16, |source_file_index| {
+        Some(Attribute::SourceFile { source_file_index })
+    })(input)
 }
 
 fn line_number_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
