@@ -1,2 +1,4 @@
 pub mod class;
-pub mod constant;
+mod constant;
+mod field;
+mod attribute;

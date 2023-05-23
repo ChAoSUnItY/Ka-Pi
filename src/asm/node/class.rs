@@ -3,15 +3,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::asm::node::access_flag::ClassAccessFlag;
 use crate::asm::node::constant::ConstantPool;
+use crate::asm::node::field::Field;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Class {
     pub java_version: JavaVersion,
+    pub constant_pool_count: u16,
     pub constant_pool: ConstantPool,
     pub access_flags: Vec<ClassAccessFlag>,
     pub this_class: u16,
     pub super_class: u16,
+    pub interfaces_count: u16,
     pub interfaces: Vec<u16>,
+    pub fields_count: u16,
+    pub fields: Vec<Field>,
 }
 
 #[repr(u32)]

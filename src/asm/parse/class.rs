@@ -12,6 +12,7 @@ use strum::IntoEnumIterator;
 use crate::asm::node::access_flag::{AccessFlag, ClassAccessFlag};
 use crate::asm::node::class::{Class, JavaVersion};
 use crate::asm::parse::constant::constant_pool;
+use crate::asm::parse::field::fields;
 use crate::error::{KapiError, KapiResult};
 
 pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
@@ -58,26 +59,31 @@ pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
 fn class(input: &[u8]) -> IResult<&[u8], Class> {
     let (input, _) = tag(&[0xCA, 0xFE, 0xBA, 0xBE])(input)?;
     let (input, java_version) = map_res(be_u32, JavaVersion::try_from)(input)?;
-    let (input, constant_pool) = constant_pool(input)?;
+    let (input, (constant_pool_count, constant_pool)) = constant_pool(input)?;
     let (input, access_flags) = map(be_u16, ClassAccessFlag::mask_access_flags)(input)?;
     let (input, this_class) = be_u16(input)?;
     let (input, super_class) = be_u16(input)?;
-    let (input, interfaces) = interfaces(input)?;
+    let (input, (interfaces_count, interfaces)) = interfaces(input)?;
+    let (input, (fields_count, fields)) = fields(input, &constant_pool)?;
 
     Ok((
         input,
         Class {
             java_version,
+            constant_pool_count,
             constant_pool,
             access_flags,
             this_class,
             super_class,
+            interfaces_count,
             interfaces,
+            fields_count,
+            fields
         },
     ))
 }
 
-fn interfaces(input: &[u8]) -> IResult<&[u8], Vec<u16>> {
+fn interfaces(input: &[u8]) -> IResult<&[u8], (u16, Vec<u16>)> {
     let (mut input, len) = be_u16(input)?;
     let mut interfaces = Vec::with_capacity(len as usize);
 
@@ -88,7 +94,7 @@ fn interfaces(input: &[u8]) -> IResult<&[u8], Vec<u16>> {
         input = remain;
     }
 
-    Ok((input, interfaces))
+    Ok((input, (len, interfaces)))
 }
 
 #[cfg(test)]

@@ -5,7 +5,7 @@ use nom::sequence::tuple;
 use nom::IResult;
 use crate::asm::node::constant::{Constant, ConstantPool, ConstantTag};
 
-pub(crate) fn constant_pool(input: &[u8]) -> IResult<&[u8], ConstantPool> {
+pub(crate) fn constant_pool(input: &[u8]) -> IResult<&[u8], (u16, ConstantPool)> {
     let (mut input, len) = be_u16(input)?;
     let mut constants = ConstantPool::default();
 
@@ -16,7 +16,7 @@ pub(crate) fn constant_pool(input: &[u8]) -> IResult<&[u8], ConstantPool> {
         input = remain;
     }
 
-    Ok((input, constants))
+    Ok((input, (len, constants)))
 }
 
 fn constant(input: &[u8]) -> IResult<&[u8], Constant> {

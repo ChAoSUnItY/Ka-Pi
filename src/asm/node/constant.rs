@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConstantPool {
-    pub len: usize,
+    len: usize,
     entries: BTreeMap<usize, Constant>,
 }
 
@@ -22,7 +22,7 @@ impl ConstantPool {
         }
     }
 
-    pub fn get(&mut self, index: usize) -> Option<&Constant> {
+    pub fn get(&self, index: usize) -> Option<&Constant> {
         self.entries.get(&index)
     }
 }

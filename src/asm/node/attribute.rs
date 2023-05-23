@@ -88,6 +88,14 @@ impl From<&str> for ConstantValue {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct AttributeInfo {
+    pub attribute_name_index: u16,
+    pub attribute_len: u32,
+    pub info: Vec<u8>,
+    pub attribute: Option<Attribute>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Attribute {
     ConstantValue {
         constant_value_index: u16,
@@ -100,7 +108,7 @@ pub enum Attribute {
         exception_table_length: u16,
         exception_table: Vec<Exception>,
         attributes_length: u16,
-        attributes: Vec<Attribute>,
+        attributes: Vec<AttributeInfo>,
     },
     StackMapTable {
         number_of_entries: u16,
@@ -234,7 +242,7 @@ impl Attribute {
                 // `total`: 12 + code_length + 8 * exception_table_length + [Attribute] * attribute_length
                 12 + *code_length as u32
                     + 8 * *exception_table_length as u32
-                    + attributes.iter().map(Attribute::attribute_len).sum::<u32>()
+                    + attributes.iter().map(|info| info.attribute_len).sum::<u32>()
             }
             Attribute::StackMapTable {
                 number_of_entries: _,
@@ -325,7 +333,9 @@ impl Attribute {
                 }
 
                 for attribute in attributes {
-                    attribute.rearrange_indices(rearrangements);
+                    if let Some(attribute) = &mut attribute.attribute {
+                        attribute.rearrange_indices(rearrangements);
+                    }
                 }
             }
             Attribute::StackMapTable {
@@ -449,10 +459,10 @@ impl Attribute {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Exception {
-    start_pc: u16,
-    end_pc: u16,
-    handler_pc: u16,
-    pub(crate) catch_type: u16,
+    pub start_pc: u16,
+    pub end_pc: u16,
+    pub handler_pc: u16,
+    pub catch_type: u16,
 }
 
 impl Exception {
