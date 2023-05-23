@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::asm::node::access_flag::ClassAccessFlag;
 use crate::asm::node::constant::ConstantPool;
 use crate::asm::node::field::Field;
+use crate::asm::node::method::Method;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Class {
@@ -17,6 +18,8 @@ pub struct Class {
     pub interfaces: Vec<u16>,
     pub fields_count: u16,
     pub fields: Vec<Field>,
+    pub methods_count: u16,
+    pub methods: Vec<Method>,
 }
 
 #[repr(u32)]

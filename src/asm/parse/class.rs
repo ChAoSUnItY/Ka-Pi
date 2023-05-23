@@ -13,6 +13,7 @@ use crate::asm::node::access_flag::{AccessFlag, ClassAccessFlag};
 use crate::asm::node::class::{Class, JavaVersion};
 use crate::asm::parse::constant::constant_pool;
 use crate::asm::parse::field::fields;
+use crate::asm::parse::method::methods;
 use crate::error::{KapiError, KapiResult};
 
 pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
@@ -65,6 +66,7 @@ fn class(input: &[u8]) -> IResult<&[u8], Class> {
     let (input, super_class) = be_u16(input)?;
     let (input, (interfaces_count, interfaces)) = interfaces(input)?;
     let (input, (fields_count, fields)) = fields(input, &constant_pool)?;
+    let (input, (methods_count, methods)) = methods(input, &constant_pool)?;
 
     Ok((
         input,
@@ -78,7 +80,9 @@ fn class(input: &[u8]) -> IResult<&[u8], Class> {
             interfaces_count,
             interfaces,
             fields_count,
-            fields
+            fields,
+            methods_count,
+            methods,
         },
     ))
 }
