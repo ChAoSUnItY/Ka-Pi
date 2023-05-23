@@ -3,9 +3,10 @@ use std::cmp::max;
 use std::rc::Rc;
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::constants;
 use crate::asm::label::Label;
-use crate::asm::opcodes::{AccessFlags, ConstantObject, Instruction, MethodAccessFlag, Opcode};
+use crate::asm::node::access_flag::{AccessFlags, MethodAccessFlag};
+use crate::asm::node::attribute::CODE;
+use crate::asm::node::opcode::{ConstantObject, Instruction, Opcode};
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::Type;
 use crate::error::KapiResult;
@@ -606,7 +607,7 @@ impl MethodVisitor for MethodWriter {
 
         // If code_byte_vec is empty, do not emit Code attribute for the method
         if code_byte_vec.len() != 0 {
-            let attribute_name_index = symbol_table.add_utf8(constants::CODE);
+            let attribute_name_index = symbol_table.add_utf8(CODE);
             let code_len = code_byte_vec.len();
             let attribute_len = 12 + code_len; // TODO
 

@@ -1,9 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::asm::attribute::{Attribute, ConstantValue};
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::opcodes::{AccessFlags, FieldAccessFlag};
+use crate::asm::node::access_flag::{AccessFlags, FieldAccessFlag};
+use crate::asm::node::attribute::{Attribute, ConstantValue};
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};

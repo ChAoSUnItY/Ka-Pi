@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use ka_pi::asm::node::class::read_class;
+use ka_pi::asm::parse::class::read_class;
 use ka_pi::error::KapiResult;
 
 fn main() -> KapiResult<()> {

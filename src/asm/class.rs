@@ -4,10 +4,11 @@ use std::rc::Rc;
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::field::{FieldVisitor, FieldWriter};
 use crate::asm::method::{MethodVisitor, MethodWriter};
-use crate::asm::node::constant::Constant;
-use crate::asm::opcodes::{
-    AccessFlags, ClassAccessFlag, FieldAccessFlag, JavaVersion, MethodAccessFlag,
+use crate::asm::node::access_flag::{
+    AccessFlags, ClassAccessFlag, FieldAccessFlag, MethodAccessFlag,
 };
+use crate::asm::node::class::JavaVersion;
+use crate::asm::node::constant::Constant;
 use crate::asm::symbol::SymbolTable;
 use crate::error::KapiResult;
 
@@ -219,7 +220,9 @@ impl ClassVisitor for ClassWriter {
                     byte_vec.put_be(*reference_kind);
                     byte_vec.put_be(*reference_index);
                 }
-                Constant::MethodType { descriptor_index: descriptor } => {
+                Constant::MethodType {
+                    descriptor_index: descriptor,
+                } => {
                     byte_vec.put_be(*descriptor);
                 }
                 Constant::Dynamic {

@@ -1,8 +1,13 @@
 pub mod signature;
 pub mod class;
 pub mod constant;
-mod utils;
+pub mod attribute;
+pub mod access_flag;
+pub mod opcode;
+pub mod handle;
 
 trait Node<'a, T> {
     fn parent(&mut self) -> Option<&'a mut T>;
 }
+
+

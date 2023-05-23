@@ -1,120 +1,43 @@
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
+use num_enum::TryFromPrimitive;
+use serde::{Deserialize, Serialize};
+use crate::asm::node::access_flag::ClassAccessFlag;
 
-use itertools::Itertools;
-use nom::bytes::complete::tag;
-use nom::combinator::{map, map_res};
-use nom::number::complete::{be_u16, be_u32};
-use nom::{IResult, Parser};
-use strum::IntoEnumIterator;
-
-use crate::asm::node::constant::{constant_pool, Constant};
-use crate::asm::node::utils::mask_access_flags;
-use crate::asm::opcodes::{ClassAccessFlag, JavaVersion};
-use crate::error::{KapiError, KapiResult};
+use crate::asm::node::constant::Constant;
 
 #[derive(Debug)]
 pub struct Class {
-    java_version: JavaVersion,
-    constant_pool: Vec<Constant>,
-    access_flags: Vec<ClassAccessFlag>,
-    this_class: u16,
-    super_class: u16,
-    interfaces: Vec<u16>,
+    pub java_version: JavaVersion,
+    pub constant_pool: Vec<Constant>,
+    pub access_flags: Vec<ClassAccessFlag>,
+    pub this_class: u16,
+    pub super_class: u16,
+    pub interfaces: Vec<u16>,
 }
 
-pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
-    let class_path = class_path.as_ref();
-    let mut file = match File::open(class_path) {
-        Ok(file) => file,
-        Err(err) => {
-            return Err(KapiError::ClassParseError(format!(
-                "Unable to open class file {}, reason: {}",
-                class_path.display(),
-                err
-            )))
-        }
-    };
-    let mut class_bytes = Vec::new();
-
-    if let Err(err) = file.read_to_end(&mut class_bytes) {
-        return Err(KapiError::ClassParseError(format!(
-            "Unable to read class file {}, reason: {}",
-            class_path.display(),
-            err
-        )));
-    }
-
-    match class(&class_bytes[..]) {
-        Ok((remain, class)) => {
-            // TODO: uncomment this when class parser is done
-            // if !remain.is_empty() {
-            //     Err(KapiError::ClassParseError(format!("Unable to parse class file {}, reason: class is fully parsed but there are {} bytes left", class_path.display(), remain.len())))
-            // } else {
-            //     Ok(class)
-            // }
-
-            Ok(class)
-        }
-        Err(err) => Err(KapiError::ClassParseError(format!(
-            "Unable parse class file {}, reason: {}",
-            class_path.display(),
-            err
-        ))),
-    }
-}
-
-fn class(input: &[u8]) -> IResult<&[u8], Class> {
-    let (input, _) = tag(&[0xCA, 0xFE, 0xBA, 0xBE])(input)?;
-    let (input, java_version) = map_res(be_u32, JavaVersion::try_from)(input)?;
-    let (input, constant_pool) = constant_pool(input)?;
-    let (input, access_flags) = map(be_u16, mask_access_flags)(input)?;
-    let (input, this_class) = be_u16(input)?;
-    let (input, super_class) = be_u16(input)?;
-    let (input, interfaces) = interfaces(input)?;
-
-    Ok((
-        input,
-        Class {
-            java_version,
-            constant_pool,
-            access_flags,
-            this_class,
-            super_class,
-            interfaces,
-        },
-    ))
-}
-
-fn interfaces(input: &[u8]) -> IResult<&[u8], Vec<u16>> {
-    let (mut input, len) = be_u16(input)?;
-    let mut interfaces = Vec::with_capacity(len as usize);
-
-    for _ in 0..len {
-        let (remain, interface_index) = be_u16(input)?;
-
-        interfaces.push(interface_index);
-        input = remain;
-    }
-
-    Ok((input, interfaces))
-}
-
-#[cfg(test)]
-mod test {
-    use std::path::PathBuf;
-
-    use crate::asm::node::class::read_class;
-    use crate::error::KapiResult;
-
-    #[test]
-    fn test_class_parse() -> KapiResult<()> {
-        let mut class_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        class_path.push("compiled_source/Main.class");
-
-        read_class(class_path)?;
-
-        Ok(())
-    }
+#[repr(u32)]
+#[derive(
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, TryFromPrimitive,
+)]
+pub enum JavaVersion {
+    V1_1 = 3 << 16 | 45,
+    V1_2 = 0 << 16 | 46,
+    V1_3 = 0 << 16 | 47,
+    V1_4 = 0 << 16 | 48,
+    V1_5 = 0 << 16 | 49,
+    V1_6 = 0 << 16 | 50,
+    V1_7 = 0 << 16 | 51,
+    V1_8 = 0 << 16 | 52,
+    V9 = 0 << 16 | 53,
+    V10 = 0 << 16 | 54,
+    V11 = 0 << 16 | 55,
+    V12 = 0 << 16 | 56,
+    V13 = 0 << 16 | 57,
+    V14 = 0 << 16 | 58,
+    V15 = 0 << 16 | 59,
+    V16 = 0 << 16 | 60,
+    V17 = 0 << 16 | 61,
+    V18 = 0 << 16 | 62,
+    V19 = 0 << 16 | 63,
+    V20 = 0 << 16 | 64,
+    V21 = 0 << 16 | 65,
 }
