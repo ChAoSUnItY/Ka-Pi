@@ -2,6 +2,7 @@ use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::node::access_flag::ClassAccessFlag;
+use crate::asm::node::attribute::AttributeInfo;
 use crate::asm::node::constant::ConstantPool;
 use crate::asm::node::field::Field;
 use crate::asm::node::method::Method;
@@ -20,6 +21,8 @@ pub struct Class {
     pub fields: Vec<Field>,
     pub methods_count: u16,
     pub methods: Vec<Method>,
+    pub attributes_count: u16,
+    pub attributes: Vec<AttributeInfo>,
 }
 
 #[repr(u32)]

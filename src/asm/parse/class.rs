@@ -11,6 +11,7 @@ use strum::IntoEnumIterator;
 
 use crate::asm::node::access_flag::{AccessFlag, ClassAccessFlag};
 use crate::asm::node::class::{Class, JavaVersion};
+use crate::asm::parse::attribute::attribute_infos;
 use crate::asm::parse::constant::constant_pool;
 use crate::asm::parse::field::fields;
 use crate::asm::parse::method::methods;
@@ -67,6 +68,7 @@ fn class(input: &[u8]) -> IResult<&[u8], Class> {
     let (input, (interfaces_count, interfaces)) = interfaces(input)?;
     let (input, (fields_count, fields)) = fields(input, &constant_pool)?;
     let (input, (methods_count, methods)) = methods(input, &constant_pool)?;
+    let (input, (attributes_count, attributes)) = attribute_infos(input, &constant_pool)?;
 
     Ok((
         input,
@@ -83,6 +85,8 @@ fn class(input: &[u8]) -> IResult<&[u8], Class> {
             fields,
             methods_count,
             methods,
+            attributes_count,
+            attributes,
         },
     ))
 }
