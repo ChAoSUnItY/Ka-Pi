@@ -7,9 +7,7 @@ use nom::Err::Error;
 use nom::{error, error_position, IResult};
 
 use crate::asm::node::attribute;
-use crate::asm::node::attribute::{
-    Attribute, AttributeInfo, Exception, StackMapFrameEntry, VerificationType,
-};
+use crate::asm::node::attribute::{Attribute, AttributeInfo, Exception, LineNumber, StackMapFrameEntry, VerificationType};
 use crate::asm::node::constant::{Constant, ConstantPool};
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
@@ -78,6 +76,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         })(input),
         attribute::CODE => code(input, constant_pool),
         attribute::STACK_MAP_TABLE => stack_map_table(input),
+        attribute::LINE_NUMBER_TABLE => line_number_table(input),
         _ => Ok((&[], None)), // Discard input data to ignore unrecognized attribute
     }
 }
@@ -241,4 +240,32 @@ fn verification_type(input: &[u8]) -> IResult<&[u8], VerificationType> {
         8 => map(be_u16, |offset| VerificationType::Uninitialized { offset })(input),
         _ => Err(Error(error_position!(input, ErrorKind::OneOf))),
     }
+}
+
+fn line_number_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(line_numbers, |(line_number_table_length, line_number_table)| Some(Attribute::LineNumberTable {
+        line_number_table_length,
+        line_number_table
+    }))(input)
+}
+
+fn line_numbers(input: &[u8]) -> IResult<&[u8], (u16, Vec<LineNumber>)> {
+    let (mut input, len) = be_u16(input)?;
+    let mut line_numbers = Vec::with_capacity(len as usize);
+    
+    for _ in 0..len {
+        let (remain, line_number) = line_number(input)?;
+        
+        line_numbers.push(line_number);
+        input = remain;
+    }
+    
+    Ok((input, (len, line_numbers)))
+}
+
+fn line_number(input: &[u8]) -> IResult<&[u8], LineNumber> {
+    map(tuple((be_u16, be_u16)), |(start_pc, line_number)| LineNumber {
+        start_pc,
+        line_number
+    })(input)
 }
