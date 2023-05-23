@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
 use crate::asm::node::access_flag::FieldAccessFlag;
 use crate::asm::node::attribute::AttributeInfo;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Field {

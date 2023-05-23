@@ -1,9 +1,9 @@
+use crate::asm::node::constant::{Constant, ConstantPool, ConstantTag};
 use nom::bytes::complete::take;
 use nom::combinator::{map, map_res};
 use nom::number::complete::{be_u16, be_u8};
 use nom::sequence::tuple;
 use nom::IResult;
-use crate::asm::node::constant::{Constant, ConstantPool, ConstantTag};
 
 pub(crate) fn constant_pool(input: &[u8]) -> IResult<&[u8], (u16, ConstantPool)> {
     let (mut input, len) = be_u16(input)?;

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::asm::node::opcode::RefKind;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Handle {
