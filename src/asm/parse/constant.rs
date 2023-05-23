@@ -3,16 +3,16 @@ use nom::combinator::{map, map_res};
 use nom::number::complete::{be_u16, be_u8};
 use nom::sequence::tuple;
 use nom::IResult;
-use crate::asm::node::constant::{Constant, ConstantTag};
+use crate::asm::node::constant::{Constant, ConstantPool, ConstantTag};
 
-pub(crate) fn constant_pool(input: &[u8]) -> IResult<&[u8], Vec<Constant>> {
+pub(crate) fn constant_pool(input: &[u8]) -> IResult<&[u8], ConstantPool> {
     let (mut input, len) = be_u16(input)?;
-    let mut constants = Vec::with_capacity(len as usize);
+    let mut constants = ConstantPool::default();
 
     for _ in 0..len - 1 {
         let (remain, constant) = constant(input)?;
 
-        constants.push(constant);
+        constants.add(constant);
         input = remain;
     }
 

@@ -1,5 +1,40 @@
+use std::collections::BTreeMap;
+
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConstantPool {
+    pub len: usize,
+    entries: BTreeMap<usize, Constant>,
+}
+
+impl ConstantPool {
+    pub(crate) fn add(&mut self, constant: Constant) {
+        let is_2 = matches!(constant, Constant::Long { .. } | Constant::Double { .. });
+
+        self.entries.insert(self.len, constant);
+
+        if is_2 {
+            self.len += 2;
+        } else {
+            self.len += 1;
+        }
+    }
+
+    pub fn get(&mut self, index: usize) -> Option<&Constant> {
+        self.entries.get(&index)
+    }
+}
+
+impl Default for ConstantPool {
+    fn default() -> Self {
+        Self {
+            len: 1,
+            entries: BTreeMap::default(),
+        }
+    }
+}
 
 #[repr(u8)]
 #[derive(
