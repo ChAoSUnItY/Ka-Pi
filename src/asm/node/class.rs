@@ -4,15 +4,15 @@ use std::path::Path;
 
 use itertools::Itertools;
 use nom::bytes::complete::{tag, take};
-use nom::combinator::{map, map_parser, map_res};
+use nom::combinator::{map, map_res};
 use nom::number::complete::{be_u16, be_u32, be_u8};
-use nom::sequence::{pair, tuple};
+use nom::sequence::tuple;
 use nom::{IResult, Parser};
 use strum::IntoEnumIterator;
 
+use crate::asm::node::constant::{Constant, ConstantTag};
 use crate::asm::node::utils::mask_access_flags;
 use crate::asm::opcodes::{ClassAccessFlag, JavaVersion};
-use crate::asm::symbol::{Constant, ConstantTag};
 use crate::error::{KapiError, KapiResult};
 
 #[derive(Debug)]

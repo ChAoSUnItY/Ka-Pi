@@ -1,5 +1,6 @@
 pub mod signature;
 pub mod class;
+pub mod constant;
 mod utils;
 
 trait Node<'a, T> {

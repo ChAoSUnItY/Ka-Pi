@@ -4,10 +4,11 @@ use std::rc::Rc;
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::field::{FieldVisitor, FieldWriter};
 use crate::asm::method::{MethodVisitor, MethodWriter};
+use crate::asm::node::constant::Constant;
 use crate::asm::opcodes::{
     AccessFlags, ClassAccessFlag, FieldAccessFlag, JavaVersion, MethodAccessFlag,
 };
-use crate::asm::symbol::{Constant, SymbolTable};
+use crate::asm::symbol::SymbolTable;
 use crate::error::KapiResult;
 
 pub trait ClassVisitor {
