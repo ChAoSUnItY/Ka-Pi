@@ -41,14 +41,11 @@ pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
 
     match class(&class_bytes[..]) {
         Ok((remain, class)) => {
-            // TODO: uncomment this when class parser is done
-            // if !remain.is_empty() {
-            //     Err(KapiError::ClassParseError(format!("Unable to parse class file {}, reason: class is fully parsed but there are {} bytes left", class_path.display(), remain.len())))
-            // } else {
-            //     Ok(class)
-            // }
-
-            Ok(class)
+            if !remain.is_empty() {
+                Err(KapiError::ClassParseError(format!("Unable to parse class file {}, reason: class is fully parsed but there are {} bytes left, {remain:?}", class_path.display(), remain.len())))
+            } else {
+                Ok(class)
+            }
         }
         Err(err) => Err(KapiError::ClassParseError(format!(
             "Unable parse class file {}, reason: {}",
