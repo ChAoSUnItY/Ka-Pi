@@ -112,7 +112,7 @@ pub enum Attribute {
     },
     StackMapTable {
         number_of_entries: u16,
-        entries: Vec<StackMapEntry>,
+        entries: Vec<StackMapFrameEntry>,
     },
     Exceptions {
         number_of_exceptions: u16,
@@ -247,7 +247,7 @@ impl Attribute {
             Attribute::StackMapTable {
                 number_of_entries: _,
                 entries,
-            } => 2 + entries.iter().map(StackMapEntry::len).sum::<u32>(),
+            } => 2 + entries.iter().map(StackMapFrameEntry::len).sum::<u32>(),
             Attribute::Exceptions {
                 number_of_exceptions,
                 exception_index_table: _,
@@ -475,46 +475,67 @@ impl Exception {
 
 #[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum StackMapEntry {
-    Same,
+pub enum StackMapFrameEntry {
+    Same {
+        frame_type: u8,
+    },
     SameLocal1StackItem {
+        frame_type: u8,
         stack: VerificationType,
     },
     SameLocal1StackItemExtended {
+        frame_type: u8,
         offset_delta: u16,
         stack: VerificationType,
     },
     Chop {
+        frame_type: u8,
         offset_delta: u16,
     },
     SameExtended {
-        frame_type: AppendType,
+        frame_type: u8,
         offset_delta: u16,
     },
-    Full {
+    Append {
+        frame_type: u8,
         offset_delta: u16,
-        numbers_of_locals: u16,
+        locals: Vec<VerificationType>,
+    },
+    Full {
+        frame_type: u8,
+        offset_delta: u16,
+        number_of_locals: u16,
         locals: Vec<VerificationType>,
         number_of_stack_items: u16,
         stack: Vec<VerificationType>,
     },
 }
 
-impl StackMapEntry {
+impl StackMapFrameEntry {
     pub fn len(&self) -> u32 {
         // frame_type: 1
         1 + match self {
-            StackMapEntry::Same => 0,
-            StackMapEntry::SameLocal1StackItem { stack } => stack.len(),
-            StackMapEntry::SameLocal1StackItemExtended {
+            StackMapFrameEntry::Same { .. } => 0,
+            StackMapFrameEntry::SameLocal1StackItem {
+                frame_type: _,
+                stack,
+            } => stack.len(),
+            StackMapFrameEntry::SameLocal1StackItemExtended {
+                frame_type: _,
                 offset_delta: _,
                 stack,
             } => 2 + stack.len(),
-            StackMapEntry::Chop { .. } => 2,
-            StackMapEntry::SameExtended { .. } => 4,
-            StackMapEntry::Full {
+            StackMapFrameEntry::Chop { .. } => 2,
+            StackMapFrameEntry::SameExtended { .. } => 4,
+            StackMapFrameEntry::Append {
+                frame_type,
                 offset_delta: _,
-                numbers_of_locals: _,
+                locals: _,
+            } => 2 + (*frame_type as u32 - 251),
+            StackMapFrameEntry::Full {
+                frame_type: _,
+                offset_delta: _,
+                number_of_locals: _,
                 locals,
                 number_of_stack_items: _,
                 stack,
@@ -527,18 +548,23 @@ impl StackMapEntry {
 
     fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
         match self {
-            StackMapEntry::SameLocal1StackItem { stack } => {
+            StackMapFrameEntry::SameLocal1StackItem {
+                frame_type: _,
+                stack,
+            } => {
                 stack.rearrange_index(rearrangements);
             }
-            StackMapEntry::SameLocal1StackItemExtended {
+            StackMapFrameEntry::SameLocal1StackItemExtended {
+                frame_type: _,
                 offset_delta: _,
                 stack,
             } => {
                 stack.rearrange_index(rearrangements);
             }
-            StackMapEntry::Full {
+            StackMapFrameEntry::Full {
+                frame_type: _,
                 offset_delta: _,
-                numbers_of_locals: _,
+                number_of_locals: _,
                 locals,
                 number_of_stack_items: _,
                 stack,
@@ -556,14 +582,6 @@ impl StackMapEntry {
     }
 }
 
-#[repr(u8)]
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum AppendType {
-    One,
-    Two,
-    Three,
-}
-
 // noinspection ALL
 #[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -573,10 +591,10 @@ pub enum VerificationType {
     Float,
     Double,
     Long,
-    NullVariable,
+    Null,
     UninitializedThis,
     Object { cpool_index: u16 },
-    Uninitialized,
+    Uninitialized { offset: u16 },
 }
 
 impl VerificationType {

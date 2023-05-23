@@ -1,13 +1,15 @@
-use crate::asm::node::attribute;
 use nom::bytes::complete::take;
 use nom::combinator::map;
 use nom::error::ErrorKind;
-use nom::number::complete::{be_u16, be_u32};
+use nom::number::complete::{be_u16, be_u32, be_u8};
 use nom::sequence::tuple;
 use nom::Err::Error;
-use nom::{error, IResult};
+use nom::{error, error_position, IResult};
 
-use crate::asm::node::attribute::{Attribute, AttributeInfo, Exception};
+use crate::asm::node::attribute;
+use crate::asm::node::attribute::{
+    Attribute, AttributeInfo, Exception, StackMapFrameEntry, VerificationType,
+};
 use crate::asm::node::constant::{Constant, ConstantPool};
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
@@ -63,7 +65,7 @@ fn attribute_info<'input: 'constant_pool, 'constant_pool>(
     ))
 }
 
-fn attribute<'input: 'data, 'constant_pool, 'data>(
+fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
     input: &'input [u8],
     constant_pool: &'constant_pool ConstantPool,
     data: &'data str,
@@ -74,39 +76,45 @@ fn attribute<'input: 'data, 'constant_pool, 'data>(
                 constant_value_index,
             })
         })(input),
-        attribute::CODE => {
-            let (input, max_stack) = be_u16(input)?;
-            let (input, max_locals) = be_u16(input)?;
-            let (input, code_length) = be_u32(input)?;
-            let (input, code) = take(code_length as usize)(input)?;
-            let (mut input, exception_table_length) = be_u16(input)?;
-            let mut exception_table = Vec::with_capacity(exception_table_length as usize);
-
-            for _ in 0..exception_table_length {
-                let (remain, exception) = exception(input)?;
-
-                exception_table.push(exception);
-                input = remain;
-            }
-
-            let (input, (attributes_length, attributes)) = attribute_infos(input, constant_pool)?;
-
-            Ok((
-                input,
-                Some(Attribute::Code {
-                    max_stack,
-                    max_locals,
-                    code_length,
-                    code: code.to_vec(),
-                    exception_table_length,
-                    exception_table,
-                    attributes_length,
-                    attributes,
-                }),
-            ))
-        }
+        attribute::CODE => code(input, constant_pool),
+        attribute::STACK_MAP_TABLE => stack_map_table(input),
         _ => Ok((&[], None)), // Discard input data to ignore unrecognized attribute
     }
+}
+
+fn code<'input: 'constant_pool, 'constant_pool>(
+    input: &'input [u8],
+    constant_pool: &'constant_pool ConstantPool,
+) -> IResult<&'input [u8], Option<Attribute>> {
+    let (input, max_stack) = be_u16(input)?;
+    let (input, max_locals) = be_u16(input)?;
+    let (input, code_length) = be_u32(input)?;
+    let (input, code) = take(code_length as usize)(input)?;
+    let (mut input, exception_table_length) = be_u16(input)?;
+    let mut exception_table = Vec::with_capacity(exception_table_length as usize);
+
+    for _ in 0..exception_table_length {
+        let (remain, exception) = exception(input)?;
+
+        exception_table.push(exception);
+        input = remain;
+    }
+
+    let (input, (attributes_length, attributes)) = attribute_infos(input, constant_pool)?;
+
+    Ok((
+        input,
+        Some(Attribute::Code {
+            max_stack,
+            max_locals,
+            code_length,
+            code: code.to_vec(),
+            exception_table_length,
+            exception_table,
+            attributes_length,
+            attributes,
+        }),
+    ))
 }
 
 fn exception(input: &[u8]) -> IResult<&[u8], Exception> {
@@ -119,4 +127,118 @@ fn exception(input: &[u8]) -> IResult<&[u8], Exception> {
             catch_type,
         },
     )(input)
+}
+
+fn stack_map_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    let (mut input, number_of_entries) = be_u16(input)?;
+    let mut entries = Vec::with_capacity(number_of_entries as usize);
+
+    for _ in 0..number_of_entries {
+        let (remain, entry) = stack_map_frame_entry(input)?;
+
+        entries.push(entry);
+        input = remain;
+    }
+
+    Ok((
+        input,
+        Some(Attribute::StackMapTable {
+            number_of_entries,
+            entries,
+        }),
+    ))
+}
+
+fn stack_map_frame_entry(input: &[u8]) -> IResult<&[u8], StackMapFrameEntry> {
+    let (input, frame_type) = be_u8(input)?;
+
+    match frame_type {
+        0..=63 => Ok((input, StackMapFrameEntry::Same { frame_type })),
+        64..=127 => map(verification_type, |stack| {
+            StackMapFrameEntry::SameLocal1StackItem { frame_type, stack }
+        })(input),
+        247 => map(
+            tuple((be_u16, verification_type)),
+            |(offset_delta, stack)| StackMapFrameEntry::SameLocal1StackItemExtended {
+                frame_type,
+                offset_delta,
+                stack,
+            },
+        )(input),
+        248..=250 => map(be_u16, |offset_delta| StackMapFrameEntry::Chop {
+            frame_type,
+            offset_delta,
+        })(input),
+        251 => map(be_u16, |offset_delta| StackMapFrameEntry::SameExtended {
+            frame_type,
+            offset_delta,
+        })(input),
+        252..=254 => {
+            let (mut input, offset_delta) = be_u16(input)?;
+            let mut locals = Vec::with_capacity(frame_type as usize - 251);
+
+            for _ in 0..frame_type - 251 {
+                let (remain, verification_type) = verification_type(input)?;
+
+                locals.push(verification_type);
+                input = remain;
+            }
+
+            Ok((
+                input,
+                StackMapFrameEntry::Append {
+                    frame_type,
+                    offset_delta,
+                    locals,
+                },
+            ))
+        }
+        255 => map(
+            tuple((be_u16, verification_types, verification_types)),
+            |(offset_delta, (number_of_locals, locals), (number_of_stack_items, stack))| {
+                StackMapFrameEntry::Full {
+                    frame_type,
+                    offset_delta,
+                    number_of_locals,
+                    locals,
+                    number_of_stack_items,
+                    stack,
+                }
+            },
+        )(input),
+        _ => Err(Error(error_position!(input, ErrorKind::OneOf))),
+    }
+}
+
+fn verification_types(input: &[u8]) -> IResult<&[u8], (u16, Vec<VerificationType>)> {
+    let (mut input, len) = be_u16(input)?;
+    let mut verification_types = Vec::with_capacity(len as usize);
+
+    for _ in 0..len {
+        let (remain, verification_type) = verification_type(input)?;
+
+        verification_types.push(verification_type);
+        input = remain;
+    }
+
+    Ok((input, (len, verification_types)))
+}
+
+fn verification_type(input: &[u8]) -> IResult<&[u8], VerificationType> {
+    let (input, tag) = be_u8(input)?;
+
+    match tag {
+        0 => Ok((input, VerificationType::Top)),
+        1 => Ok((input, VerificationType::Integer)),
+        2 => Ok((input, VerificationType::Float)),
+        3 => Ok((input, VerificationType::Double)),
+        4 => Ok((input, VerificationType::Long)),
+        5 => Ok((input, VerificationType::Null)),
+        6 => Ok((input, VerificationType::UninitializedThis)),
+        7 => map(be_u16, |cpool_index| VerificationType::Object {
+            cpool_index,
+        })(input),
+        8 => map(be_u16, |offset| VerificationType::Uninitialized { offset })(input),
+        _ => Err(Error(error_position!(input, ErrorKind::OneOf))),
+    }
 }
