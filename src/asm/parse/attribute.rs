@@ -38,18 +38,14 @@ fn attribute_info<'input: 'constant_pool, 'constant_pool>(
     let (input, info) = take(attribute_len as usize)(input)?;
     let name_constant = constant_pool.get(attribute_name_index as usize);
 
-    let attribute = if let Some(constant) = name_constant {
-        if let Constant::Utf8(Utf8 { data }) = constant {
-            let (remain, attribute) = attribute(info, constant_pool, data)?;
+    let attribute = if let Some(Constant::Utf8(Utf8 { data })) = name_constant {
+        let (remain, attribute) = attribute(info, constant_pool, data)?;
 
-            if !remain.is_empty() {
-                return Err(Error(error::Error::new(remain, ErrorKind::NonEmpty)));
-            }
-
-            attribute
-        } else {
-            None
+        if !remain.is_empty() {
+            return Err(Error(error::Error::new(remain, ErrorKind::NonEmpty)));
         }
+
+        attribute
     } else {
         None
     };
