@@ -111,9 +111,15 @@ impl SymbolTable {
         rearrangements
     }
 
-    pub(crate) fn get_utf8(&self, index: u16) -> Option<&String> {
+    pub(crate) fn get_utf8(&self, index: u16) -> Option<String> {
         match self.constants.index((index - 1) as usize) {
-            Constant::Utf8(Utf8 { data }) => Some(data),
+            Constant::Utf8(constant) => {
+                if let Ok(string) = constant.string() {
+                    Some(string)
+                } else {
+                    None
+                }
+            }
             _ => None,
         }
     }
@@ -123,8 +129,10 @@ impl SymbolTable {
     }
 
     pub(crate) fn add_utf8(&mut self, string: &str) -> u16 {
+        let bytes = cesu8::to_java_cesu8(string);
         let constant = Constant::Utf8(Utf8 {
-            data: string.to_owned(),
+            length: bytes.len() as u16,
+            bytes: bytes.to_vec(),
         });
 
         self.insert_constant(constant)

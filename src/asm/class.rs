@@ -216,8 +216,8 @@ impl ClassVisitor for ClassWriter {
                     byte_vec.put_be(*name_index);
                     byte_vec.put_be(*type_index);
                 }
-                Constant::Utf8(Utf8 { data }) => {
-                    byte_vec.put_utf8(&data).unwrap();
+                Constant::Utf8(Utf8 { length: _, bytes }) => {
+                    byte_vec.put_u8s(bytes);
                 }
                 Constant::MethodHandle(MethodHandle {
                     reference_kind,

@@ -109,12 +109,13 @@ fn constant(input: &[u8]) -> IResult<&[u8], Constant> {
         })(input)?,
         ConstantTag::Utf8 => {
             let (input, length) = be_u16(input)?;
-            let (input, string) = map_res(take(length), cesu8::from_java_cesu8)(input)?;
+            let (input, bytes) = take(length)(input)?;
 
             (
                 input,
                 Constant::Utf8(Utf8 {
-                    data: string.to_string(),
+                    length,
+                    bytes: bytes.to_vec(),
                 }),
             )
         }

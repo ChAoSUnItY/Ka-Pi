@@ -146,9 +146,9 @@ impl Class {
     pub fn name<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant_pool str> {
-        if let Some(Constant::Utf8(Utf8 { data })) = constant_pool.get(self.name_index) {
-            Some(data)
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.name_index) {
+            Some(constant)
         } else {
             None
         }
@@ -263,9 +263,9 @@ impl String {
     pub fn string<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant_pool str> {
-        if let Some(Constant::Utf8(Utf8 { data })) = constant_pool.get(self.string_index) {
-            Some(data)
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.string_index) {
+            Some(constant)
         } else {
             None
         }
@@ -337,9 +337,9 @@ impl NameAndType {
     pub fn name<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant_pool str> {
-        if let Some(Constant::Utf8(Utf8 { data })) = constant_pool.get(self.name_index) {
-            Some(data)
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.name_index) {
+            Some(constant)
         } else {
             None
         }
@@ -348,9 +348,9 @@ impl NameAndType {
     pub fn typ<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant_pool str> {
-        if let Some(Constant::Utf8(Utf8 { data })) = constant_pool.get(self.type_index) {
-            Some(data)
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.type_index) {
+            Some(constant)
         } else {
             None
         }
@@ -359,10 +359,21 @@ impl NameAndType {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Utf8 {
-    /*  Implementation note: This has been merged into a single String type for later table
-     *  implementation usage.
-     */
-    pub data: std::string::String,
+    pub length: u16,
+    pub bytes: Vec<u8>,
+}
+
+impl Utf8 {
+    pub fn string(&self) -> KapiResult<std::string::String> {
+        cesu8::from_java_cesu8(&self.bytes[..])
+            .map_err(|err| {
+                KapiError::ClassParseError(format!(
+                    "Unable to convert bytes to string, reason: {}",
+                    err.to_string()
+                ))
+            })
+            .map(|string| string.to_string())
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -451,9 +462,9 @@ impl MethodType {
     pub fn descriptor<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant_pool str> {
-        if let Some(Constant::Utf8(Utf8 { data })) = constant_pool.get(self.descriptor_index) {
-            Some(data)
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.descriptor_index) {
+            Some(constant)
         } else {
             None
         }
@@ -518,9 +529,9 @@ impl Module {
     pub fn name<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant_pool str> {
-        if let Some(Constant::Utf8(Utf8 { data })) = constant_pool.get(self.name_index) {
-            Some(data)
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.name_index) {
+            Some(constant)
         } else {
             None
         }
@@ -537,9 +548,9 @@ impl Package {
     pub fn name<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant_pool str> {
-        if let Some(Constant::Utf8(Utf8 { data })) = constant_pool.get(self.name_index) {
-            Some(data)
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.name_index) {
+            Some(constant)
         } else {
             None
         }
