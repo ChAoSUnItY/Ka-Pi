@@ -55,7 +55,7 @@ fn main() -> KapiResult<()> {
 
     let class = read_class(class_path)?;
 
-    println!("{class:?}");
+    println!("{class:#?}");
 
     Ok(())
 }

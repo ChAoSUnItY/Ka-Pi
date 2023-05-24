@@ -9,7 +9,11 @@ use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::node::attribute::{Attribute, BootstrapMethod, ConstantValue};
-use crate::asm::node::constant::Constant;
+use crate::asm::node::constant;
+use crate::asm::node::constant::{
+    Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, InvokeDynamic,
+    Long, MethodHandle, MethodRef, MethodType, Module, NameAndType, Package, Utf8,
+};
 use crate::asm::node::handle::Handle;
 use crate::asm::node::opcode::{ConstantObject, RefKind};
 
@@ -109,7 +113,7 @@ impl SymbolTable {
 
     pub(crate) fn get_utf8(&self, index: u16) -> Option<&String> {
         match self.constants.index((index - 1) as usize) {
-            Constant::Utf8 { data } => Some(data),
+            Constant::Utf8(Utf8 { data }) => Some(data),
             _ => None,
         }
     }
@@ -119,39 +123,39 @@ impl SymbolTable {
     }
 
     pub(crate) fn add_utf8(&mut self, string: &str) -> u16 {
-        let constant = Constant::Utf8 {
+        let constant = Constant::Utf8(Utf8 {
             data: string.to_owned(),
-        };
+        });
 
         self.insert_constant(constant)
     }
 
     pub(crate) fn add_class(&mut self, class: &str) -> u16 {
         let name_index = self.add_utf8(class);
-        let constant = Constant::Class { name_index };
+        let constant = Constant::Class(Class { name_index });
 
         self.insert_constant(constant)
     }
 
     pub(crate) fn add_string(&mut self, string: &str) -> u16 {
         let string_index = self.add_utf8(string);
-        let constant = Constant::String { string_index };
+        let constant = Constant::String(constant::String { string_index });
 
         self.insert_constant(constant)
     }
 
     pub(crate) fn add_integer(&mut self, integer: i32) -> u16 {
-        let constant = Constant::Integer {
+        let constant = Constant::Integer(Integer {
             bytes: integer.to_be_bytes(),
-        };
+        });
 
         self.insert_constant(constant)
     }
 
     pub(crate) fn add_float(&mut self, float: f32) -> u16 {
-        let constant = Constant::Float {
+        let constant = Constant::Float(Float {
             bytes: float.to_be_bytes(),
-        };
+        });
 
         self.insert_constant(constant)
     }
@@ -159,10 +163,10 @@ impl SymbolTable {
     pub(crate) fn add_long(&mut self, long: i64) -> u16 {
         let bytes = long.to_be_bytes();
         let (high_bytes, low_bytes) = bytes.split_at(4);
-        let constant = Constant::Long {
+        let constant = Constant::Long(Long {
             high_bytes: high_bytes.try_into().unwrap(),
             low_bytes: low_bytes.try_into().unwrap(),
-        };
+        });
 
         self.insert_constant(constant)
     }
@@ -170,10 +174,10 @@ impl SymbolTable {
     pub(crate) fn add_double(&mut self, double: f64) -> u16 {
         let bytes = double.to_be_bytes();
         let (high_bytes, low_bytes) = bytes.split_at(4);
-        let constant = Constant::Double {
+        let constant = Constant::Double(Double {
             high_bytes: high_bytes.try_into().unwrap(),
             low_bytes: low_bytes.try_into().unwrap(),
-        };
+        });
 
         self.insert_constant(constant)
     }
@@ -181,10 +185,10 @@ impl SymbolTable {
     pub(crate) fn add_field_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
         let class_index = self.add_class(class);
         let name_and_type_index = self.add_name_and_type(name, typ);
-        let constant = Constant::FieldRef {
+        let constant = Constant::FieldRef(FieldRef {
             class_index,
             name_and_type_index,
-        };
+        });
 
         self.insert_constant(constant)
     }
@@ -192,10 +196,10 @@ impl SymbolTable {
     pub(crate) fn add_method_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
         let class_index = self.add_class(class);
         let name_and_type_index = self.add_name_and_type(name, typ);
-        let constant = Constant::MethodRef {
+        let constant = Constant::MethodRef(MethodRef {
             class_index,
             name_and_type_index,
-        };
+        });
 
         self.insert_constant(constant)
     }
@@ -203,10 +207,10 @@ impl SymbolTable {
     pub(crate) fn add_interface_ref(&mut self, class: &str, name: &str, typ: &str) -> u16 {
         let class_index = self.add_class(class);
         let name_and_type_index = self.add_name_and_type(name, typ);
-        let constant = Constant::InterfaceMethodRef {
+        let constant = Constant::InterfaceMethodRef(InterfaceMethodRef {
             class_index,
             name_and_type_index,
-        };
+        });
 
         self.insert_constant(constant)
     }
@@ -214,10 +218,10 @@ impl SymbolTable {
     pub(crate) fn add_name_and_type(&mut self, name: &str, typ: &str) -> u16 {
         let name_index = self.add_utf8(name);
         let type_index = self.add_utf8(typ);
-        let constant = Constant::NameAndType {
+        let constant = Constant::NameAndType(NameAndType {
             name_index,
             type_index,
-        };
+        });
 
         self.insert_constant(constant)
     }
@@ -240,10 +244,10 @@ impl SymbolTable {
                 self.add_interface_ref(class, name, typ)
             }
         };
-        let constant = Constant::MethodHandle {
+        let constant = Constant::MethodHandle(MethodHandle {
             reference_kind: *reference_kind as u8,
             reference_index,
-        };
+        });
 
         self.insert_constant(constant)
     }
@@ -253,14 +257,14 @@ impl SymbolTable {
 
     pub(crate) fn add_module(&mut self, name: &str) -> u16 {
         let name_index = self.add_utf8(name);
-        let constant = Constant::Module { name_index };
+        let constant = Constant::Module(Module { name_index });
 
         self.insert_constant(constant)
     }
 
     pub(crate) fn add_package(&mut self, name: &str) -> u16 {
         let name_index = self.add_utf8(name);
-        let constant = Constant::Package { name_index };
+        let constant = Constant::Package(Package { name_index });
 
         self.insert_constant(constant)
     }
@@ -311,10 +315,10 @@ impl SymbolTable {
     ) -> u16 {
         let boostrap_method_index = self.add_bootstrap_method(handle, arguments);
         let name_and_type_index = self.add_name_and_type(name, descriptor);
-        let constant = Constant::Dynamic {
+        let constant = Constant::Dynamic(Dynamic {
             bootstrap_method_attr_index: boostrap_method_index,
             name_and_type_index,
-        };
+        });
 
         self.insert_constant(constant)
     }

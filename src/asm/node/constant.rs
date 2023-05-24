@@ -79,75 +79,29 @@ pub enum ConstantTag {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Constant {
-    Class {
-        name_index: u16,
-    },
-    FieldRef {
-        class_index: u16,
-        name_and_type_index: u16,
-    },
-    MethodRef {
-        class_index: u16,
-        name_and_type_index: u16,
-    },
-    InterfaceMethodRef {
-        class_index: u16,
-        name_and_type_index: u16,
-    },
-    String {
-        string_index: u16,
-    },
-    Integer {
-        bytes: [u8; 4],
-    },
-    Float {
-        bytes: [u8; 4],
-    },
-    Long {
-        high_bytes: [u8; 4],
-        low_bytes: [u8; 4],
-    },
-    Double {
-        high_bytes: [u8; 4],
-        low_bytes: [u8; 4],
-    },
-    NameAndType {
-        name_index: u16,
-        type_index: u16,
-    },
-    Utf8 {
-        /*  Implementation note: This has been merged into a single String type for later table
-         *  implementation usage.
-         */
-        data: String,
-    },
-    MethodHandle {
-        reference_kind: u8,
-        reference_index: u16,
-    },
-    MethodType {
-        descriptor_index: u16,
-    },
-    Dynamic {
-        bootstrap_method_attr_index: u16,
-        name_and_type_index: u16,
-    },
-    InvokeDynamic {
-        bootstrap_method_attr_index: u16,
-        name_and_type_index: u16,
-    },
-    Module {
-        name_index: u16,
-    },
-    Package {
-        name_index: u16,
-    },
+    Class(Class),
+    FieldRef(FieldRef),
+    MethodRef(MethodRef),
+    InterfaceMethodRef(InterfaceMethodRef),
+    String(String),
+    Integer(Integer),
+    Float(Float),
+    Long(Long),
+    Double(Double),
+    NameAndType(NameAndType),
+    Utf8(Utf8),
+    MethodHandle(MethodHandle),
+    MethodType(MethodType),
+    Dynamic(Dynamic),
+    InvokeDynamic(InvokeDynamic),
+    Module(Module),
+    Package(Package),
 }
 
 impl Constant {
     pub const fn tag(&self) -> ConstantTag {
         match self {
-            Constant::Class { .. } => ConstantTag::Class,
+            Constant::Class(..) => ConstantTag::Class,
             Constant::FieldRef { .. } => ConstantTag::FieldRef,
             Constant::MethodRef { .. } => ConstantTag::MethodRef,
             Constant::InterfaceMethodRef { .. } => ConstantTag::InterfaceMethodRef,
@@ -166,4 +120,101 @@ impl Constant {
             Constant::Package { .. } => ConstantTag::Package,
         }
     }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Class {
+    pub name_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct FieldRef {
+    pub class_index: u16,
+    pub name_and_type_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct MethodRef {
+    pub class_index: u16,
+    pub name_and_type_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct InterfaceMethodRef {
+    pub class_index: u16,
+    pub name_and_type_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct String {
+    pub string_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Integer {
+    pub bytes: [u8; 4],
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Float {
+    pub bytes: [u8; 4],
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Long {
+    pub high_bytes: [u8; 4],
+    pub low_bytes: [u8; 4],
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Double {
+    pub high_bytes: [u8; 4],
+    pub low_bytes: [u8; 4],
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct NameAndType {
+    pub name_index: u16,
+    pub type_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Utf8 {
+    /*  Implementation note: This has been merged into a single String type for later table
+     *  implementation usage.
+     */
+    pub data: std::string::String,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct MethodHandle {
+    pub reference_kind: u8,
+    pub reference_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct MethodType {
+    pub descriptor_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Dynamic {
+    pub bootstrap_method_attr_index: u16,
+    pub name_and_type_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct InvokeDynamic {
+    pub bootstrap_method_attr_index: u16,
+    pub name_and_type_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Module {
+    pub name_index: u16,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Package {
+    pub name_index: u16,
 }

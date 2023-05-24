@@ -8,7 +8,11 @@ use crate::asm::node::access_flag::{
     AccessFlags, ClassAccessFlag, FieldAccessFlag, MethodAccessFlag,
 };
 use crate::asm::node::class::JavaVersion;
-use crate::asm::node::constant::Constant;
+use crate::asm::node::constant;
+use crate::asm::node::constant::{
+    Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, InvokeDynamic,
+    Long, MethodHandle, MethodRef, MethodType, Module, NameAndType, Package, Utf8,
+};
 use crate::asm::symbol::SymbolTable;
 use crate::error::KapiResult;
 
@@ -158,91 +162,93 @@ impl ClassVisitor for ClassWriter {
             byte_vec.put_be(constant.tag() as u8);
 
             match constant {
-                Constant::Class { name_index } => {
+                Constant::Class(Class { name_index }) => {
                     byte_vec.put_be(*name_index);
                 }
-                Constant::FieldRef {
+                Constant::FieldRef(FieldRef {
                     class_index,
                     name_and_type_index,
-                } => {
+                }) => {
                     byte_vec.put_be(*class_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
-                Constant::MethodRef {
+                Constant::MethodRef(MethodRef {
                     class_index,
                     name_and_type_index,
-                } => {
+                }) => {
                     byte_vec.put_be(*class_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
-                Constant::InterfaceMethodRef {
+                Constant::InterfaceMethodRef(InterfaceMethodRef {
                     class_index,
                     name_and_type_index,
-                } => {
+                }) => {
                     byte_vec.put_be(*class_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
-                Constant::String { string_index } => byte_vec.put_be(*string_index),
-                Constant::Integer { bytes } => {
+                Constant::String(constant::String { string_index }) => {
+                    byte_vec.put_be(*string_index)
+                }
+                Constant::Integer(Integer { bytes }) => {
                     byte_vec.extend_from_slice(bytes);
                 }
-                Constant::Float { bytes } => {
+                Constant::Float(Float { bytes }) => {
                     byte_vec.extend_from_slice(bytes);
                 }
-                Constant::Long {
+                Constant::Long(Long {
                     high_bytes,
                     low_bytes,
-                } => {
+                }) => {
                     byte_vec.extend_from_slice(high_bytes);
                     byte_vec.extend_from_slice(low_bytes);
                 }
-                Constant::Double {
+                Constant::Double(Double {
                     high_bytes,
                     low_bytes,
-                } => {
+                }) => {
                     byte_vec.extend_from_slice(high_bytes);
                     byte_vec.extend_from_slice(low_bytes);
                 }
-                Constant::NameAndType {
+                Constant::NameAndType(NameAndType {
                     name_index,
                     type_index,
-                } => {
+                }) => {
                     byte_vec.put_be(*name_index);
                     byte_vec.put_be(*type_index);
                 }
-                Constant::Utf8 { data } => {
+                Constant::Utf8(Utf8 { data }) => {
                     byte_vec.put_utf8(&data).unwrap();
                 }
-                Constant::MethodHandle {
+                Constant::MethodHandle(MethodHandle {
                     reference_kind,
                     reference_index,
-                } => {
+                }) => {
                     byte_vec.put_be(*reference_kind);
                     byte_vec.put_be(*reference_index);
                 }
-                Constant::MethodType {
+                Constant::MethodType(MethodType {
                     descriptor_index: descriptor,
-                } => {
+                }) => {
                     byte_vec.put_be(*descriptor);
                 }
-                Constant::Dynamic {
+                Constant::Dynamic(Dynamic {
                     bootstrap_method_attr_index,
                     name_and_type_index,
-                } => {
+                }) => {
                     byte_vec.put_be(*bootstrap_method_attr_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
-                Constant::InvokeDynamic {
+                Constant::InvokeDynamic(InvokeDynamic {
                     bootstrap_method_attr_index,
                     name_and_type_index,
-                } => {
+                }) => {
                     byte_vec.put_be(*bootstrap_method_attr_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
-                Constant::Module { name_index } => {
+                Constant::Module(Module { name_index }) => {
                     byte_vec.put_be(*name_index);
                 }
-                Constant::Package { name_index } => {
+                Constant::Package(Package { name_index }) => {
                     byte_vec.put_be(*name_index);
                 }
             }

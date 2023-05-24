@@ -10,7 +10,7 @@ use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
     Attribute, AttributeInfo, Exception, LineNumber, StackMapFrameEntry, VerificationType,
 };
-use crate::asm::node::constant::{Constant, ConstantPool};
+use crate::asm::node::constant::{Constant, ConstantPool, Utf8};
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
@@ -39,7 +39,7 @@ fn attribute_info<'input: 'constant_pool, 'constant_pool>(
     let name_constant = constant_pool.get(attribute_name_index as usize);
 
     let attribute = if let Some(constant) = name_constant {
-        if let Constant::Utf8 { data } = constant {
+        if let Constant::Utf8(Utf8 { data }) = constant {
             let (remain, attribute) = attribute(info, constant_pool, data)?;
 
             if !remain.is_empty() {
