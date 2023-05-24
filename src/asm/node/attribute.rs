@@ -686,9 +686,9 @@ impl LocalVariableType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct BootstrapMethod {
-    bootstrap_method_ref: u16,
-    num_bootstrap_arguments: u16,
-    bootstrap_arguments: Vec<u16>,
+    pub bootstrap_method_ref: u16,
+    pub num_bootstrap_arguments: u16,
+    pub bootstrap_arguments: Vec<u16>,
 }
 
 impl BootstrapMethod {

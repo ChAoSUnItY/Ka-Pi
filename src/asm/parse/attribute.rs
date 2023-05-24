@@ -1,6 +1,8 @@
 use nom::bytes::complete::take;
+use nom::character::complete::u16;
 use nom::combinator::map;
 use nom::error::ErrorKind;
+use nom::multi::count;
 use nom::number::complete::{be_u16, be_u32, be_u8};
 use nom::sequence::tuple;
 use nom::Err::Error;
@@ -8,7 +10,8 @@ use nom::{error, error_position, IResult};
 
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
-    Attribute, AttributeInfo, Exception, LineNumber, StackMapFrameEntry, VerificationType,
+    Attribute, AttributeInfo, BootstrapMethod, Exception, LineNumber, StackMapFrameEntry,
+    VerificationType,
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
 
@@ -80,6 +83,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::STACK_MAP_TABLE => stack_map_table(input),
         attribute::SOURCE_FILE => source_file(input),
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
+        attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
         _ => Ok((&[], None)), // Discard input data to ignore unrecognized attribute
     }
 }
@@ -284,4 +288,45 @@ fn line_number(input: &[u8]) -> IResult<&[u8], LineNumber> {
             line_number,
         }
     })(input)
+}
+
+fn bootstrap_methods_attribute(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(
+        bootstrap_methods,
+        |(num_bootstrap_methods, bootstrap_methods)| {
+            Some(Attribute::BootstrapMethods {
+                num_bootstrap_methods,
+                bootstrap_methods,
+            })
+        },
+    )(input)
+}
+
+fn bootstrap_methods(input: &[u8]) -> IResult<&[u8], (u16, Vec<BootstrapMethod>)> {
+    let (mut input, len) = be_u16(input)?;
+    let mut bootstrap_methods = Vec::with_capacity(len as usize);
+
+    for _ in 0..len {
+        let (remain, bootstrap_method) = bootstrap_method(input)?;
+
+        bootstrap_methods.push(bootstrap_method);
+        input = remain;
+    }
+
+    Ok((input, (len, bootstrap_methods)))
+}
+
+fn bootstrap_method(input: &[u8]) -> IResult<&[u8], BootstrapMethod> {
+    let (input, bootstrap_method_ref) = be_u16(input)?;
+    let (input, num_bootstrap_arguments) = be_u16(input)?;
+    let (input, bootstrap_arguments) = count(be_u16, num_bootstrap_arguments as usize)(input)?;
+
+    Ok((
+        input,
+        BootstrapMethod {
+            bootstrap_method_ref,
+            num_bootstrap_arguments,
+            bootstrap_arguments,
+        },
+    ))
 }
