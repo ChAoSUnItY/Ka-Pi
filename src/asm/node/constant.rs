@@ -4,6 +4,7 @@ use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 use strum::IntoStaticStr;
 
+use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod};
 use crate::asm::node::opcode::RefKind;
 use crate::error::{KapiError, KapiResult};
 
@@ -479,7 +480,29 @@ pub struct Dynamic {
 
 //noinspection DuplicatedCode
 impl Dynamic {
-    // TODO: Access to bootstrap method
+    pub fn bootstrap_method<'bootstrap_method, 'attributes: 'bootstrap_method>(
+        &self,
+        attribute_infos: &'attributes Vec<AttributeInfo>,
+    ) -> Option<&'bootstrap_method BootstrapMethod> {
+        let bootstrap_methods = if let Some(AttributeInfo {
+            attribute:
+                Some(Attribute::BootstrapMethods {
+                    bootstrap_methods, ..
+                }),
+            ..
+        }) = attribute_infos.iter().find(|attribute_info| {
+            matches!(
+                attribute_info.attribute,
+                Some(Attribute::BootstrapMethods { .. })
+            )
+        }) {
+            bootstrap_methods
+        } else {
+            return None;
+        };
+
+        bootstrap_methods.get(self.bootstrap_method_attr_index as usize)
+    }
 
     pub fn name_and_type<'constant, 'constant_pool: 'constant>(
         &'constant self,
@@ -503,7 +526,29 @@ pub struct InvokeDynamic {
 
 //noinspection DuplicatedCode
 impl InvokeDynamic {
-    // TODO: Access to bootstrap method
+    pub fn bootstrap_method<'bootstrap_method, 'attributes: 'bootstrap_method>(
+        &self,
+        attribute_infos: &'attributes Vec<AttributeInfo>,
+    ) -> Option<&'bootstrap_method BootstrapMethod> {
+        let bootstrap_methods = if let Some(AttributeInfo {
+            attribute:
+                Some(Attribute::BootstrapMethods {
+                    bootstrap_methods, ..
+                }),
+            ..
+        }) = attribute_infos.iter().find(|attribute_info| {
+            matches!(
+                attribute_info.attribute,
+                Some(Attribute::BootstrapMethods { .. })
+            )
+        }) {
+            bootstrap_methods
+        } else {
+            return None;
+        };
+
+        bootstrap_methods.get(self.bootstrap_method_attr_index as usize)
+    }
 
     pub fn name_and_type<'constant, 'constant_pool: 'constant>(
         &'constant self,
