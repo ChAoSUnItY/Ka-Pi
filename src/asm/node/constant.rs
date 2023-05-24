@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConstantPool {
-    len: usize,
-    entries: BTreeMap<usize, Constant>,
+    len: u16,
+    entries: BTreeMap<u16, Constant>,
 }
 
 impl ConstantPool {
@@ -22,7 +22,7 @@ impl ConstantPool {
         }
     }
 
-    pub fn get(&self, index: usize) -> Option<&Constant> {
+    pub fn get(&self, index: u16) -> Option<&Constant> {
         self.entries.get(&index)
     }
 }
@@ -148,6 +148,16 @@ pub struct InterfaceMethodRef {
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct String {
     pub string_index: u16,
+}
+
+impl String {
+    pub fn get_string<'constant, 'constant_pool: 'constant>(&'constant self, constant_pool: &'constant_pool ConstantPool) -> Option<&'constant_pool str> {
+        if let Some(Constant::Utf8(Utf8 { data })) = constant_pool.get(self.string_index) {
+            Some(data)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]

@@ -36,7 +36,7 @@ fn attribute_info<'input: 'constant_pool, 'constant_pool>(
     let (input, attribute_name_index) = be_u16(input)?;
     let (input, attribute_len) = be_u32(input)?;
     let (input, info) = take(attribute_len as usize)(input)?;
-    let name_constant = constant_pool.get(attribute_name_index as usize);
+    let name_constant = constant_pool.get(attribute_name_index);
 
     let attribute = if let Some(Constant::Utf8(Utf8 { data })) = name_constant {
         let (remain, attribute) = attribute(info, constant_pool, data)?;

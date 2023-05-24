@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use ka_pi::asm::node::constant::Constant;
 
 use ka_pi::asm::parse::class::read_class;
 use ka_pi::error::KapiResult;
@@ -56,6 +57,13 @@ fn main() -> KapiResult<()> {
     let class = read_class(class_path)?;
 
     println!("{class:#?}");
+    
+    let constant_pool = &class.constant_pool;
+    let string_constant = constant_pool.get(13);
+    
+    if let Some(Constant::String(constant)) = string_constant {
+        println!("{:?}", constant.get_string(constant_pool));
+    }
 
     Ok(())
 }
