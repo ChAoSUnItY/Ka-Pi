@@ -1,8 +1,6 @@
 use nom::bytes::complete::take;
-use nom::character::complete::u16;
 use nom::combinator::map;
 use nom::error::ErrorKind;
-use nom::multi::count;
 use nom::number::complete::{be_u16, be_u32, be_u8};
 use nom::sequence::tuple;
 use nom::Err::Error;
@@ -14,6 +12,7 @@ use crate::asm::node::attribute::{
     VerificationType,
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
+use crate::asm::parse::collect;
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
@@ -96,16 +95,7 @@ fn code<'input: 'constant_pool, 'constant_pool>(
     let (input, max_locals) = be_u16(input)?;
     let (input, code_length) = be_u32(input)?;
     let (input, code) = take(code_length as usize)(input)?;
-    let (mut input, exception_table_length) = be_u16(input)?;
-    let mut exception_table = Vec::with_capacity(exception_table_length as usize);
-
-    for _ in 0..exception_table_length {
-        let (remain, exception) = exception(input)?;
-
-        exception_table.push(exception);
-        input = remain;
-    }
-
+    let (input, (exception_table_length, exception_table)) = collect(be_u16, exception)(input)?;
     let (input, (attributes_length, attributes)) = attribute_infos(input, constant_pool)?;
 
     Ok((
@@ -136,23 +126,15 @@ fn exception(input: &[u8]) -> IResult<&[u8], Exception> {
 }
 
 fn stack_map_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
-    let (mut input, number_of_entries) = be_u16(input)?;
-    let mut entries = Vec::with_capacity(number_of_entries as usize);
-
-    for _ in 0..number_of_entries {
-        let (remain, entry) = stack_map_frame_entry(input)?;
-
-        entries.push(entry);
-        input = remain;
-    }
-
-    Ok((
-        input,
-        Some(Attribute::StackMapTable {
-            number_of_entries,
-            entries,
-        }),
-    ))
+    map(
+        collect(be_u16, stack_map_frame_entry),
+        |(number_of_entries, entries)| {
+            Some(Attribute::StackMapTable {
+                number_of_entries,
+                entries,
+            })
+        },
+    )(input)
 }
 
 fn stack_map_frame_entry(input: &[u8]) -> IResult<&[u8], StackMapFrameEntry> {
@@ -200,7 +182,11 @@ fn stack_map_frame_entry(input: &[u8]) -> IResult<&[u8], StackMapFrameEntry> {
             ))
         }
         255 => map(
-            tuple((be_u16, verification_types, verification_types)),
+            tuple((
+                be_u16,
+                collect(be_u16, verification_type),
+                collect(be_u16, verification_type),
+            )),
             |(offset_delta, (number_of_locals, locals), (number_of_stack_items, stack))| {
                 StackMapFrameEntry::Full {
                     frame_type,
@@ -214,20 +200,6 @@ fn stack_map_frame_entry(input: &[u8]) -> IResult<&[u8], StackMapFrameEntry> {
         )(input),
         _ => Err(Error(error_position!(input, ErrorKind::OneOf))),
     }
-}
-
-fn verification_types(input: &[u8]) -> IResult<&[u8], (u16, Vec<VerificationType>)> {
-    let (mut input, len) = be_u16(input)?;
-    let mut verification_types = Vec::with_capacity(len as usize);
-
-    for _ in 0..len {
-        let (remain, verification_type) = verification_type(input)?;
-
-        verification_types.push(verification_type);
-        input = remain;
-    }
-
-    Ok((input, (len, verification_types)))
 }
 
 fn verification_type(input: &[u8]) -> IResult<&[u8], VerificationType> {
@@ -249,6 +221,18 @@ fn verification_type(input: &[u8]) -> IResult<&[u8], VerificationType> {
     }
 }
 
+fn exceptions_attribute(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(
+        collect(be_u16, be_u16),
+        |(number_of_exceptions, exception_index_table)| {
+            Some(Attribute::Exceptions {
+                number_of_exceptions,
+                exception_index_table,
+            })
+        },
+    )(input)
+}
+
 fn source_file(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(be_u16, |source_file_index| {
         Some(Attribute::SourceFile { source_file_index })
@@ -257,7 +241,7 @@ fn source_file(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
 
 fn line_number_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
-        line_numbers,
+        collect(be_u16, line_number),
         |(line_number_table_length, line_number_table)| {
             Some(Attribute::LineNumberTable {
                 line_number_table_length,
@@ -265,20 +249,6 @@ fn line_number_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
             })
         },
     )(input)
-}
-
-fn line_numbers(input: &[u8]) -> IResult<&[u8], (u16, Vec<LineNumber>)> {
-    let (mut input, len) = be_u16(input)?;
-    let mut line_numbers = Vec::with_capacity(len as usize);
-
-    for _ in 0..len {
-        let (remain, line_number) = line_number(input)?;
-
-        line_numbers.push(line_number);
-        input = remain;
-    }
-
-    Ok((input, (len, line_numbers)))
 }
 
 fn line_number(input: &[u8]) -> IResult<&[u8], LineNumber> {
@@ -292,7 +262,7 @@ fn line_number(input: &[u8]) -> IResult<&[u8], LineNumber> {
 
 fn bootstrap_methods_attribute(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
-        bootstrap_methods,
+        collect(be_u16, bootstrap_method),
         |(num_bootstrap_methods, bootstrap_methods)| {
             Some(Attribute::BootstrapMethods {
                 num_bootstrap_methods,
@@ -302,24 +272,9 @@ fn bootstrap_methods_attribute(input: &[u8]) -> IResult<&[u8], Option<Attribute>
     )(input)
 }
 
-fn bootstrap_methods(input: &[u8]) -> IResult<&[u8], (u16, Vec<BootstrapMethod>)> {
-    let (mut input, len) = be_u16(input)?;
-    let mut bootstrap_methods = Vec::with_capacity(len as usize);
-
-    for _ in 0..len {
-        let (remain, bootstrap_method) = bootstrap_method(input)?;
-
-        bootstrap_methods.push(bootstrap_method);
-        input = remain;
-    }
-
-    Ok((input, (len, bootstrap_methods)))
-}
-
 fn bootstrap_method(input: &[u8]) -> IResult<&[u8], BootstrapMethod> {
     let (input, bootstrap_method_ref) = be_u16(input)?;
-    let (input, num_bootstrap_arguments) = be_u16(input)?;
-    let (input, bootstrap_arguments) = count(be_u16, num_bootstrap_arguments as usize)(input)?;
+    let (input, (num_bootstrap_arguments, bootstrap_arguments)) = collect(be_u16, be_u16)(input)?;
 
     Ok((
         input,
