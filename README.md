@@ -55,7 +55,7 @@ Ka-Pi offers several essential modules relates to JVM ecosystem:
 - - [x] Attributes (See Class#Attributes)
 - [x] Attributes
 - - [x] Attribute Info
-- - - [x] Critical for JVM
+- - - [ ] Critical for JVM
 - - - - [x] ConstantValue
 - - - - [x] Code
 - - - - [x] StackMapTable
@@ -63,7 +63,7 @@ Ka-Pi offers several essential modules relates to JVM ecosystem:
 - - - - [ ] NestHost
 - - - - [ ] NestMembers
 - - - - [ ] PermittedSubclasses
-- - - [x] Critical for Java SE
+- - - [ ] Critical for Java SE
 - - - - [ ] Exceptions
 - - - - [ ] InnerClasses
 - - - - [ ] EnclosingMethod
@@ -74,7 +74,7 @@ Ka-Pi offers several essential modules relates to JVM ecosystem:
 - - - - [x] LineNumberTable
 - - - - [ ] LocalVariableTable
 - - - - [ ] LocalVariableTypeTable
-- - - [x] Not critical
+- - - [ ] Not critical
 - - - - [ ] SourceDebugExtension
 - - - - [ ] Deprecated
 - - - - [ ] RuntimeVisibleAnnotations
