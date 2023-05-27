@@ -56,55 +56,38 @@ impl Default for ConstantPool {
     IntoStaticStr,
 )]
 pub enum ConstantTag {
-    /** The tag value of CONSTANT_Class_info JVMS structures. */
-    Class = 7,
-    /** The tag value of CONSTANT_Fieldref_info JVMS structures. */
-    FieldRef = 9,
-    /** The tag value of CONSTANT_Methodref_info JVMS structures. */
-    MethodRef = 10,
-    /** The tag value of CONSTANT_InterfaceMethodref_info JVMS structures. */
-    InterfaceMethodRef = 11,
-    /** The tag value of CONSTANT_String_info JVMS structures. */
-    String = 8,
-    /** The tag value of CONSTANT_Integer_info JVMS structures. */
-    Integer = 3,
-    /** The tag value of CONSTANT_Float_info JVMS structures. */
-    Float = 4,
-    /** The tag value of CONSTANT_Long_info JVMS structures. */
-    Long = 5,
-    /** The tag value of CONSTANT_Double_info JVMS structures. */
-    Double = 6,
-    /** The tag value of CONSTANT_NameAndType_info JVMS structures. */
-    NameAndType = 12,
-    /** The tag value of CONSTANT_Utf8_info JVMS structures. */
     Utf8 = 1,
-    /** The tag value of CONSTANT_MethodHandle_info JVMS structures. */
+    Integer = 3,
+    Float = 4,
+    Long = 5,
+    Double = 6,
+    Class = 7,
+    String = 8,
+    FieldRef = 9,
+    MethodRef = 10,
+    InterfaceMethodRef = 11,
+    NameAndType = 12,
     MethodHandle = 15,
-    /** The tag value of CONSTANT_MethodType_info JVMS structures. */
     MethodType = 16,
-    /** The tag value of CONSTANT_MethodType_info JVMS structures. */
     Dynamic = 17,
-    /** The tag value of CONSTANT_Dynamic_info JVMS structures. */
     InvokeDynamic = 18,
-    /** The tag value of CONSTANT_InvokeDynamic_info JVMS structures. */
     Module = 19,
-    /** The tag value of CONSTANT_Module_info JVMS structures. */
     Package = 20,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize, IntoStaticStr)]
 pub enum Constant {
-    Class(Class),
-    FieldRef(FieldRef),
-    MethodRef(MethodRef),
-    InterfaceMethodRef(InterfaceMethodRef),
-    String(String),
+    Utf8(Utf8),
     Integer(Integer),
     Float(Float),
     Long(Long),
     Double(Double),
+    Class(Class),
+    String(String),
+    FieldRef(FieldRef),
+    MethodRef(MethodRef),
+    InterfaceMethodRef(InterfaceMethodRef),
     NameAndType(NameAndType),
-    Utf8(Utf8),
     MethodHandle(MethodHandle),
     MethodType(MethodType),
     Dynamic(Dynamic),
@@ -116,17 +99,17 @@ pub enum Constant {
 impl Constant {
     pub const fn tag(&self) -> ConstantTag {
         match self {
-            Constant::Class(..) => ConstantTag::Class,
-            Constant::FieldRef(..) => ConstantTag::FieldRef,
-            Constant::MethodRef(..) => ConstantTag::MethodRef,
-            Constant::InterfaceMethodRef(..) => ConstantTag::InterfaceMethodRef,
-            Constant::String(..) => ConstantTag::String,
+            Constant::Utf8(..) => ConstantTag::Utf8,
             Constant::Integer(..) => ConstantTag::Integer,
             Constant::Float(..) => ConstantTag::Float,
             Constant::Long(..) => ConstantTag::Long,
             Constant::Double(..) => ConstantTag::Double,
+            Constant::Class(..) => ConstantTag::Class,
+            Constant::String(..) => ConstantTag::String,
+            Constant::FieldRef(..) => ConstantTag::FieldRef,
+            Constant::MethodRef(..) => ConstantTag::MethodRef,
+            Constant::InterfaceMethodRef(..) => ConstantTag::InterfaceMethodRef,
             Constant::NameAndType(..) => ConstantTag::NameAndType,
-            Constant::Utf8(..) => ConstantTag::Utf8,
             Constant::MethodHandle(..) => ConstantTag::MethodHandle,
             Constant::MethodType(..) => ConstantTag::MethodType,
             Constant::Dynamic(..) => ConstantTag::Dynamic,
@@ -134,6 +117,79 @@ impl Constant {
             Constant::Module(..) => ConstantTag::Module,
             Constant::Package(..) => ConstantTag::Package,
         }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Utf8 {
+    pub length: u16,
+    pub bytes: Vec<u8>,
+}
+
+impl Utf8 {
+    pub fn string(&self) -> KapiResult<std::string::String> {
+        cesu8::from_java_cesu8(&self.bytes[..])
+            .map_err(|err| {
+                KapiError::ClassParseError(format!(
+                    "Unable to convert bytes to string, reason: {}",
+                    err.to_string()
+                ))
+            })
+            .map(|string| string.to_string())
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Integer {
+    pub bytes: [u8; 4],
+}
+
+impl Integer {
+    pub fn as_i32(&self) -> i32 {
+        i32::from_be_bytes(self.bytes)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Float {
+    pub bytes: [u8; 4],
+}
+
+impl Float {
+    pub fn as_f32(&self) -> f32 {
+        f32::from_be_bytes(self.bytes)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Long {
+    pub high_bytes: [u8; 4],
+    pub low_bytes: [u8; 4],
+}
+
+impl Long {
+    pub fn as_i64(&self) -> i64 {
+        let mut bytes = [0u8; 8];
+        bytes[..4].copy_from_slice(&self.high_bytes);
+        bytes[4..].copy_from_slice(&self.low_bytes);
+
+        i64::from_be_bytes(bytes)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Double {
+    pub high_bytes: [u8; 4],
+    pub low_bytes: [u8; 4],
+}
+
+impl Double {
+    pub fn as_f64(&self) -> f64 {
+        let mut bytes = [0u8; 8];
+        bytes[..4].copy_from_slice(&self.high_bytes);
+        bytes[4..].copy_from_slice(&self.low_bytes);
+
+        f64::from_be_bytes(bytes)
     }
 }
 
@@ -149,6 +205,24 @@ impl Class {
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
         if let Some(Constant::Utf8(constant)) = constant_pool.get(self.name_index) {
+            Some(constant)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct String {
+    pub string_index: u16,
+}
+
+impl String {
+    pub fn string<'constant, 'constant_pool: 'constant>(
+        &'constant self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.string_index) {
             Some(constant)
         } else {
             None
@@ -256,78 +330,6 @@ impl InterfaceMethodRef {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct String {
-    pub string_index: u16,
-}
-
-impl String {
-    pub fn string<'constant, 'constant_pool: 'constant>(
-        &'constant self,
-        constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.string_index) {
-            Some(constant)
-        } else {
-            None
-        }
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Integer {
-    pub bytes: [u8; 4],
-}
-
-impl Integer {
-    pub fn as_i32(&self) -> i32 {
-        i32::from_be_bytes(self.bytes)
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Float {
-    pub bytes: [u8; 4],
-}
-
-impl Float {
-    pub fn as_f32(&self) -> f32 {
-        f32::from_be_bytes(self.bytes)
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Long {
-    pub high_bytes: [u8; 4],
-    pub low_bytes: [u8; 4],
-}
-
-impl Long {
-    pub fn as_i64(&self) -> i64 {
-        let mut bytes = [0u8; 8];
-        bytes[..4].copy_from_slice(&self.high_bytes);
-        bytes[4..].copy_from_slice(&self.low_bytes);
-
-        i64::from_be_bytes(bytes)
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Double {
-    pub high_bytes: [u8; 4],
-    pub low_bytes: [u8; 4],
-}
-
-impl Double {
-    pub fn as_f64(&self) -> f64 {
-        let mut bytes = [0u8; 8];
-        bytes[..4].copy_from_slice(&self.high_bytes);
-        bytes[4..].copy_from_slice(&self.low_bytes);
-
-        f64::from_be_bytes(bytes)
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct NameAndType {
     pub name_index: u16,
     pub type_index: u16,
@@ -355,25 +357,6 @@ impl NameAndType {
         } else {
             None
         }
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Utf8 {
-    pub length: u16,
-    pub bytes: Vec<u8>,
-}
-
-impl Utf8 {
-    pub fn string(&self) -> KapiResult<std::string::String> {
-        cesu8::from_java_cesu8(&self.bytes[..])
-            .map_err(|err| {
-                KapiError::ClassParseError(format!(
-                    "Unable to convert bytes to string, reason: {}",
-                    err.to_string()
-                ))
-            })
-            .map(|string| string.to_string())
     }
 }
 
