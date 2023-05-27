@@ -4,7 +4,7 @@ use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 use strum::IntoStaticStr;
 
-use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod};
+use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods};
 use crate::asm::node::opcode::RefKind;
 use crate::error::{KapiError, KapiResult};
 
@@ -117,22 +117,22 @@ impl Constant {
     pub const fn tag(&self) -> ConstantTag {
         match self {
             Constant::Class(..) => ConstantTag::Class,
-            Constant::FieldRef { .. } => ConstantTag::FieldRef,
-            Constant::MethodRef { .. } => ConstantTag::MethodRef,
-            Constant::InterfaceMethodRef { .. } => ConstantTag::InterfaceMethodRef,
-            Constant::String { .. } => ConstantTag::String,
-            Constant::Integer { .. } => ConstantTag::Integer,
-            Constant::Float { .. } => ConstantTag::Float,
-            Constant::Long { .. } => ConstantTag::Long,
-            Constant::Double { .. } => ConstantTag::Double,
-            Constant::NameAndType { .. } => ConstantTag::NameAndType,
-            Constant::Utf8 { .. } => ConstantTag::Utf8,
-            Constant::MethodHandle { .. } => ConstantTag::MethodHandle,
-            Constant::MethodType { .. } => ConstantTag::MethodType,
-            Constant::Dynamic { .. } => ConstantTag::Dynamic,
-            Constant::InvokeDynamic { .. } => ConstantTag::InvokeDynamic,
-            Constant::Module { .. } => ConstantTag::Module,
-            Constant::Package { .. } => ConstantTag::Package,
+            Constant::FieldRef(..) => ConstantTag::FieldRef,
+            Constant::MethodRef(..) => ConstantTag::MethodRef,
+            Constant::InterfaceMethodRef(..) => ConstantTag::InterfaceMethodRef,
+            Constant::String(..) => ConstantTag::String,
+            Constant::Integer(..) => ConstantTag::Integer,
+            Constant::Float(..) => ConstantTag::Float,
+            Constant::Long(..) => ConstantTag::Long,
+            Constant::Double(..) => ConstantTag::Double,
+            Constant::NameAndType(..) => ConstantTag::NameAndType,
+            Constant::Utf8(..) => ConstantTag::Utf8,
+            Constant::MethodHandle(..) => ConstantTag::MethodHandle,
+            Constant::MethodType(..) => ConstantTag::MethodType,
+            Constant::Dynamic(..) => ConstantTag::Dynamic,
+            Constant::InvokeDynamic(..) => ConstantTag::InvokeDynamic,
+            Constant::Module(..) => ConstantTag::Module,
+            Constant::Package(..) => ConstantTag::Package,
         }
     }
 }
@@ -486,9 +486,9 @@ impl Dynamic {
     ) -> Option<&'bootstrap_method BootstrapMethod> {
         let bootstrap_methods = if let Some(AttributeInfo {
             attribute:
-                Some(Attribute::BootstrapMethods {
+                Some(Attribute::BootstrapMethods(BootstrapMethods {
                     bootstrap_methods, ..
-                }),
+                })),
             ..
         }) = attribute_infos.iter().find(|attribute_info| {
             matches!(
@@ -532,9 +532,9 @@ impl InvokeDynamic {
     ) -> Option<&'bootstrap_method BootstrapMethod> {
         let bootstrap_methods = if let Some(AttributeInfo {
             attribute:
-                Some(Attribute::BootstrapMethods {
+                Some(Attribute::BootstrapMethods(BootstrapMethods {
                     bootstrap_methods, ..
-                }),
+                })),
             ..
         }) = attribute_infos.iter().find(|attribute_info| {
             matches!(

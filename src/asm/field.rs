@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::node::access_flag::{AccessFlags, FieldAccessFlag};
-use crate::asm::node::attribute::{Attribute, ConstantValue};
+use crate::asm::node::attribute::{Attribute, ConstantFieldValue};
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
@@ -12,7 +12,7 @@ use crate::error::{KapiError, KapiResult};
 pub trait FieldVisitor {
     fn visit_constant<CV>(&mut self, constant_value: CV) -> KapiResult<()>
     where
-        CV: Into<ConstantValue>;
+        CV: Into<ConstantFieldValue>;
 
     fn visit_end(&mut self) {}
 }
@@ -59,7 +59,7 @@ impl FieldWriter {
 impl FieldVisitor for FieldWriter {
     fn visit_constant<CV>(&mut self, constant_value: CV) -> KapiResult<()>
     where
-        CV: Into<ConstantValue>,
+        CV: Into<ConstantFieldValue>,
     {
         let constant_value = constant_value.into();
 
@@ -70,8 +70,8 @@ impl FieldVisitor for FieldWriter {
         match &self.expected_field_type {
             Type::Boolean => {
                 match constant_value {
-                    ConstantValue::Int(value) if value == 0 || value == 1 => {}
-                    ConstantValue::Int(value) if value != 0 && value != 1 => {
+                    ConstantFieldValue::Int(value) if value == 0 || value == 1 => {}
+                    ConstantFieldValue::Int(value) if value != 0 && value != 1 => {
                         return Err(KapiError::ArgError(format!(
                             "Field has type `I` which can only have int type with value 0 or 1, but got {}",
                             value,
@@ -85,7 +85,7 @@ impl FieldVisitor for FieldWriter {
                 }
             }
             Type::Byte | Type::Short | Type::Char | Type::Int => {
-                if !matches!(constant_value, ConstantValue::Int(_)) {
+                if !matches!(constant_value, ConstantFieldValue::Int(_)) {
                     return Err(KapiError::ArgError(format!(
                         "Field has type `{}` which can only have int type",
                         descriptor,
@@ -93,28 +93,28 @@ impl FieldVisitor for FieldWriter {
                 }
             }
             Type::Float => {
-                if !matches!(constant_value, ConstantValue::Float(_)) {
+                if !matches!(constant_value, ConstantFieldValue::Float(_)) {
                     return Err(KapiError::ArgError(format!(
                         "Field has type `F` which can only have float type",
                     )))
                 }
             }
             Type::Long => {
-                if !matches!(constant_value, ConstantValue::Long(_)) {
+                if !matches!(constant_value, ConstantFieldValue::Long(_)) {
                     return Err(KapiError::ArgError(format!(
                         "Field has type `J` which can only have long type",
                     )))
                 }
             }
             Type::Double => {
-                if !matches!(constant_value, ConstantValue::Double(_)) {
+                if !matches!(constant_value, ConstantFieldValue::Double(_)) {
                     return Err(KapiError::ArgError(format!(
                         "Field has type `D` which can only have double type",
                     )))
                 }
             }
             Type::ObjectRef(object_ref_type) if object_ref_type.as_str() == "java/lang/String" => {
-                if !matches!(constant_value, ConstantValue::String(_)) {
+                if !matches!(constant_value, ConstantFieldValue::String(_)) {
                     return Err(KapiError::ArgError(format!(
                         "Field has type `java/lang/String` which can only have String type",
                     )))
@@ -177,7 +177,7 @@ impl FieldVisitor for FieldWriter {
         byte_vec.put_be(field_attributes.len() as u16); // attribute length
 
         for attribute in field_attributes {
-            attribute.bytecode(&mut *byte_vec, &mut *symbol_table);
+            attribute.put_u8s(&mut *byte_vec, &mut *symbol_table);
         }
     }
 }

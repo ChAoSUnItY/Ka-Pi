@@ -8,7 +8,7 @@ use indexmap::IndexSet;
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
-use crate::asm::node::attribute::{Attribute, BootstrapMethod, ConstantValue};
+use crate::asm::node::attribute::{Attribute, BootstrapMethod, ConstantFieldValue, ConstantValue};
 use crate::asm::node::constant;
 use crate::asm::node::constant::{
     Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, InvokeDynamic,
@@ -279,19 +279,19 @@ impl SymbolTable {
 
     pub(crate) fn add_constant_attribute<CV>(&mut self, constant_value: CV) -> u16
     where
-        CV: Into<ConstantValue>,
+        CV: Into<ConstantFieldValue>,
     {
         let constant_value = constant_value.into();
         let constant_value_index = match &constant_value {
-            ConstantValue::Int(val) => self.add_integer(*val),
-            ConstantValue::Float(val) => self.add_float(*val),
-            ConstantValue::Long(val) => self.add_long(*val),
-            ConstantValue::Double(val) => self.add_double(*val),
-            ConstantValue::String(val) => self.add_string(val),
+            ConstantFieldValue::Int(val) => self.add_integer(*val),
+            ConstantFieldValue::Float(val) => self.add_float(*val),
+            ConstantFieldValue::Long(val) => self.add_long(*val),
+            ConstantFieldValue::Double(val) => self.add_double(*val),
+            ConstantFieldValue::String(val) => self.add_string(val),
         };
-        let attribute = Attribute::ConstantValue {
+        let attribute = Attribute::ConstantValue(ConstantValue {
             constant_value_index,
-        };
+        });
 
         self.insert_attr(attribute)
     }

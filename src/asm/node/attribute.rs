@@ -41,7 +41,7 @@ pub(crate) const PERMITTED_SUBCLASSES: &'static str = "PermittedSubclasses";
 pub(crate) const RECORD: &'static str = "Record";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum ConstantValue {
+pub enum ConstantFieldValue {
     Int(i32),
     Float(f32),
     Long(i64),
@@ -49,39 +49,39 @@ pub enum ConstantValue {
     String(String),
 }
 
-impl Eq for ConstantValue {}
+impl Eq for ConstantFieldValue {}
 
-impl From<i32> for ConstantValue {
+impl From<i32> for ConstantFieldValue {
     fn from(value: i32) -> Self {
         Self::Int(value)
     }
 }
 
-impl From<f32> for ConstantValue {
+impl From<f32> for ConstantFieldValue {
     fn from(value: f32) -> Self {
         Self::Float(value)
     }
 }
 
-impl From<i64> for ConstantValue {
+impl From<i64> for ConstantFieldValue {
     fn from(value: i64) -> Self {
         Self::Long(value)
     }
 }
 
-impl From<f64> for ConstantValue {
+impl From<f64> for ConstantFieldValue {
     fn from(value: f64) -> Self {
         Self::Double(value)
     }
 }
 
-impl From<String> for ConstantValue {
+impl From<String> for ConstantFieldValue {
     fn from(value: String) -> Self {
         Self::String(value)
     }
 }
 
-impl From<&str> for ConstantValue {
+impl From<&str> for ConstantFieldValue {
     fn from(value: &str) -> Self {
         Self::String(value.to_owned())
     }
@@ -97,57 +97,19 @@ pub struct AttributeInfo {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Attribute {
-    ConstantValue {
-        constant_value_index: u16,
-    },
-    Code {
-        max_stack: u16,
-        max_locals: u16,
-        code_length: u32,
-        code: Vec<u8>,
-        exception_table_length: u16,
-        exception_table: Vec<Exception>,
-        attributes_length: u16,
-        attributes: Vec<AttributeInfo>,
-    },
-    StackMapTable {
-        number_of_entries: u16,
-        entries: Vec<StackMapFrameEntry>,
-    },
-    Exceptions {
-        number_of_exceptions: u16,
-        exception_index_table: Vec<u16>,
-    },
-    InnerClasses {
-        number_of_classes: u16,
-        class: Vec<InnerClass>,
-    },
-    EnclosingMethod {
-        class_index: u16,
-        method_index: u16,
-    },
+    ConstantValue(ConstantValue),
+    Code(Code),
+    StackMapTable(StackMapTable),
+    Exceptions(Exceptions),
+    InnerClasses(InnerClasses),
+    EnclosingMethod(EnclosingMethod),
     Synthetic,
-    Signature {
-        signature_index: u16,
-    },
-    SourceFile {
-        source_file_index: u16,
-    },
-    SourceDebugExtension {
-        debug_extension: Vec<u8>,
-    },
-    LineNumberTable {
-        line_number_table_length: u16,
-        line_number_table: Vec<LineNumber>,
-    },
-    LocalVariableTable {
-        local_variable_table_length: u16,
-        local_variable_table: Vec<LocalVariable>,
-    },
-    LocalVariableTypeTable {
-        local_variable_type_table_length: u16,
-        local_variable_type_table: Vec<LocalVariableType>,
-    },
+    Signature(Signature),
+    SourceFile(SourceFile),
+    SourceDebugExtension(SourceDebugExtension),
+    LineNumberTable(LineNumberTable),
+    LocalVariableTable(LocalVariableTable),
+    LocalVariableTypeTable(LocalVariableTypeTable),
     Deprecate,
     // RuntimeVisibleAnnotations,
     // RuntimeInvisibleAnnotations,
@@ -156,25 +118,15 @@ pub enum Attribute {
     // RuntimeVisibleTypeAnnotations,
     // RuntimeInvisibleTypeAnnotations,
     // AnnotationDefault,
-    BootstrapMethods {
-        num_bootstrap_methods: u16,
-        bootstrap_methods: Vec<BootstrapMethod>,
-    },
-    MethodParameters {
-        parameters_count: u16,
-        method_parameters: Vec<MethodParameter>,
-    },
+    BootstrapMethods(BootstrapMethods),
+    MethodParameters(MethodParameters),
     // Module,
     // ModulePackages,
     // ModuleMainClass,
-    NestHost {
-        host_class_index: u16,
-    },
-    NestMembers {
-        number_of_classes: u16,
-        classes: Vec<u16>,
-    }, // Record,
-       // PermittedSubclasses,
+    NestHost(NestHost),
+    NestMembers(NestMembers),
+    Record(Record),
+    PermittedSubclasses(PermittedSubclasses),
 }
 
 impl Attribute {
@@ -208,100 +160,8 @@ impl Attribute {
             // Attribute::ModuleMainClass,
             Attribute::NestHost { .. } => NEST_HOST,
             Attribute::NestMembers { .. } => NEST_MEMBERS,
-            // Attribute::Record,
-            // Attribute::PermittedSubclasses,
-        }
-    }
-
-    pub fn attribute_len(&self) -> u32 {
-        match self {
-            Attribute::ConstantValue { .. } => 2,
-            Attribute::Code {
-                max_stack: _,
-                max_locals: _,
-                code_length,
-                code: _,
-                exception_table_length,
-                exception_table: _,
-                attributes_length: _,
-                attributes,
-            } => {
-                // max_stack: 2
-                // max_locals: 2
-                // code_length: 4
-                // code: code_length
-                // exception_table_length: 2
-                // exception_table: [Exception] (8) * exception_table_length
-                //     start_pc: 2
-                //     end_pc: 2
-                //     handler_pc: 2
-                //     catch_type: 2
-                //     `total`: 8
-                // attributes_length: 2
-                // attributes: [Attribute] * attributes_length
-                // `total`: 12 + code_length + 8 * exception_table_length + [Attribute] * attribute_length
-                12 + *code_length as u32
-                    + 8 * *exception_table_length as u32
-                    + attributes.iter().map(|info| info.attribute_len).sum::<u32>()
-            }
-            Attribute::StackMapTable {
-                number_of_entries: _,
-                entries,
-            } => 2 + entries.iter().map(StackMapFrameEntry::len).sum::<u32>(),
-            Attribute::Exceptions {
-                number_of_exceptions,
-                exception_index_table: _,
-            } => 2 + 2 * *number_of_exceptions as u32,
-            Attribute::InnerClasses {
-                number_of_classes,
-                class: _,
-            } => 8 * *number_of_classes as u32,
-            Attribute::EnclosingMethod { .. } => 4,
-            Attribute::Synthetic => 0,
-            Attribute::Signature { .. } => 2,
-            Attribute::SourceFile { .. } => 2,
-            Attribute::SourceDebugExtension { debug_extension } => debug_extension.len() as u32,
-            Attribute::LineNumberTable {
-                line_number_table_length,
-                line_number_table: _,
-            } => 4 * *line_number_table_length as u32,
-            Attribute::LocalVariableTable {
-                local_variable_table_length,
-                local_variable_table: _,
-            } => 10 * *local_variable_table_length as u32,
-            Attribute::LocalVariableTypeTable {
-                local_variable_type_table_length,
-                local_variable_type_table: _,
-            } => 10 * *local_variable_type_table_length as u32,
-            Attribute::Deprecate => 0,
-            // Attribute::RuntimeVisibleAnnotations,
-            // Attribute::RuntimeInvisibleAnnotations,
-            // Attribute::RuntimeVisibleParameterAnnotations,
-            // Attribute::RuntimeInvisibleParameterAnnotations,
-            // Attribute::RuntimeVisibleTypeAnnotations,
-            // Attribute::RuntimeInvisibleTypeAnnotations,
-            // Attribute::AnnotationDefault,
-            Attribute::BootstrapMethods {
-                num_bootstrap_methods: _,
-                bootstrap_methods,
-            } => {
-                2 + bootstrap_methods
-                    .iter()
-                    .map(BootstrapMethod::len)
-                    .sum::<u32>()
-            },
-            Attribute::MethodParameters { parameters_count, method_parameters: _ } => {
-                2 + 4 * *parameters_count as u32
-            }
-            // Attribute::Module,
-            // Attribute::ModulePackages,
-            // Attribute::ModuleMainClass,
-            Attribute::NestHost { .. } => 2,
-            Attribute::NestMembers { number_of_classes, classes: _ } => {
-                2 + 2 * *number_of_classes as u32
-            }
-            // Attribute::Record,
-            // Attribute::PermittedSubclasses,
+            Attribute::Record { .. } => RECORD,
+            Attribute::PermittedSubclasses { .. } => PERMITTED_SUBCLASSES,
         }
     }
 
@@ -313,21 +173,16 @@ impl Attribute {
 
     pub(crate) fn rearrange_indices(&mut self, rearrangements: &HashMap<u16, u16>) {
         match self {
-            Attribute::ConstantValue {
+            Attribute::ConstantValue(ConstantValue {
                 constant_value_index,
-            } => {
+            }) => {
                 Self::rearrange_index(constant_value_index, &rearrangements);
             }
-            Attribute::Code {
-                max_stack: _,
-                max_locals: _,
-                code_length: _,
-                code: _,
-                exception_table_length: _,
+            Attribute::Code(Code {
                 exception_table,
-                attributes_length: _,
                 attributes,
-            } => {
+                ..
+            }) => {
                 for exception in exception_table {
                     Self::rearrange_index(&mut exception.catch_type, rearrangements);
                 }
@@ -338,86 +193,92 @@ impl Attribute {
                     }
                 }
             }
-            Attribute::StackMapTable {
-                number_of_entries: _,
-                entries,
-            } => {
+            Attribute::StackMapTable(StackMapTable { entries, .. }) => {
                 for entry in entries {
                     entry.rearrange_index(rearrangements);
                 }
             }
-            Attribute::Exceptions {
-                number_of_exceptions: _,
+            Attribute::Exceptions(Exceptions {
                 exception_index_table,
-            } => {
+                ..
+            }) => {
                 for exception_index in exception_index_table {
                     Self::rearrange_index(exception_index, rearrangements);
                 }
             }
-            Attribute::InnerClasses {
-                number_of_classes: _,
-                class,
-            } => {
+            Attribute::InnerClasses(InnerClasses { class, .. }) => {
                 for class in class {
                     class.rearrange_index(rearrangements);
                 }
             }
-            Attribute::EnclosingMethod {
+            Attribute::EnclosingMethod(EnclosingMethod {
                 class_index,
                 method_index,
-            } => {
+            }) => {
                 Self::rearrange_index(class_index, rearrangements);
                 Self::rearrange_index(method_index, rearrangements);
             }
             Attribute::Synthetic => {}
-            Attribute::Signature { signature_index } => {
+            Attribute::Signature(Signature { signature_index }) => {
                 Self::rearrange_index(signature_index, rearrangements);
             }
-            Attribute::SourceFile { source_file_index } => {
+            Attribute::SourceFile(SourceFile { source_file_index }) => {
                 Self::rearrange_index(source_file_index, rearrangements);
             }
-            Attribute::SourceDebugExtension { .. } => {}
-            Attribute::LineNumberTable { .. } => {}
-            Attribute::LocalVariableTable {
-                local_variable_table_length: _,
+            Attribute::SourceDebugExtension(..) => {}
+            Attribute::LineNumberTable(..) => {}
+            Attribute::LocalVariableTable(LocalVariableTable {
                 local_variable_table,
-            } => {
+                ..
+            }) => {
                 for local_variable in local_variable_table {
                     local_variable.rearrange_index(rearrangements);
                 }
             }
-            Attribute::LocalVariableTypeTable {
-                local_variable_type_table_length: _,
+            Attribute::LocalVariableTypeTable(LocalVariableTypeTable {
                 local_variable_type_table,
-            } => {
+                ..
+            }) => {
                 for local_variable_type in local_variable_type_table {
                     local_variable_type.rearrange_index(rearrangements);
                 }
             }
             Attribute::Deprecate => {}
-            Attribute::BootstrapMethods {
-                num_bootstrap_methods: _,
-                bootstrap_methods,
-            } => {
+            Attribute::BootstrapMethods(BootstrapMethods {
+                bootstrap_methods, ..
+            }) => {
                 for bootstrap_method in bootstrap_methods {
                     bootstrap_method.rearrange_index(rearrangements);
                 }
             }
-            Attribute::MethodParameters {
-                parameters_count: _,
-                method_parameters,
-            } => {
+            Attribute::MethodParameters(MethodParameters {
+                method_parameters, ..
+            }) => {
                 for method_parameter in method_parameters {
                     method_parameter.rearrange_index(rearrangements);
                 }
             }
-            Attribute::NestHost { host_class_index } => {
+            Attribute::NestHost(NestHost { host_class_index }) => {
                 Self::rearrange_index(host_class_index, rearrangements);
             }
-            Attribute::NestMembers {
-                number_of_classes: _,
-                classes,
-            } => {
+            Attribute::NestMembers(NestMembers { classes, .. }) => {
+                for class in classes {
+                    Self::rearrange_index(class, rearrangements);
+                }
+            }
+            Attribute::Record(Record { components, .. }) => {
+                for component in components {
+                    Self::rearrange_index(&mut component.name_index, rearrangements);
+                    Self::rearrange_index(&mut component.descriptor_index, rearrangements);
+
+                    for attribute_info in &mut component.attributes {
+                        if let Some(attribute) = &mut attribute_info.attribute {
+                            attribute.rearrange_indices(rearrangements);
+                        }
+                    }
+                }
+            }
+            Attribute::PermittedSubclasses(PermittedSubclasses { classes, .. }) => {
                 for class in classes {
                     Self::rearrange_index(class, rearrangements);
                 }
@@ -425,14 +286,14 @@ impl Attribute {
         }
     }
 
-    pub(crate) fn bytecode(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) {
+    pub(crate) fn put_u8s(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) {
         let name_index = symbol_table.add_utf8(self.name());
         byte_vec.put_be(name_index);
 
         match self {
-            Attribute::ConstantValue {
+            Attribute::ConstantValue(ConstantValue {
                 constant_value_index,
-            } => {
+            }) => {
                 byte_vec.put_be(2u32);
                 byte_vec.put_be(*constant_value_index);
             }
@@ -453,9 +314,122 @@ impl Attribute {
             Attribute::MethodParameters { .. } => {}
             Attribute::NestHost { .. } => {}
             Attribute::NestMembers { .. } => {}
+            Attribute::Record { .. } => {}
+            Attribute::PermittedSubclasses { .. } => {}
         }
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ConstantValue {
+    pub constant_value_index: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Code {
+    pub max_stack: u16,
+    pub max_locals: u16,
+    pub code_length: u32,
+    pub code: Vec<u8>,
+    pub exception_table_length: u16,
+    pub exception_table: Vec<Exception>,
+    pub attributes_length: u16,
+    pub attributes: Vec<AttributeInfo>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct StackMapTable {
+    pub number_of_entries: u16,
+    pub entries: Vec<StackMapFrameEntry>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Exceptions {
+    pub number_of_exceptions: u16,
+    pub exception_index_table: Vec<u16>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct InnerClasses {
+    pub number_of_classes: u16,
+    pub class: Vec<InnerClass>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct EnclosingMethod {
+    pub class_index: u16,
+    pub method_index: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Signature {
+    pub signature_index: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SourceFile {
+    pub source_file_index: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SourceDebugExtension {
+    pub debug_extension: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct LineNumberTable {
+    pub line_number_table_length: u16,
+    pub line_number_table: Vec<LineNumber>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct LocalVariableTable {
+    pub local_variable_table_length: u16,
+    pub local_variable_table: Vec<LocalVariable>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct LocalVariableTypeTable {
+    pub local_variable_type_table_length: u16,
+    pub local_variable_type_table: Vec<LocalVariableType>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct BootstrapMethods {
+    pub num_bootstrap_methods: u16,
+    pub bootstrap_methods: Vec<BootstrapMethod>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct MethodParameters {
+    pub parameters_count: u16,
+    pub method_parameters: Vec<MethodParameter>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct NestHost {
+    pub host_class_index: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct NestMembers {
+    pub number_of_classes: u16,
+    pub classes: Vec<u16>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Record {
+    pub components_count: u16,
+    pub components: Vec<RecordComponent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct PermittedSubclasses {
+    pub number_of_classes: u16,
+    pub classes: Vec<u16>,
+}
+
+// Inner structs
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Exception {
@@ -729,4 +703,12 @@ impl MethodParameter {
             self.name_index = *target_index;
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RecordComponent {
+    pub name_index: u16,
+    pub descriptor_index: u16,
+    pub attributes_count: u16,
+    pub attributes: Vec<AttributeInfo>,
 }

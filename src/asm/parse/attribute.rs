@@ -8,7 +8,8 @@ use nom::{error, error_position, IResult};
 
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
-    Attribute, AttributeInfo, BootstrapMethod, Exception, LineNumber, StackMapFrameEntry,
+    Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, Code, ConstantValue, Exception,
+    Exceptions, LineNumber, LineNumberTable, SourceFile, StackMapFrameEntry, StackMapTable,
     VerificationType,
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
@@ -74,9 +75,9 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
 ) -> IResult<&'input [u8], Option<Attribute>> {
     match data {
         attribute::CONSTANT_VALUE => map(be_u16, |constant_value_index| {
-            Some(Attribute::ConstantValue {
+            Some(Attribute::ConstantValue(ConstantValue {
                 constant_value_index,
-            })
+            }))
         })(input),
         attribute::CODE => code(input, constant_pool),
         attribute::STACK_MAP_TABLE => stack_map_table(input),
@@ -100,7 +101,7 @@ fn code<'input: 'constant_pool, 'constant_pool>(
 
     Ok((
         input,
-        Some(Attribute::Code {
+        Some(Attribute::Code(Code {
             max_stack,
             max_locals,
             code_length,
@@ -109,7 +110,7 @@ fn code<'input: 'constant_pool, 'constant_pool>(
             exception_table,
             attributes_length,
             attributes,
-        }),
+        })),
     ))
 }
 
@@ -129,10 +130,10 @@ fn stack_map_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
         collect(be_u16, stack_map_frame_entry),
         |(number_of_entries, entries)| {
-            Some(Attribute::StackMapTable {
+            Some(Attribute::StackMapTable(StackMapTable {
                 number_of_entries,
                 entries,
-            })
+            }))
         },
     )(input)
 }
@@ -225,17 +226,17 @@ fn exceptions_attribute(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
         collect(be_u16, be_u16),
         |(number_of_exceptions, exception_index_table)| {
-            Some(Attribute::Exceptions {
+            Some(Attribute::Exceptions(Exceptions {
                 number_of_exceptions,
                 exception_index_table,
-            })
+            }))
         },
     )(input)
 }
 
 fn source_file(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(be_u16, |source_file_index| {
-        Some(Attribute::SourceFile { source_file_index })
+        Some(Attribute::SourceFile(SourceFile { source_file_index }))
     })(input)
 }
 
@@ -243,10 +244,10 @@ fn line_number_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
         collect(be_u16, line_number),
         |(line_number_table_length, line_number_table)| {
-            Some(Attribute::LineNumberTable {
+            Some(Attribute::LineNumberTable(LineNumberTable {
                 line_number_table_length,
                 line_number_table,
-            })
+            }))
         },
     )(input)
 }
@@ -264,10 +265,10 @@ fn bootstrap_methods_attribute(input: &[u8]) -> IResult<&[u8], Option<Attribute>
     map(
         collect(be_u16, bootstrap_method),
         |(num_bootstrap_methods, bootstrap_methods)| {
-            Some(Attribute::BootstrapMethods {
+            Some(Attribute::BootstrapMethods(BootstrapMethods {
                 num_bootstrap_methods,
                 bootstrap_methods,
-            })
+            }))
         },
     )(input)
 }
