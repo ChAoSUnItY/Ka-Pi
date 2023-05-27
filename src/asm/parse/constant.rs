@@ -28,39 +28,18 @@ pub(crate) fn constant_pool(input: &[u8]) -> IResult<&[u8], (u16, ConstantPool)>
 fn constant(input: &[u8]) -> IResult<&[u8], Constant> {
     let (input, tag) = map_res(be_u8, ConstantTag::try_from)(input)?;
     let (input, constant) = match tag {
-        ConstantTag::Class => {
-            map(be_u16, |name_index| Constant::Class(Class { name_index }))(input)?
+        ConstantTag::Utf8 => {
+            let (input, length) = be_u16(input)?;
+            let (input, bytes) = take(length)(input)?;
+
+            (
+                input,
+                Constant::Utf8(Utf8 {
+                    length,
+                    bytes: bytes.to_vec(),
+                }),
+            )
         }
-        ConstantTag::FieldRef => map(
-            tuple((be_u16, be_u16)),
-            |(class_index, name_and_type_index)| {
-                Constant::FieldRef(FieldRef {
-                    class_index,
-                    name_and_type_index,
-                })
-            },
-        )(input)?,
-        ConstantTag::MethodRef => map(
-            tuple((be_u16, be_u16)),
-            |(class_index, name_and_type_index)| {
-                Constant::MethodRef(MethodRef {
-                    class_index,
-                    name_and_type_index,
-                })
-            },
-        )(input)?,
-        ConstantTag::InterfaceMethodRef => map(
-            tuple((be_u16, be_u16)),
-            |(class_index, name_and_type_index)| {
-                Constant::InterfaceMethodRef(InterfaceMethodRef {
-                    class_index,
-                    name_and_type_index,
-                })
-            },
-        )(input)?,
-        ConstantTag::String => map(be_u16, |string_index| {
-            Constant::String(constant::String { string_index })
-        })(input)?,
         ConstantTag::Integer => map(take(4usize), |bytes: &[u8]| {
             Constant::Integer(Integer {
                 bytes: bytes
@@ -101,24 +80,45 @@ fn constant(input: &[u8]) -> IResult<&[u8], Constant> {
                 })
             },
         )(input)?,
+        ConstantTag::Class => {
+            map(be_u16, |name_index| Constant::Class(Class { name_index }))(input)?
+        }
+        ConstantTag::String => map(be_u16, |string_index| {
+            Constant::String(constant::String { string_index })
+        })(input)?,
+        ConstantTag::FieldRef => map(
+            tuple((be_u16, be_u16)),
+            |(class_index, name_and_type_index)| {
+                Constant::FieldRef(FieldRef {
+                    class_index,
+                    name_and_type_index,
+                })
+            },
+        )(input)?,
+        ConstantTag::MethodRef => map(
+            tuple((be_u16, be_u16)),
+            |(class_index, name_and_type_index)| {
+                Constant::MethodRef(MethodRef {
+                    class_index,
+                    name_and_type_index,
+                })
+            },
+        )(input)?,
+        ConstantTag::InterfaceMethodRef => map(
+            tuple((be_u16, be_u16)),
+            |(class_index, name_and_type_index)| {
+                Constant::InterfaceMethodRef(InterfaceMethodRef {
+                    class_index,
+                    name_and_type_index,
+                })
+            },
+        )(input)?,
         ConstantTag::NameAndType => map(tuple((be_u16, be_u16)), |(name_index, type_index)| {
             Constant::NameAndType(NameAndType {
                 name_index,
                 type_index,
             })
         })(input)?,
-        ConstantTag::Utf8 => {
-            let (input, length) = be_u16(input)?;
-            let (input, bytes) = take(length)(input)?;
-
-            (
-                input,
-                Constant::Utf8(Utf8 {
-                    length,
-                    bytes: bytes.to_vec(),
-                }),
-            )
-        }
         ConstantTag::MethodHandle => map(
             tuple((be_u8, be_u16)),
             |(reference_kind, reference_index)| {
