@@ -21,7 +21,8 @@ Ka-Pi offers several essential modules relates to JVM ecosystem:
 - TODO
 
 #### `parse`
-#### Class structure parsing
+<details>
+    <summary> Class structure parsing </summary>
 
 - [x] Magic Number (0xCAFEBABE)
 - [x] Constant Pool
@@ -89,6 +90,7 @@ Ka-Pi offers several essential modules relates to JVM ecosystem:
 - - - - [ ] ModulePackages
 - - - - [ ] ModuleMainClass
 - - - [x] Custom Attribute (Not described in specification)
+</details>
 
 ### Author
 
