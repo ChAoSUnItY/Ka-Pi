@@ -9,8 +9,8 @@ use nom::{error, error_position, IResult};
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
     Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, Code, ConstantValue, Exception,
-    Exceptions, LineNumber, LineNumberTable, SourceFile, StackMapFrameEntry, StackMapTable,
-    VerificationType,
+    Exceptions, LineNumber, LineNumberTable, NestHost, NestMembers, PermittedSubclasses,
+    SourceFile, StackMapFrameEntry, StackMapTable, VerificationType,
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
 use crate::asm::parse::collect;
@@ -84,6 +84,9 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::SOURCE_FILE => source_file(input),
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
         attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
+        attribute::NEST_HOST => nest_host(input),
+        attribute::NEST_MEMBERS => nest_members(input),
+        attribute::PERMITTED_SUBCLASSES => permitted_subclasses(input),
         _ => Ok((&[], None)), // Discard input data to ignore unrecognized attribute
     }
 }
@@ -285,4 +288,28 @@ fn bootstrap_method(input: &[u8]) -> IResult<&[u8], BootstrapMethod> {
             bootstrap_arguments,
         },
     ))
+}
+
+fn nest_host(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(be_u16, |host_class_index| {
+        Some(Attribute::NestHost(NestHost { host_class_index }))
+    })(input)
+}
+
+fn nest_members(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(collect(be_u16, be_u16), |(number_of_classes, classes)| {
+        Some(Attribute::NestMembers(NestMembers {
+            number_of_classes,
+            classes,
+        }))
+    })(input)
+}
+
+fn permitted_subclasses(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(collect(be_u16, be_u16), |(number_of_classes, classes)| {
+        Some(Attribute::PermittedSubclasses(PermittedSubclasses {
+            number_of_classes,
+            classes,
+        }))
+    })(input)
 }
