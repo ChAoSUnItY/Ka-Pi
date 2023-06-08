@@ -3,15 +3,17 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::node::access_flag::{NestedClassAccessFlag, ParameterAccessFlag};
+use crate::asm::node::access_flag::{ModuleAccessFlag, NestedClassAccessFlag, ParameterAccessFlag};
 use crate::asm::node::attribute::annotation::{
     Annotation, ElementValue, ParameterAnnotation, TypeAnnotation,
 };
+use crate::asm::node::attribute::module::{Exports, Opens, Provides, Requires};
 use crate::asm::node::ConstantRearrangeable;
 use crate::asm::symbol::SymbolTable;
 
 pub mod annotation;
 pub mod constant_value;
+pub mod module;
 
 pub(crate) const CONSTANT_VALUE: &'static str = "ConstantValue";
 pub(crate) const CODE: &'static str = "Code";
@@ -91,9 +93,9 @@ pub enum Attribute {
     AnnotationDefault(AnnotationDefault),
     BootstrapMethods(BootstrapMethods),
     MethodParameters(MethodParameters),
-    // Module,
-    // ModulePackages,
-    // ModuleMainClass,
+    Module(Module),
+    ModulePackages(ModulePackage),
+    ModuleMainClass(ModuleMainClass),
     NestHost(NestHost),
     NestMembers(NestMembers),
     Record(Record),
@@ -130,9 +132,9 @@ impl Attribute {
             Attribute::AnnotationDefault(..) => ANNOTATION_DEFAULT,
             Attribute::BootstrapMethods(..) => BOOTSTRAP_METHODS,
             Attribute::MethodParameters(..) => METHOD_PARAMETERS,
-            // Attribute::Module,
-            // Attribute::ModulePackages,
-            // Attribute::ModuleMainClass,
+            Attribute::Module(..) => MODULE,
+            Attribute::ModulePackages(..) => MODULE_PACKAGES,
+            Attribute::ModuleMainClass(..) => MODULE_MAIN_CLASS,
             Attribute::NestHost(..) => NEST_HOST,
             Attribute::NestMembers(..) => NEST_MEMBERS,
             Attribute::Record(..) => RECORD,
@@ -223,6 +225,11 @@ impl ConstantRearrangeable for Attribute {
             }
             Attribute::MethodParameters(method_parameters) => {
                 method_parameters.rearrange(rearrangements);
+            }
+            Attribute::Module(module) => module.rearrange(rearrangements),
+            Attribute::ModulePackages(module_packages) => module_packages.rearrange(rearrangements),
+            Attribute::ModuleMainClass(module_main_class) => {
+                module_main_class.rearrange(rearrangements)
             }
             Attribute::NestHost(nest_host) => {
                 nest_host.rearrange(rearrangements);
@@ -511,6 +518,75 @@ impl ConstantRearrangeable for MethodParameters {
         for method_parameter in &mut self.method_parameters {
             method_parameter.rearrange(rearrangements);
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Module {
+    pub module_name_index: u16,
+    pub module_flags: Vec<ModuleAccessFlag>,
+    pub module_version_index: u16,
+    pub requires_count: u16,
+    pub requires: Vec<Requires>,
+    pub exports_count: u16,
+    pub exports: Vec<Exports>,
+    pub opens_count: u16,
+    pub opens: Vec<Opens>,
+    pub uses_count: u16,
+    pub uses_index: Vec<u16>,
+    pub provides_count: u16,
+    pub provides: Vec<Provides>,
+}
+
+impl ConstantRearrangeable for Module {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.module_name_index, rearrangements);
+        Self::rearrange_index(&mut self.module_version_index, rearrangements);
+
+        for requires in &mut self.requires {
+            requires.rearrange(rearrangements);
+        }
+
+        for exports in &mut self.exports {
+            exports.rearrange(rearrangements);
+        }
+
+        for opens in &mut self.opens {
+            opens.rearrange(rearrangements);
+        }
+
+        for uses_index in &mut self.uses_index {
+            Self::rearrange_index(uses_index, rearrangements);
+        }
+
+        for provides in &mut self.provides {
+            provides.rearrange(rearrangements);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ModulePackage {
+    pub package_count: u16,
+    pub package_index: Vec<u16>,
+}
+
+impl ConstantRearrangeable for ModulePackage {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for package_index in &mut self.package_index {
+            Self::rearrange_index(package_index, rearrangements);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ModuleMainClass {
+    pub main_class_index: u16,
+}
+
+impl ConstantRearrangeable for ModuleMainClass {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.main_class_index, rearrangements);
     }
 }
 

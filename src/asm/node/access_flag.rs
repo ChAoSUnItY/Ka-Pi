@@ -170,3 +170,94 @@ pub enum ParameterAccessFlag {
 }
 
 impl AccessFlag for ParameterAccessFlag {}
+
+#[repr(u16)]
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    IntoPrimitive,
+    Serialize,
+    Deserialize,
+    EnumIter,
+)]
+pub enum ModuleAccessFlag {
+    Open = 0x0020,
+    Synthetic = 0x1000,
+    Mandated = 0x8000,
+}
+
+impl AccessFlag for ModuleAccessFlag {}
+
+#[repr(u16)]
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    IntoPrimitive,
+    Serialize,
+    Deserialize,
+    EnumIter,
+)]
+pub enum RequiresAccessFlag {
+    Transitive = 0x0020,
+    StaticPhase = 0x0040,
+    Synthetic = 0x1000,
+    Mandated = 0x8000,
+}
+
+impl AccessFlag for RequiresAccessFlag {}
+
+#[repr(u16)]
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    IntoPrimitive,
+    Serialize,
+    Deserialize,
+    EnumIter,
+)]
+pub enum ExportsAccessFlag {
+    Synthetic = 0x1000,
+    Mandated = 0x8000,
+}
+
+impl AccessFlag for ExportsAccessFlag {}
+
+#[repr(u16)]
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    IntoPrimitive,
+    Serialize,
+    Deserialize,
+    EnumIter,
+)]
+pub enum OpensAccessFlag {
+    Synthetic = 0x1000,
+    Mandated = 0x8000,
+}
+
+impl AccessFlag for OpensAccessFlag {}
