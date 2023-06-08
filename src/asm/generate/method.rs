@@ -5,14 +5,14 @@ use std::rc::Rc;
 
 use itertools::Itertools;
 
-use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::label::Label;
+use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::generate::label::Label;
+use crate::asm::generate::symbol::SymbolTable;
+use crate::asm::generate::types::Type;
 use crate::asm::node::access_flag::{AccessFlags, MethodAccessFlag};
 use crate::asm::node::attribute;
 use crate::asm::node::class::JavaVersion;
 use crate::asm::node::opcode::{ConstantObject, Instruction, Opcode};
-use crate::asm::symbol::SymbolTable;
-use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
 
 pub trait MethodVisitor {

@@ -135,7 +135,7 @@ impl_byteconv!(8, usize);
 #[cfg(test)]
 mod test {
     #[allow(arithmetic_overflow)]
-    use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
+    use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
     use crate::error::KapiResult;
 
     #[test]

@@ -1,12 +1,11 @@
 use std::collections::VecDeque;
-use std::{default, iter::Peekable, str::CharIndices};
+use std::iter::Peekable;
 
-use either::Either;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::asm::field::FieldVisitor;
+use crate::asm::generate::field::FieldVisitor;
 use crate::asm::node::signature::{BaseType, Wildcard};
 use crate::error::{KapiError, KapiResult};
 
@@ -760,7 +759,7 @@ mod test {
     use insta::assert_yaml_snapshot;
     use rstest::rstest;
 
-    use crate::asm::signature::{
+    use crate::asm::generate::signature::{
         accept_class_signature_visitor, accept_field_signature_visitor,
         accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter,
         FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,

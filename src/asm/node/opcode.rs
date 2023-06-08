@@ -1,8 +1,8 @@
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
+use crate::asm::generate::types::Type;
 use crate::asm::node::handle::Handle;
-use crate::asm::types::Type;
 use crate::error::KapiResult;
 
 #[repr(u8)]

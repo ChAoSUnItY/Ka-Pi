@@ -352,7 +352,7 @@ impl SymbolTable {
 
 #[cfg(test)]
 mod test {
-    use crate::asm::symbol::SymbolTable;
+    use crate::asm::generate::symbol::SymbolTable;
 
     #[test]
     fn test_symbol_table_utf8() {

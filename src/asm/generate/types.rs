@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::error::KapiResult;
-use crate::{asm::byte_vec::ByteVec, error::KapiError};
+use crate::{asm::generate::byte_vec::ByteVec, error::KapiError};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Type {
@@ -287,7 +287,7 @@ const PRIMITIVE_DESCRIPTORS: &'static str = "VZCBSIFJD";
 
 #[cfg(test)]
 mod test {
-    use crate::asm::types::Type;
+    use crate::asm::generate::types::Type;
     use crate::error::KapiResult;
 
     #[test]
