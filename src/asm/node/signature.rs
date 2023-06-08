@@ -45,8 +45,7 @@ impl Signature {
         collector
             .signature
             .ok_or(KapiError::ClassParseError(format!(
-                "Unable to parse class signature from `{}`",
-                string
+                "Unable to parse class signature from `{string}`"
             )))
     }
 
@@ -63,8 +62,7 @@ impl Signature {
         collector
             .signature
             .ok_or(KapiError::ClassParseError(format!(
-                "Unable to parse field signature from `{}`",
-                string
+                "Unable to parse field signature from `{string}`"
             )))
     }
 
@@ -81,8 +79,7 @@ impl Signature {
         collector
             .signature
             .ok_or(KapiError::ClassParseError(format!(
-                "Unable to parse method signature from `{}`",
-                string
+                "Unable to parse method signature from `{string}`"
             )))
     }
 }
@@ -303,9 +300,9 @@ pub enum Wildcard {
     INSTANCEOF = INSTANCEOF as u8,
 }
 
-impl Into<char> for Wildcard {
-    fn into(self) -> char {
-        self as u8 as char
+impl From<Wildcard> for char {
+    fn from(value: Wildcard) -> Self {
+        value as u8 as char
     }
 }
 
@@ -318,8 +315,7 @@ impl TryFrom<char> for Wildcard {
             SUPER => Ok(Wildcard::SUPER),
             INSTANCEOF => Ok(Self::INSTANCEOF),
             _ => Err(KapiError::ArgError(format!(
-                "Character {} cannot be converted into Wildcard",
-                value
+                "Character {value} cannot be converted into Wildcard"
             ))),
         }
     }
@@ -337,19 +333,19 @@ impl TryFrom<&char> for Wildcard {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum BaseType {
-    Boolean = 'Z' as u8,
-    Byte = 'B' as u8,
-    Short = 'S' as u8,
-    Int = 'I' as u8,
-    Long = 'J' as u8,
-    Float = 'F' as u8,
-    Double = 'D' as u8,
-    Void = 'V' as u8,
+    Boolean = b'Z',
+    Byte = b'B',
+    Short = b'S',
+    Int = b'I',
+    Long = b'J',
+    Float = b'F',
+    Double = b'D',
+    Void = b'V',
 }
 
-impl Into<char> for BaseType {
-    fn into(self) -> char {
-        self as u8 as char
+impl From<BaseType> for char {
+    fn from(value: BaseType) -> Self {
+        value as u8 as char
     }
 }
 
@@ -367,8 +363,7 @@ impl TryFrom<char> for BaseType {
             'D' => Ok(Self::Double),
             'V' => Ok(Self::Void),
             _ => Err(KapiError::ArgError(format!(
-                "Unexpected char `{}` for base type",
-                value
+                "Unexpected char `{value}` for base type"
             ))),
         }
     }
@@ -452,7 +447,7 @@ where
 
         while let Some(wildcard) = self.stack_actions.pop_back() {
             if let Some(wildcard) = wildcard {
-                typ = Self::wrap_type_argument(wildcard.clone(), typ);
+                typ = Self::wrap_type_argument(wildcard, typ);
             } else {
                 typ = Self::wrap_array_type(typ);
             }
@@ -470,31 +465,40 @@ mod test {
     use crate::asm::node::signature::Signature;
     use crate::error::KapiResult;
 
-    #[rstest]
-    #[case("<T:[Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;")]
-    fn test_class_signatures(#[case] signature: &'static str) -> KapiResult<()> {
-        let class_signature = Signature::class_signature_from_str(signature)?;
+    #[test]
+    fn test_class_signature_with_generic() -> KapiResult<()> {
+        let class_signature = Signature::class_signature_from_str(
+            "<T:[Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;",
+        )?;
 
         assert_yaml_snapshot!(class_signature);
 
         Ok(())
     }
 
-    #[rstest]
-    #[case("Ljava/lang/Object;")]
-    #[case("TT;")]
-    fn test_field_signatures(#[case] signature: &'static str) -> KapiResult<()> {
-        let field_signature = Signature::field_signature_from_str(signature)?;
+    #[test]
+    fn test_field_signature_object() -> KapiResult<()> {
+        let field_signature = Signature::field_signature_from_str("Ljava/lang/Object;")?;
 
         assert_yaml_snapshot!(field_signature);
 
         Ok(())
     }
 
-    #[rstest]
-    #[case("<T:Ljava/lang/Object;>(Z[[ZTT;)Ljava/lang/Object;^Ljava/lang/Exception;")]
-    fn test_method_signatures(#[case] signature: &'static str) -> KapiResult<()> {
-        let method_signature = Signature::method_signature_from_str(signature)?;
+    #[test]
+    fn test_field_signature_type_variable() -> KapiResult<()> {
+        let field_signature = Signature::field_signature_from_str("TT;")?;
+
+        assert_yaml_snapshot!(field_signature);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_method_signature_with_generic() -> KapiResult<()> {
+        let method_signature = Signature::method_signature_from_str(
+            "<T:Ljava/lang/Object;>(Z[[ZTT;)Ljava/lang/Object;^Ljava/lang/Exception;",
+        )?;
 
         assert_yaml_snapshot!(method_signature);
 
