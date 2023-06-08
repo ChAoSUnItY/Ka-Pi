@@ -1,9 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::asm::attribute::{Attribute, ConstantValue};
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::opcodes::{AccessFlag, FieldAccessFlag};
+use crate::asm::node::access_flag::{AccessFlags, FieldAccessFlag};
+use crate::asm::node::attribute::{constant_value::ConstantValue, Attribute};
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
@@ -177,7 +177,7 @@ impl FieldVisitor for FieldWriter {
         byte_vec.put_be(field_attributes.len() as u16); // attribute length
 
         for attribute in field_attributes {
-            attribute.bytecode(&mut *byte_vec, &mut *symbol_table);
+            attribute.put_u8s(&mut *byte_vec, &mut *symbol_table);
         }
     }
 }
