@@ -6,9 +6,11 @@ use std::rc::Rc;
 use itertools::Itertools;
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::constants;
 use crate::asm::label::Label;
-use crate::asm::opcodes::{AccessFlag, ConstantObject, Instruction, JavaVersion, MethodAccessFlag, Opcode};
+use crate::asm::node::access_flag::{AccessFlags, MethodAccessFlag};
+use crate::asm::node::attribute;
+use crate::asm::node::class::JavaVersion;
+use crate::asm::node::opcode::{ConstantObject, Instruction, Opcode};
 use crate::asm::symbol::SymbolTable;
 use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
@@ -401,13 +403,13 @@ impl MethodWriter {
                 self.push_stack(Type::Short);
             }
             Instruction::LDC(constant) => {
-                self.visit_ldc(constant.to_owned());
+                self.visit_ldc(constant.to_owned())?;
             }
             Instruction::LDC_W(constant) => {
-                self.visit_ldc(constant.to_owned());
+                self.visit_ldc(constant.to_owned())?;
             }
             Instruction::LDC2_W(constant) => {
-                self.visit_ldc(constant.to_owned());
+                self.visit_ldc(constant.to_owned())?;
             }
             Instruction::ILOAD(val) => {
                 self.put_opcode(inst.opcode());
@@ -1215,30 +1217,35 @@ impl MethodWriter {
                 self.code_byte_vec.put_be(*branch_offset);
             }
             Instruction::JSR(_) => {
-                if (self.java_version as u32) < (JavaVersion::V1_7 as u32) {
-                    return Err(KapiError::StateError(format!(
+                return if (self.java_version as u32) < (JavaVersion::V1_7 as u32) {
+                    Err(KapiError::StateError(format!(
                         "Deprecated opcode JSR should not be used after Java 7"
-                    )));
+                    )))
                 } else {
-                    return Err(KapiError::StateError(format!(
+                    Err(KapiError::StateError(format!(
                         "Opcode JSR is not yet implemented"
                     )))
                 }
             }
             Instruction::RET(_) => {
-                if (self.java_version as u32) < (JavaVersion::V1_7 as u32) {
-                    return Err(KapiError::StateError(format!(
+                return if (self.java_version as u32) < (JavaVersion::V1_7 as u32) {
+                    Err(KapiError::StateError(format!(
                         "Deprecated opcode RET should not be used after Java 7"
-                    )));
+                    )))
                 } else {
-                    return Err(KapiError::StateError(format!(
+                    Err(KapiError::StateError(format!(
                         "Opcode RET is not yet implemented"
                     )))
                 }
             }
             Instruction::TABLESWITCH => {}
             Instruction::LOOKUPSWITCH => {}
-            Instruction::IRETURN | Instruction::LRETURN | Instruction::FRETURN | Instruction::DRETURN | Instruction::ARETURN | Instruction::RETURN => {
+            Instruction::IRETURN
+            | Instruction::LRETURN
+            | Instruction::FRETURN
+            | Instruction::DRETURN
+            | Instruction::ARETURN
+            | Instruction::RETURN => {
                 self.visit_return(inst.opcode())?;
             }
             Instruction::GETSTATIC => {}
@@ -1267,7 +1274,7 @@ impl MethodWriter {
         Ok(())
     }
 
-    pub fn visit_ldc<C>(&mut self, constant_object: C)
+    pub fn visit_ldc<C>(&mut self, constant_object: C) -> KapiResult<()>
     where
         C: Into<ConstantObject>,
     {
@@ -1293,7 +1300,9 @@ impl MethodWriter {
             }
         }
 
-        self.push_stack(constant_object.constant_type());
+        self.push_stack(constant_object.constant_type()?);
+
+        Ok(())
     }
 
     pub fn visit_return(&mut self, return_opcode: Opcode) -> KapiResult<()> {
@@ -1391,7 +1400,7 @@ impl MethodVisitor for MethodWriter {
 
         // If code_byte_vec is empty, do not emit Code attribute for the method
         if code_byte_vec.len() != 0 {
-            let attribute_name_index = symbol_table.add_utf8(constants::CODE);
+            let attribute_name_index = symbol_table.add_utf8(attribute::CODE);
             let code_len = code_byte_vec.len();
             let attribute_len = 12 + code_len; // TODO
 

@@ -309,7 +309,7 @@ impl SymbolTable {
             }
             ConstantObject::MethodType(val) => self.add_utf8(val),
             ConstantObject::ConstantDynamic(name, descriptor, handle, arguments) => {
-                self.add_constant_dynamic(name, &descriptor.descriptor(), handle, arguments)
+                self.add_constant_dynamic(name, &descriptor, handle, arguments)
             }
         }
     }

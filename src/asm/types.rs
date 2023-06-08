@@ -209,7 +209,7 @@ impl Type {
             Type::Null => unreachable!(),
         }
     }
-    
+
     pub fn implicit_cmp(&self, other: &Self) -> bool {
         if let Self::ObjectRef(_) = self {
             matches!(other, Self::ObjectRef(_))
