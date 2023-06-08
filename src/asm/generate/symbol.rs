@@ -309,7 +309,7 @@ impl SymbolTable {
             }
             ConstantObject::MethodType(val) => self.add_utf8(val),
             ConstantObject::ConstantDynamic(name, descriptor, handle, arguments) => {
-                self.add_constant_dynamic(name, descriptor, handle, arguments)
+                self.add_constant_dynamic(name, &descriptor, handle, arguments)
             }
         }
     }
@@ -352,7 +352,7 @@ impl SymbolTable {
 
 #[cfg(test)]
 mod test {
-    use crate::asm::symbol::SymbolTable;
+    use crate::asm::generate::symbol::SymbolTable;
 
     #[test]
     fn test_symbol_table_utf8() {

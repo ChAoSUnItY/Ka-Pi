@@ -1,9 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::field::{FieldVisitor, FieldWriter};
-use crate::asm::method::{MethodVisitor, MethodWriter};
+use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::generate::field::{FieldVisitor, FieldWriter};
+use crate::asm::generate::method::{MethodVisitor, MethodWriter};
+use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::node::access_flag::{
     AccessFlags, ClassAccessFlag, FieldAccessFlag, MethodAccessFlag,
 };
@@ -13,7 +14,6 @@ use crate::asm::node::constant::{
     Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, InvokeDynamic,
     Long, MethodHandle, MethodRef, MethodType, Module, NameAndType, Package, Utf8,
 };
-use crate::asm::symbol::SymbolTable;
 use crate::error::KapiResult;
 
 pub trait ClassVisitor {
@@ -108,6 +108,7 @@ impl ClassVisitor for ClassWriter {
         self.methods.push(method_byte_vec.clone());
 
         MethodWriter::new(
+            &self.version,
             &method_byte_vec,
             &self.symbol_table,
             access_flags,

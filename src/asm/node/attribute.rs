@@ -2,14 +2,14 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::node::access_flag::{ModuleAccessFlag, NestedClassAccessFlag, ParameterAccessFlag};
 use crate::asm::node::attribute::annotation::{
     Annotation, ElementValue, ParameterAnnotation, TypeAnnotation,
 };
 use crate::asm::node::attribute::module::{Exports, Opens, Provides, Requires};
 use crate::asm::node::ConstantRearrangeable;
-use crate::asm::symbol::SymbolTable;
 
 pub mod annotation;
 pub mod constant_value;

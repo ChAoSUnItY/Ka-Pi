@@ -1,7 +1,9 @@
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
+use crate::asm::generate::types::Type;
 use crate::asm::node::handle::Handle;
+use crate::error::KapiResult;
 
 #[repr(u8)]
 #[derive(
@@ -686,6 +688,26 @@ impl ConstantObject {
         match self {
             ConstantObject::Long(..) | ConstantObject::Double(..) => true,
             _ => false,
+        }
+    }
+
+    pub(crate) fn constant_type(&self) -> KapiResult<Type> {
+        match self {
+            ConstantObject::String(_) => Ok(Type::string_type()),
+            ConstantObject::Int(_) => Ok(Type::Int),
+            ConstantObject::Float(_) => Ok(Type::Float),
+            ConstantObject::Long(_) => Ok(Type::Long),
+            ConstantObject::Double(_) => Ok(Type::Double),
+            ConstantObject::Class(_) => Ok(Type::ObjectRef("java/lang/Class".to_string())),
+            ConstantObject::MethodHandle(_, _, _, _) => {
+                Ok(Type::ObjectRef("java/lang/invoke/MethodHandle".to_string()))
+            }
+            ConstantObject::MethodType(_) => {
+                Ok(Type::ObjectRef("java/lang/invoke/MethodType".to_string()))
+            }
+            ConstantObject::ConstantDynamic(_, method_descriptor, _, _) => {
+                Type::from_method_descriptor(method_descriptor).map(|(.., return_type)| return_type)
+            }
         }
     }
 }

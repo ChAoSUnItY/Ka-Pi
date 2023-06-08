@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use serde::{Deserialize, Serialize};
 
-use crate::asm::signature::{
+use crate::asm::generate::signature::{
     accept_class_signature_visitor, accept_field_signature_visitor,
     accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter,
     FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
@@ -460,7 +460,6 @@ where
 #[cfg(test)]
 mod test {
     use insta::assert_yaml_snapshot;
-    use rstest::rstest;
 
     use crate::asm::node::signature::Signature;
     use crate::error::KapiResult;

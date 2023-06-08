@@ -1,11 +1,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::generate::symbol::SymbolTable;
+use crate::asm::generate::types::Type;
 use crate::asm::node::access_flag::{AccessFlags, FieldAccessFlag};
 use crate::asm::node::attribute::{constant_value::ConstantValue, Attribute};
-use crate::asm::symbol::SymbolTable;
-use crate::asm::types::Type;
 use crate::error::{KapiError, KapiResult};
 
 #[allow(unused_variables)]

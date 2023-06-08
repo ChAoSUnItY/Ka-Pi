@@ -1,13 +1,14 @@
 use std::iter::Peekable;
 use std::str::Chars;
 use std::str::FromStr;
+use std::string::ToString;
 
 use itertools::{Itertools, PeekingNext};
 use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::error::KapiResult;
-use crate::{asm::byte_vec::ByteVec, error::KapiError};
+use crate::{asm::generate::byte_vec::ByteVec, error::KapiError};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Type {
@@ -22,9 +23,30 @@ pub enum Type {
     Double,
     Array(Box<Type>),
     ObjectRef(String),
+    /// [Type::Null] should not be ever used to emit bytecode, it's intended for stack validation usage
+    Null,
 }
 
 impl Type {
+    pub fn array_type(depth: usize, inner_type: Self) -> Self {
+        let mut depth = depth - 1;
+        let mut array_type = Type::Array(Box::new(inner_type));
+
+        while depth >= 1 {
+            array_type = Type::Array(Box::new(array_type));
+        }
+
+        array_type
+    }
+
+    pub fn object_type() -> Self {
+        Type::ObjectRef("java/lang/Object".to_string())
+    }
+
+    pub fn string_type() -> Self {
+        Type::ObjectRef("java/lang/String".to_string())
+    }
+
     pub(crate) fn from_method_descriptor(method_descriptor: &str) -> KapiResult<(Vec<Self>, Self)> {
         let mut descriptor_iter = method_descriptor.chars().peekable();
         let mut argument_types = Vec::new();
@@ -170,6 +192,56 @@ impl Type {
             _ => 1,
         }
     }
+
+    pub fn descriptor(&self) -> String {
+        match self {
+            Type::Void => "V".into(),
+            Type::Boolean => "Z".into(),
+            Type::Char => "C".into(),
+            Type::Byte => "B".into(),
+            Type::Short => "S".into(),
+            Type::Int => "I".into(),
+            Type::Float => "F".into(),
+            Type::Long => "J".into(),
+            Type::Double => "D".into(),
+            Type::Array(inner_type) => format!("[{}", inner_type.descriptor()),
+            Type::ObjectRef(type_ref) => format!("L{};", type_ref),
+            Type::Null => unreachable!(),
+        }
+    }
+
+    pub fn implicit_cmp(&self, other: &Self) -> bool {
+        if let Self::ObjectRef(_) = self {
+            matches!(other, Self::ObjectRef(_))
+        } else if let Self::Array(inner_type) = self {
+            if let Self::Array(other_inner_type) = self {
+                inner_type.implicit_cmp(other_inner_type)
+            } else {
+                false
+            }
+        } else {
+            self == other
+        }
+    }
+}
+
+impl ToString for Type {
+    fn to_string(&self) -> String {
+        match self {
+            Type::Void => "void".into(),
+            Type::Boolean => "boolean".into(),
+            Type::Char => "char".into(),
+            Type::Byte => "byte".into(),
+            Type::Short => "short".into(),
+            Type::Int => "int".into(),
+            Type::Float => "float".into(),
+            Type::Long => "long".into(),
+            Type::Double => "double".into(),
+            Type::Array(inner_typ) => format!("{}[]", inner_typ.to_string()),
+            Type::ObjectRef(type_ref) => type_ref.clone(),
+            Type::Null => "null".into(),
+        }
+    }
 }
 
 pub const VOID: u8 = 0;
@@ -215,7 +287,7 @@ const PRIMITIVE_DESCRIPTORS: &'static str = "VZCBSIFJD";
 
 #[cfg(test)]
 mod test {
-    use crate::asm::types::Type;
+    use crate::asm::generate::types::Type;
     use crate::error::KapiResult;
 
     #[test]
