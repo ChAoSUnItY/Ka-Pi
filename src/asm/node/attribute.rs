@@ -4,7 +4,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::asm::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::node::access_flag::{NestedClassAccessFlag, ParameterAccessFlag};
+use crate::asm::node::attribute::annotation::{
+    Annotation, ElementValue, ParameterAnnotation, TypeAnnotation,
+};
+use crate::asm::node::ConstantRearrangeable;
 use crate::asm::symbol::SymbolTable;
+
+pub mod annotation;
+pub mod constant_value;
 
 pub(crate) const CONSTANT_VALUE: &'static str = "ConstantValue";
 pub(crate) const CODE: &'static str = "Code";
@@ -40,59 +47,23 @@ pub(crate) const NEST_MEMBERS: &'static str = "NestMembers";
 pub(crate) const PERMITTED_SUBCLASSES: &'static str = "PermittedSubclasses";
 pub(crate) const RECORD: &'static str = "Record";
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum ConstantFieldValue {
-    Int(i32),
-    Float(f32),
-    Long(i64),
-    Double(f64),
-    String(String),
-}
-
-impl Eq for ConstantFieldValue {}
-
-impl From<i32> for ConstantFieldValue {
-    fn from(value: i32) -> Self {
-        Self::Int(value)
-    }
-}
-
-impl From<f32> for ConstantFieldValue {
-    fn from(value: f32) -> Self {
-        Self::Float(value)
-    }
-}
-
-impl From<i64> for ConstantFieldValue {
-    fn from(value: i64) -> Self {
-        Self::Long(value)
-    }
-}
-
-impl From<f64> for ConstantFieldValue {
-    fn from(value: f64) -> Self {
-        Self::Double(value)
-    }
-}
-
-impl From<String> for ConstantFieldValue {
-    fn from(value: String) -> Self {
-        Self::String(value)
-    }
-}
-
-impl From<&str> for ConstantFieldValue {
-    fn from(value: &str) -> Self {
-        Self::String(value.to_owned())
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AttributeInfo {
     pub attribute_name_index: u16,
     pub attribute_len: u32,
+    /// `info` will not be available on generation process, it's an readonly field.
     pub info: Vec<u8>,
     pub attribute: Option<Attribute>,
+}
+
+impl ConstantRearrangeable for AttributeInfo {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.attribute_name_index, rearrangements);
+
+        if let Some(attribute) = &mut self.attribute {
+            attribute.rearrange(rearrangements);
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -111,13 +82,13 @@ pub enum Attribute {
     LocalVariableTable(LocalVariableTable),
     LocalVariableTypeTable(LocalVariableTypeTable),
     Deprecate,
-    // RuntimeVisibleAnnotations,
-    // RuntimeInvisibleAnnotations,
-    // RuntimeVisibleParameterAnnotations,
-    // RuntimeInvisibleParameterAnnotations,
-    // RuntimeVisibleTypeAnnotations,
-    // RuntimeInvisibleTypeAnnotations,
-    // AnnotationDefault,
+    RuntimeVisibleAnnotations(RuntimeVisibleAnnotations),
+    RuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations),
+    RuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations),
+    RuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations),
+    RuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations),
+    RuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations),
+    AnnotationDefault(AnnotationDefault),
     BootstrapMethods(BootstrapMethods),
     MethodParameters(MethodParameters),
     // Module,
@@ -132,157 +103,40 @@ pub enum Attribute {
 impl Attribute {
     pub const fn name(&self) -> &'static str {
         match self {
-            Attribute::ConstantValue { .. } => CONSTANT_VALUE,
-            Attribute::Code { .. } => CODE,
-            Attribute::StackMapTable { .. } => STACK_MAP_TABLE,
-            Attribute::Exceptions { .. } => EXCEPTIONS,
-            Attribute::InnerClasses { .. } => INNER_CLASSES,
-            Attribute::EnclosingMethod { .. } => ENCLOSING_METHOD,
+            Attribute::ConstantValue(..) => CONSTANT_VALUE,
+            Attribute::Code(..) => CODE,
+            Attribute::StackMapTable(..) => STACK_MAP_TABLE,
+            Attribute::Exceptions(..) => EXCEPTIONS,
+            Attribute::InnerClasses(..) => INNER_CLASSES,
+            Attribute::EnclosingMethod(..) => ENCLOSING_METHOD,
             Attribute::Synthetic => SYNTHETIC,
-            Attribute::Signature { .. } => SIGNATURE,
-            Attribute::SourceFile { .. } => SOURCE_FILE,
-            Attribute::SourceDebugExtension { .. } => SOURCE_DEBUG_EXTENSION,
-            Attribute::LineNumberTable { .. } => LINE_NUMBER_TABLE,
-            Attribute::LocalVariableTable { .. } => LOCAL_VARIABLE_TABLE,
-            Attribute::LocalVariableTypeTable { .. } => LOCAL_VARIABLE_TYPE_TABLE,
+            Attribute::Signature(..) => SIGNATURE,
+            Attribute::SourceFile(..) => SOURCE_FILE,
+            Attribute::SourceDebugExtension(..) => SOURCE_DEBUG_EXTENSION,
+            Attribute::LineNumberTable(..) => LINE_NUMBER_TABLE,
+            Attribute::LocalVariableTable(..) => LOCAL_VARIABLE_TABLE,
+            Attribute::LocalVariableTypeTable(..) => LOCAL_VARIABLE_TYPE_TABLE,
             Attribute::Deprecate => DEPRECATED,
-            // Attribute::RuntimeVisibleAnnotations,
-            // Attribute::RuntimeInvisibleAnnotations,
-            // Attribute::RuntimeVisibleParameterAnnotations,
-            // Attribute::RuntimeInvisibleParameterAnnotations,
-            // Attribute::RuntimeVisibleTypeAnnotations,
-            // Attribute::RuntimeInvisibleTypeAnnotations,
-            // Attribute::AnnotationDefault,
-            Attribute::BootstrapMethods { .. } => BOOTSTRAP_METHODS,
-            Attribute::MethodParameters { .. } => METHOD_PARAMETERS,
+            Attribute::RuntimeVisibleAnnotations(..) => RUNTIME_VISIBLE_ANNOTATIONS,
+            Attribute::RuntimeInvisibleAnnotations(..) => RUNTIME_INVISIBLE_ANNOTATIONS,
+            Attribute::RuntimeVisibleParameterAnnotations(..) => {
+                RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS
+            }
+            Attribute::RuntimeInvisibleParameterAnnotations(..) => {
+                RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS
+            }
+            Attribute::RuntimeVisibleTypeAnnotations(..) => RUNTIME_VISIBLE_TYPE_ANNOTATIONS,
+            Attribute::RuntimeInvisibleTypeAnnotations(..) => RUNTIME_INVISIBLE_TYPE_ANNOTATIONS,
+            Attribute::AnnotationDefault(..) => ANNOTATION_DEFAULT,
+            Attribute::BootstrapMethods(..) => BOOTSTRAP_METHODS,
+            Attribute::MethodParameters(..) => METHOD_PARAMETERS,
             // Attribute::Module,
             // Attribute::ModulePackages,
             // Attribute::ModuleMainClass,
-            Attribute::NestHost { .. } => NEST_HOST,
-            Attribute::NestMembers { .. } => NEST_MEMBERS,
-            Attribute::Record { .. } => RECORD,
-            Attribute::PermittedSubclasses { .. } => PERMITTED_SUBCLASSES,
-        }
-    }
-
-    fn rearrange_index(original: &mut u16, rearrangements: &HashMap<u16, u16>) {
-        if let Some(target_index) = rearrangements.get(original) {
-            *original = *target_index;
-        }
-    }
-
-    pub(crate) fn rearrange_indices(&mut self, rearrangements: &HashMap<u16, u16>) {
-        match self {
-            Attribute::ConstantValue(ConstantValue {
-                constant_value_index,
-            }) => {
-                Self::rearrange_index(constant_value_index, &rearrangements);
-            }
-            Attribute::Code(Code {
-                exception_table,
-                attributes,
-                ..
-            }) => {
-                for exception in exception_table {
-                    Self::rearrange_index(&mut exception.catch_type, rearrangements);
-                }
-
-                for attribute in attributes {
-                    if let Some(attribute) = &mut attribute.attribute {
-                        attribute.rearrange_indices(rearrangements);
-                    }
-                }
-            }
-            Attribute::StackMapTable(StackMapTable { entries, .. }) => {
-                for entry in entries {
-                    entry.rearrange_index(rearrangements);
-                }
-            }
-            Attribute::Exceptions(Exceptions {
-                exception_index_table,
-                ..
-            }) => {
-                for exception_index in exception_index_table {
-                    Self::rearrange_index(exception_index, rearrangements);
-                }
-            }
-            Attribute::InnerClasses(InnerClasses { class, .. }) => {
-                for class in class {
-                    class.rearrange_index(rearrangements);
-                }
-            }
-            Attribute::EnclosingMethod(EnclosingMethod {
-                class_index,
-                method_index,
-            }) => {
-                Self::rearrange_index(class_index, rearrangements);
-                Self::rearrange_index(method_index, rearrangements);
-            }
-            Attribute::Synthetic => {}
-            Attribute::Signature(Signature { signature_index }) => {
-                Self::rearrange_index(signature_index, rearrangements);
-            }
-            Attribute::SourceFile(SourceFile { source_file_index }) => {
-                Self::rearrange_index(source_file_index, rearrangements);
-            }
-            Attribute::SourceDebugExtension(..) => {}
-            Attribute::LineNumberTable(..) => {}
-            Attribute::LocalVariableTable(LocalVariableTable {
-                local_variable_table,
-                ..
-            }) => {
-                for local_variable in local_variable_table {
-                    local_variable.rearrange_index(rearrangements);
-                }
-            }
-            Attribute::LocalVariableTypeTable(LocalVariableTypeTable {
-                local_variable_type_table,
-                ..
-            }) => {
-                for local_variable_type in local_variable_type_table {
-                    local_variable_type.rearrange_index(rearrangements);
-                }
-            }
-            Attribute::Deprecate => {}
-            Attribute::BootstrapMethods(BootstrapMethods {
-                bootstrap_methods, ..
-            }) => {
-                for bootstrap_method in bootstrap_methods {
-                    bootstrap_method.rearrange_index(rearrangements);
-                }
-            }
-            Attribute::MethodParameters(MethodParameters {
-                method_parameters, ..
-            }) => {
-                for method_parameter in method_parameters {
-                    method_parameter.rearrange_index(rearrangements);
-                }
-            }
-            Attribute::NestHost(NestHost { host_class_index }) => {
-                Self::rearrange_index(host_class_index, rearrangements);
-            }
-            Attribute::NestMembers(NestMembers { classes, .. }) => {
-                for class in classes {
-                    Self::rearrange_index(class, rearrangements);
-                }
-            }
-            Attribute::Record(Record { components, .. }) => {
-                for component in components {
-                    Self::rearrange_index(&mut component.name_index, rearrangements);
-                    Self::rearrange_index(&mut component.descriptor_index, rearrangements);
-
-                    for attribute_info in &mut component.attributes {
-                        if let Some(attribute) = &mut attribute_info.attribute {
-                            attribute.rearrange_indices(rearrangements);
-                        }
-                    }
-                }
-            }
-            Attribute::PermittedSubclasses(PermittedSubclasses { classes, .. }) => {
-                for class in classes {
-                    Self::rearrange_index(class, rearrangements);
-                }
-            }
+            Attribute::NestHost(..) => NEST_HOST,
+            Attribute::NestMembers(..) => NEST_MEMBERS,
+            Attribute::Record(..) => RECORD,
+            Attribute::PermittedSubclasses(..) => PERMITTED_SUBCLASSES,
         }
     }
 
@@ -297,25 +151,91 @@ impl Attribute {
                 byte_vec.put_be(2u32);
                 byte_vec.put_be(*constant_value_index);
             }
-            Attribute::Code { .. } => {}
-            Attribute::StackMapTable { .. } => {}
-            Attribute::Exceptions { .. } => {}
-            Attribute::InnerClasses { .. } => {}
-            Attribute::EnclosingMethod { .. } => {}
+            _ => {}
+        }
+    }
+}
+
+impl ConstantRearrangeable for Attribute {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        match self {
+            Attribute::ConstantValue(constant_value) => {
+                constant_value.rearrange(rearrangements);
+            }
+            Attribute::Code(code) => {
+                code.rearrange(rearrangements);
+            }
+            Attribute::StackMapTable(stack_map_table) => {
+                stack_map_table.rearrange(rearrangements);
+            }
+            Attribute::Exceptions(exceptions) => {
+                exceptions.rearrange(rearrangements);
+            }
+            Attribute::InnerClasses(inner_classes) => {
+                inner_classes.rearrange(rearrangements);
+            }
+            Attribute::EnclosingMethod(enclosing_method) => {
+                enclosing_method.rearrange(rearrangements);
+            }
             Attribute::Synthetic => {}
-            Attribute::Signature { .. } => {}
-            Attribute::SourceFile { .. } => {}
-            Attribute::SourceDebugExtension { .. } => {}
-            Attribute::LineNumberTable { .. } => {}
-            Attribute::LocalVariableTable { .. } => {}
-            Attribute::LocalVariableTypeTable { .. } => {}
+            Attribute::Signature(signature) => {
+                signature.rearrange(rearrangements);
+            }
+            Attribute::SourceFile(source_file) => {
+                source_file.rearrange(rearrangements);
+            }
+            Attribute::SourceDebugExtension(..) => {}
+            Attribute::LineNumberTable(..) => {}
+            Attribute::LocalVariableTable(local_variable_table) => {
+                local_variable_table.rearrange(rearrangements);
+            }
+            Attribute::LocalVariableTypeTable(local_variable_type_table) => {
+                local_variable_type_table.rearrange(rearrangements);
+            }
             Attribute::Deprecate => {}
-            Attribute::BootstrapMethods { .. } => {}
-            Attribute::MethodParameters { .. } => {}
-            Attribute::NestHost { .. } => {}
-            Attribute::NestMembers { .. } => {}
-            Attribute::Record { .. } => {}
-            Attribute::PermittedSubclasses { .. } => {}
+            Attribute::RuntimeVisibleAnnotations(runtime_visible_annotations) => {
+                runtime_visible_annotations.rearrange(rearrangements);
+            }
+            Attribute::RuntimeInvisibleAnnotations(runtime_invisible_annotations) => {
+                runtime_invisible_annotations.rearrange(rearrangements);
+            }
+            Attribute::RuntimeVisibleParameterAnnotations(
+                runtime_visible_parameter_annotations,
+            ) => {
+                runtime_visible_parameter_annotations.rearrange(rearrangements);
+            }
+            Attribute::RuntimeInvisibleParameterAnnotations(
+                runtime_invisible_parameter_annotations,
+            ) => {
+                runtime_invisible_parameter_annotations.rearrange(rearrangements);
+            }
+            Attribute::RuntimeVisibleTypeAnnotations(runtime_visible_type_annotations) => {
+                runtime_visible_type_annotations.rearrange(rearrangements);
+            }
+            Attribute::RuntimeInvisibleTypeAnnotations(runtime_invisible_type_annotations) => {
+                runtime_invisible_type_annotations.rearrange(rearrangements);
+            }
+            Attribute::AnnotationDefault(annotation_default) => {
+                annotation_default.rearrange(rearrangements);
+            }
+            Attribute::BootstrapMethods(bootstrap_method) => {
+                bootstrap_method.rearrange(rearrangements);
+            }
+            Attribute::MethodParameters(method_parameters) => {
+                method_parameters.rearrange(rearrangements);
+            }
+            Attribute::NestHost(nest_host) => {
+                nest_host.rearrange(rearrangements);
+            }
+            Attribute::NestMembers(nest_members) => {
+                nest_members.rearrange(rearrangements);
+            }
+            Attribute::Record(record) => {
+                record.rearrange(rearrangements);
+            }
+            Attribute::PermittedSubclasses(permitted_subclasses) => {
+                permitted_subclasses.rearrange(rearrangements);
+            }
         }
     }
 }
@@ -323,6 +243,12 @@ impl Attribute {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ConstantValue {
     pub constant_value_index: u16,
+}
+
+impl ConstantRearrangeable for ConstantValue {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.constant_value_index, rearrangements);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -337,10 +263,30 @@ pub struct Code {
     pub attributes: Vec<AttributeInfo>,
 }
 
+impl ConstantRearrangeable for Code {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for exception in &mut self.exception_table {
+            Self::rearrange_index(&mut exception.catch_type, rearrangements);
+        }
+
+        for attribute in &mut self.attributes {
+            attribute.rearrange(rearrangements);
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct StackMapTable {
     pub number_of_entries: u16,
     pub entries: Vec<StackMapFrameEntry>,
+}
+
+impl ConstantRearrangeable for StackMapTable {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for entry in &mut self.entries {
+            entry.rearrange_index(rearrangements);
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -349,10 +295,26 @@ pub struct Exceptions {
     pub exception_index_table: Vec<u16>,
 }
 
+impl ConstantRearrangeable for Exceptions {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for exception_index in &mut self.exception_index_table {
+            Self::rearrange_index(exception_index, rearrangements);
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct InnerClasses {
     pub number_of_classes: u16,
     pub class: Vec<InnerClass>,
+}
+
+impl ConstantRearrangeable for InnerClasses {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for class in &mut self.class {
+            class.rearrange(rearrangements);
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -361,14 +323,33 @@ pub struct EnclosingMethod {
     pub method_index: u16,
 }
 
+impl ConstantRearrangeable for EnclosingMethod {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.class_index, rearrangements);
+        Self::rearrange_index(&mut self.method_index, rearrangements);
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Signature {
     pub signature_index: u16,
 }
 
+impl ConstantRearrangeable for Signature {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.signature_index, rearrangements);
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SourceFile {
     pub source_file_index: u16,
+}
+
+impl ConstantRearrangeable for SourceFile {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.source_file_index, rearrangements);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -388,10 +369,121 @@ pub struct LocalVariableTable {
     pub local_variable_table: Vec<LocalVariable>,
 }
 
+impl ConstantRearrangeable for LocalVariableTable {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for local_variable in &mut self.local_variable_table {
+            local_variable.rearrange(rearrangements);
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LocalVariableTypeTable {
     pub local_variable_type_table_length: u16,
     pub local_variable_type_table: Vec<LocalVariableType>,
+}
+
+impl ConstantRearrangeable for LocalVariableTypeTable {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for local_variable_type in &mut self.local_variable_type_table {
+            local_variable_type.rearrange(rearrangements);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RuntimeVisibleAnnotations {
+    pub num_annotations: u16,
+    pub annotations: Vec<Annotation>,
+}
+
+impl ConstantRearrangeable for RuntimeVisibleAnnotations {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for annotation in &mut self.annotations {
+            annotation.rearrange(rearrangements);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RuntimeInvisibleAnnotations {
+    pub num_annotations: u16,
+    pub annotations: Vec<Annotation>,
+}
+
+impl ConstantRearrangeable for RuntimeInvisibleAnnotations {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for annotation in &mut self.annotations {
+            annotation.rearrange(rearrangements);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RuntimeVisibleParameterAnnotations {
+    pub num_parameters: u16,
+    pub parameter_annotations: Vec<ParameterAnnotation>,
+}
+
+impl ConstantRearrangeable for RuntimeVisibleParameterAnnotations {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for annotation in &mut self.parameter_annotations {
+            annotation.rearrange(rearrangements);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RuntimeInvisibleParameterAnnotations {
+    pub num_parameters: u16,
+    pub parameter_annotations: Vec<ParameterAnnotation>,
+}
+
+impl ConstantRearrangeable for RuntimeInvisibleParameterAnnotations {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for annotation in &mut self.parameter_annotations {
+            annotation.rearrange(rearrangements);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RuntimeVisibleTypeAnnotations {
+    pub num_annotations: u16,
+    pub type_annotations: Vec<TypeAnnotation>,
+}
+
+impl ConstantRearrangeable for RuntimeVisibleTypeAnnotations {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for annotation in &mut self.type_annotations {
+            annotation.rearrange(rearrangements);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RuntimeInvisibleTypeAnnotations {
+    pub num_annotations: u16,
+    pub type_annotations: Vec<TypeAnnotation>,
+}
+
+impl ConstantRearrangeable for RuntimeInvisibleTypeAnnotations {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for annotation in &mut self.type_annotations {
+            annotation.rearrange(rearrangements);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct AnnotationDefault {
+    pub default_value: ElementValue,
+}
+
+impl ConstantRearrangeable for AnnotationDefault {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        self.default_value.rearrange(rearrangements);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -400,15 +492,37 @@ pub struct BootstrapMethods {
     pub bootstrap_methods: Vec<BootstrapMethod>,
 }
 
+impl ConstantRearrangeable for BootstrapMethods {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for bootstrap_method in &mut self.bootstrap_methods {
+            bootstrap_method.rearrange(rearrangements);
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MethodParameters {
     pub parameters_count: u16,
     pub method_parameters: Vec<MethodParameter>,
 }
 
+impl ConstantRearrangeable for MethodParameters {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for method_parameter in &mut self.method_parameters {
+            method_parameter.rearrange(rearrangements);
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct NestHost {
     pub host_class_index: u16,
+}
+
+impl ConstantRearrangeable for NestHost {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.host_class_index, rearrangements);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -417,16 +531,40 @@ pub struct NestMembers {
     pub classes: Vec<u16>,
 }
 
+impl ConstantRearrangeable for NestMembers {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for class in &mut self.classes {
+            Self::rearrange_index(class, rearrangements);
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Record {
     pub components_count: u16,
     pub components: Vec<RecordComponent>,
 }
 
+impl ConstantRearrangeable for Record {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for component in &mut self.components {
+            component.rearrange(rearrangements);
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PermittedSubclasses {
     pub number_of_classes: u16,
     pub classes: Vec<u16>,
+}
+
+impl ConstantRearrangeable for PermittedSubclasses {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        for class in &mut self.classes {
+            Self::rearrange_index(class, rearrangements);
+        }
+    }
 }
 
 // Inner structs
@@ -526,14 +664,14 @@ impl StackMapFrameEntry {
                 frame_type: _,
                 stack,
             } => {
-                stack.rearrange_index(rearrangements);
+                stack.rearrange(rearrangements);
             }
             StackMapFrameEntry::SameLocal1StackItemExtended {
                 frame_type: _,
                 offset_delta: _,
                 stack,
             } => {
-                stack.rearrange_index(rearrangements);
+                stack.rearrange(rearrangements);
             }
             StackMapFrameEntry::Full {
                 frame_type: _,
@@ -544,11 +682,11 @@ impl StackMapFrameEntry {
                 stack,
             } => {
                 for local in locals {
-                    local.rearrange_index(rearrangements);
+                    local.rearrange(rearrangements);
                 }
 
                 for stack_entry in stack {
-                    stack_entry.rearrange_index(rearrangements);
+                    stack_entry.rearrange(rearrangements);
                 }
             }
             _ => {}
@@ -571,12 +709,10 @@ pub enum VerificationType {
     Uninitialized { offset: u16 },
 }
 
-impl VerificationType {
-    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
+impl ConstantRearrangeable for VerificationType {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
         if let Self::Object { cpool_index } = self {
-            if let Some(target_index) = rearrangements.get(cpool_index) {
-                *cpool_index = *target_index;
-            }
+            Self::rearrange_index(cpool_index, rearrangements);
         }
     }
 }
@@ -598,17 +734,11 @@ pub struct InnerClass {
     pub inner_class_access_flags: Vec<NestedClassAccessFlag>,
 }
 
-impl InnerClass {
-    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
-        if let Some(target_index) = rearrangements.get(&self.inner_class_info_index) {
-            self.inner_class_info_index = *target_index;
-        }
-        if let Some(target_index) = rearrangements.get(&self.outer_class_info_index) {
-            self.outer_class_info_index = *target_index;
-        }
-        if let Some(target_index) = rearrangements.get(&self.inner_name_index) {
-            self.inner_name_index = *target_index;
-        }
+impl ConstantRearrangeable for InnerClass {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.inner_class_info_index, rearrangements);
+        Self::rearrange_index(&mut self.outer_class_info_index, rearrangements);
+        Self::rearrange_index(&mut self.inner_name_index, rearrangements);
     }
 }
 
@@ -627,34 +757,26 @@ pub struct LocalVariable {
     pub index: u16,
 }
 
-impl LocalVariable {
-    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
-        if let Some(target_index) = rearrangements.get(&self.name_index) {
-            self.name_index = *target_index;
-        }
-        if let Some(target_index) = rearrangements.get(&self.descriptor_index) {
-            self.descriptor_index = *target_index;
-        }
+impl ConstantRearrangeable for LocalVariable {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.name_index, rearrangements);
+        Self::rearrange_index(&mut self.descriptor_index, rearrangements);
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LocalVariableType {
-    start_pc: u16,
-    length: u16,
-    name_index: u16,
-    signature_index: u16,
-    index: u16,
+    pub start_pc: u16,
+    pub length: u16,
+    pub name_index: u16,
+    pub signature_index: u16,
+    pub index: u16,
 }
 
-impl LocalVariableType {
-    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
-        if let Some(target_index) = rearrangements.get(&self.name_index) {
-            self.name_index = *target_index;
-        }
-        if let Some(target_index) = rearrangements.get(&self.signature_index) {
-            self.signature_index = *target_index;
-        }
+impl ConstantRearrangeable for LocalVariableType {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.name_index, rearrangements);
+        Self::rearrange_index(&mut self.signature_index, rearrangements);
     }
 }
 
@@ -673,35 +795,27 @@ impl BootstrapMethod {
             bootstrap_arguments: boostrap_arguments_indices,
         }
     }
+}
 
-    pub fn len(&self) -> u32 {
-        4 + self.bootstrap_arguments.len() as u32 * 2
-    }
-
-    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
-        if let Some(target_index) = rearrangements.get(&self.bootstrap_method_ref) {
-            self.bootstrap_method_ref = *target_index;
-        }
+impl ConstantRearrangeable for BootstrapMethod {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.bootstrap_method_ref, rearrangements);
 
         for bootstrap_argument in &mut self.bootstrap_arguments {
-            if let Some(target_index) = rearrangements.get(bootstrap_argument) {
-                *bootstrap_argument = *target_index;
-            }
+            Self::rearrange_index(bootstrap_argument, rearrangements);
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MethodParameter {
-    name_index: u16,
-    access_flags: Vec<ParameterAccessFlag>,
+    pub name_index: u16,
+    pub access_flags: Vec<ParameterAccessFlag>,
 }
 
-impl MethodParameter {
-    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
-        if let Some(target_index) = rearrangements.get(&self.name_index) {
-            self.name_index = *target_index;
-        }
+impl ConstantRearrangeable for MethodParameter {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.name_index, rearrangements);
     }
 }
 
@@ -711,4 +825,15 @@ pub struct RecordComponent {
     pub descriptor_index: u16,
     pub attributes_count: u16,
     pub attributes: Vec<AttributeInfo>,
+}
+
+impl ConstantRearrangeable for RecordComponent {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+        Self::rearrange_index(&mut self.name_index, rearrangements);
+        Self::rearrange_index(&mut self.descriptor_index, rearrangements);
+
+        for attribute in &mut self.attributes {
+            attribute.rearrange(rearrangements);
+        }
+    }
 }

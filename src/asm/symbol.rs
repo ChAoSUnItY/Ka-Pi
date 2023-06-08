@@ -8,14 +8,14 @@ use indexmap::IndexSet;
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
-use crate::asm::node::attribute::{Attribute, BootstrapMethod, ConstantFieldValue, ConstantValue};
-use crate::asm::node::constant;
+use crate::asm::node::attribute::{constant_value, Attribute, BootstrapMethod, ConstantValue};
 use crate::asm::node::constant::{
-    Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, InvokeDynamic,
-    Long, MethodHandle, MethodRef, MethodType, Module, NameAndType, Package, Utf8,
+    Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, Long,
+    MethodHandle, MethodRef, Module, NameAndType, Package, Utf8,
 };
 use crate::asm::node::handle::Handle;
 use crate::asm::node::opcode::{ConstantObject, RefKind};
+use crate::asm::node::{constant, ConstantRearrangeable};
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct SymbolTable {
@@ -102,7 +102,7 @@ impl SymbolTable {
         for attribute in attributes.iter() {
             let mut attribute = attribute.clone();
 
-            attribute.rearrange_indices(&rearrangements);
+            attribute.rearrange(&rearrangements);
             rearranged_attrs.insert(attribute);
         }
 
@@ -279,15 +279,15 @@ impl SymbolTable {
 
     pub(crate) fn add_constant_attribute<CV>(&mut self, constant_value: CV) -> u16
     where
-        CV: Into<ConstantFieldValue>,
+        CV: Into<constant_value::ConstantValue>,
     {
         let constant_value = constant_value.into();
         let constant_value_index = match &constant_value {
-            ConstantFieldValue::Int(val) => self.add_integer(*val),
-            ConstantFieldValue::Float(val) => self.add_float(*val),
-            ConstantFieldValue::Long(val) => self.add_long(*val),
-            ConstantFieldValue::Double(val) => self.add_double(*val),
-            ConstantFieldValue::String(val) => self.add_string(val),
+            constant_value::ConstantValue::Int(val) => self.add_integer(*val),
+            constant_value::ConstantValue::Float(val) => self.add_float(*val),
+            constant_value::ConstantValue::Long(val) => self.add_long(*val),
+            constant_value::ConstantValue::Double(val) => self.add_double(*val),
+            constant_value::ConstantValue::String(val) => self.add_string(val),
         };
         let attribute = Attribute::ConstantValue(ConstantValue {
             constant_value_index,
