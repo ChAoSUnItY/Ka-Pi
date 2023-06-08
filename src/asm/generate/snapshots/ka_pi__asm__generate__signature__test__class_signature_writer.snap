@@ -1,0 +1,6 @@
+---
+source: src/asm/generate/signature.rs
+expression: writer.to_string()
+---
+"<TLjava/lang/Object;>Ljava/lang/Object;Ljava/lang/Comparable;"
+
