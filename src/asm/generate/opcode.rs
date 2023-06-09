@@ -143,7 +143,7 @@ pub enum Instruction {
     LXOR,
     IINC {
         index: u8,
-        value: u8,
+        value: i8,
     },
     I2L,
     I2F,

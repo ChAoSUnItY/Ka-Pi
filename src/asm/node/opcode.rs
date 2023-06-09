@@ -1,6 +1,6 @@
 pub mod instruction;
 
-use crate::asm::node::opcode::instruction::{Ldc, Ldc2_w};
+use crate::asm::node::opcode::instruction::{CheckCast, GetField, GetStatic, InstanceOf, InvokeDynamic, InvokeInterface, InvokeSpecial, InvokeStatic, InvokeVirtual, Ldc, Ldc2_w, MultiANewArray, New, PutField, PutStatic, Wide};
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
@@ -413,7 +413,7 @@ pub enum Instruction {
     LXOR,
     IINC {
         index: u8,
-        value: u8,
+        value: i8,
     },
     I2L,
     I2F,
@@ -468,31 +468,28 @@ pub enum Instruction {
     DRETURN,
     ARETURN,
     RETURN,
-    GETSTATIC(u16),
-    PUTSTATIC(u16),
-    GETFIELD(u16),
-    PUTFIELD(u16),
-    INVOKEVIRTUAL(u16),
-    INVOKESPECIAL(u16),
-    INVOKESTATIC(u16),
-    INVOKEINTERFACE {
-        index: u16,
-        count: u8,
-    },
-    INVOKEDYNAMIC(u16),
-    NEW(u16),
+    GETSTATIC(GetStatic),
+    PUTSTATIC(PutStatic),
+    GETFIELD(GetField),
+    PUTFIELD(PutField),
+    INVOKEVIRTUAL(InvokeVirtual),
+    INVOKESPECIAL(InvokeSpecial),
+    INVOKESTATIC(InvokeStatic),
+    INVOKEINTERFACE(InvokeInterface),
+    INVOKEDYNAMIC(InvokeDynamic),
+    NEW(New),
     NEWARRAY(ArrayType),
     ANEWARRAY(u16),
     ARRAYLENGTH,
     ATHROW,
-    CHECKCAST(u16),
-    INSTANCEOF(u16),
+    CHECKCAST(CheckCast),
+    INSTANCEOF(InstanceOf),
     MONITORENTER,
     MONITOREXIT,
-    MULTIANEWARRAY {
-        index: u16,
-        dimensions: u8,
-    },
+    WIDE(Wide),
+    MULTIANEWARRAY(MultiANewArray),
     IFNULL(i16),
     IFNONNULL(i16),
+    GOTO_W(i64),
+    JSR_W(i64),
 }
