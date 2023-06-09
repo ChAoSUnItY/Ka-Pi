@@ -1,6 +1,7 @@
 use crate::asm::node::ConstantRearrangeable;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use crate::error::KapiResult;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Ldc {
@@ -8,8 +9,8 @@ pub struct Ldc {
 }
 
 impl ConstantRearrangeable for Ldc {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
-        Self::rearrange_index(&mut (self.index as u16), rearrangements);
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_narrow_index(&mut self.index, rearrangements)
     }
 }
 
@@ -20,8 +21,10 @@ pub struct Ldc_w {
 }
 
 impl ConstantRearrangeable for Ldc_w {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.index, rearrangements);
+        
+        Ok(())
     }
 }
 
@@ -32,7 +35,9 @@ pub struct Ldc2_w {
 }
 
 impl ConstantRearrangeable for Ldc2_w {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.index, rearrangements);
+        
+        Ok(())
     }
 }
