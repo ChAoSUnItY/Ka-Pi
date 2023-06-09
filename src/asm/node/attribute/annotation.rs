@@ -1,4 +1,5 @@
 use crate::asm::node::ConstantRearrangeable;
+use crate::error::KapiResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -15,12 +16,14 @@ pub struct Annotation {
 
 //noinspection DuplicatedCode
 impl ConstantRearrangeable for Annotation {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.type_index, rearrangements);
 
         for element_value_pair in &mut self.element_value_pairs {
-            element_value_pair.rearrange(rearrangements);
+            element_value_pair.rearrange(rearrangements)?;
         }
+
+        Ok(())
     }
 }
 
@@ -35,10 +38,12 @@ pub struct ParameterAnnotation {
 }
 
 impl ConstantRearrangeable for ParameterAnnotation {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for annotation in &mut self.annotations {
-            annotation.rearrange(rearrangements);
+            annotation.rearrange(rearrangements)?;
         }
+
+        Ok(())
     }
 }
 
@@ -58,12 +63,14 @@ pub struct TypeAnnotation {
 
 //noinspection DuplicatedCode
 impl ConstantRearrangeable for TypeAnnotation {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.type_index, rearrangements);
 
         for element_value_pair in &mut self.element_value_pairs {
-            element_value_pair.rearrange(rearrangements);
+            element_value_pair.rearrange(rearrangements)?;
         }
+
+        Ok(())
     }
 }
 
@@ -157,9 +164,9 @@ pub struct ElementValuePair {
 }
 
 impl ConstantRearrangeable for ElementValuePair {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.element_name_index, rearrangements);
-        self.value.rearrange(rearrangements);
+        self.value.rearrange(rearrangements)
     }
 }
 
@@ -170,8 +177,8 @@ pub struct ElementValue {
 }
 
 impl ConstantRearrangeable for ElementValue {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
-        self.value.rearrange(rearrangements);
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        self.value.rearrange(rearrangements)
     }
 }
 
@@ -184,12 +191,12 @@ pub enum Value {
 }
 
 impl ConstantRearrangeable for Value {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         match self {
             Value::ConstValue(const_value) => const_value.rearrange(rearrangements),
-            Value::EnumConstValue(_) => {}
-            Value::ClassInfo(_) => {}
-            Value::ArrayValue(_) => {}
+            Value::EnumConstValue(enum_const_value) => enum_const_value.rearrange(rearrangements),
+            Value::ClassInfo(class_info) => class_info.rearrange(rearrangements),
+            Value::ArrayValue(array_value) => array_value.rearrange(rearrangements),
         }
     }
 }
@@ -200,8 +207,10 @@ pub struct ConstValue {
 }
 
 impl ConstantRearrangeable for ConstValue {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.const_value_index, rearrangements);
+
+        Ok(())
     }
 }
 
@@ -212,9 +221,11 @@ pub struct EnumConstValue {
 }
 
 impl ConstantRearrangeable for EnumConstValue {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.type_name_index, rearrangements);
         Self::rearrange_index(&mut self.const_name_index, rearrangements);
+
+        Ok(())
     }
 }
 
@@ -224,8 +235,10 @@ pub struct ClassInfo {
 }
 
 impl ConstantRearrangeable for ClassInfo {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.class_info_index, rearrangements);
+
+        Ok(())
     }
 }
 
@@ -236,9 +249,11 @@ pub struct ArrayValue {
 }
 
 impl ConstantRearrangeable for ArrayValue {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for element_value in &mut self.values {
-            element_value.rearrange(rearrangements);
+            element_value.rearrange(rearrangements)?;
         }
+
+        Ok(())
     }
 }

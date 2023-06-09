@@ -1,5 +1,6 @@
 use crate::asm::node::access_flag::{ExportsAccessFlag, OpensAccessFlag, RequiresAccessFlag};
 use crate::asm::node::ConstantRearrangeable;
+use crate::error::KapiResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -11,9 +12,11 @@ pub struct Requires {
 }
 
 impl ConstantRearrangeable for Requires {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.requires_index, rearrangements);
         Self::rearrange_index(&mut self.requires_version_index, rearrangements);
+
+        Ok(())
     }
 }
 
@@ -26,12 +29,14 @@ pub struct Exports {
 }
 
 impl ConstantRearrangeable for Exports {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.exports_index, rearrangements);
 
         for exports_to in &mut self.exports_to_index {
             Self::rearrange_index(exports_to, rearrangements);
         }
+
+        Ok(())
     }
 }
 
@@ -44,12 +49,14 @@ pub struct Opens {
 }
 
 impl ConstantRearrangeable for Opens {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.opens_index, rearrangements);
 
         for opens_to in &mut self.opens_to_index {
             Self::rearrange_index(opens_to, rearrangements);
         }
+
+        Ok(())
     }
 }
 
@@ -61,11 +68,13 @@ pub struct Provides {
 }
 
 impl ConstantRearrangeable for Provides {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.provides_index, rearrangements);
 
         for provides_to in &mut self.provides_with_index {
             Self::rearrange_index(provides_to, rearrangements);
         }
+
+        Ok(())
     }
 }
