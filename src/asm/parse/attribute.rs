@@ -1,3 +1,5 @@
+mod code;
+
 use nom::bytes::complete::take;
 use nom::combinator::map;
 use nom::error::ErrorKind;
@@ -8,7 +10,7 @@ use nom::{error, error_position, IResult};
 
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
-    Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, Code, ConstantValue, Exception,
+    Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, ConstantValue, Exception,
     Exceptions, LineNumber, LineNumberTable, NestHost, NestMembers, PermittedSubclasses,
     SourceFile, StackMapFrameEntry, StackMapTable, VerificationType,
 };
@@ -79,7 +81,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
                 constant_value_index,
             }))
         })(input),
-        attribute::CODE => code(input, constant_pool),
+        attribute::CODE => code::code(input, constant_pool),
         attribute::STACK_MAP_TABLE => stack_map_table(input),
         attribute::SOURCE_FILE => source_file(input),
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
@@ -91,31 +93,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
     }
 }
 
-fn code<'input: 'constant_pool, 'constant_pool>(
-    input: &'input [u8],
-    constant_pool: &'constant_pool ConstantPool,
-) -> IResult<&'input [u8], Option<Attribute>> {
-    let (input, max_stack) = be_u16(input)?;
-    let (input, max_locals) = be_u16(input)?;
-    let (input, code_length) = be_u32(input)?;
-    let (input, code) = take(code_length as usize)(input)?;
-    let (input, (exception_table_length, exception_table)) = collect(be_u16, exception)(input)?;
-    let (input, (attributes_length, attributes)) = attribute_infos(input, constant_pool)?;
 
-    Ok((
-        input,
-        Some(Attribute::Code(Code {
-            max_stack,
-            max_locals,
-            code_length,
-            code: code.to_vec(),
-            exception_table_length,
-            exception_table,
-            attributes_length,
-            attributes,
-        })),
-    ))
-}
 
 fn exception(input: &[u8]) -> IResult<&[u8], Exception> {
     map(

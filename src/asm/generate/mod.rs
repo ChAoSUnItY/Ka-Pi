@@ -9,3 +9,4 @@ pub mod record;
 pub mod signature;
 pub(crate) mod symbol;
 pub mod types;
+pub mod opcode;

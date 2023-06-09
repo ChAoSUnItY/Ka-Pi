@@ -9,6 +9,7 @@ use crate::asm::node::attribute::annotation::{
     Annotation, ElementValue, ParameterAnnotation, TypeAnnotation,
 };
 use crate::asm::node::attribute::module::{Exports, Opens, Provides, Requires};
+use crate::asm::node::opcode::Instruction;
 use crate::asm::node::ConstantRearrangeable;
 
 pub mod annotation;
@@ -264,6 +265,7 @@ pub struct Code {
     pub max_locals: u16,
     pub code_length: u32,
     pub code: Vec<u8>,
+    pub instructions: Vec<Instruction>,
     pub exception_table_length: u16,
     pub exception_table: Vec<Exception>,
     pub attributes_length: u16,
