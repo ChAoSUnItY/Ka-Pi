@@ -1,7 +1,7 @@
 use crate::asm::node::ConstantRearrangeable;
+use crate::error::KapiResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::error::KapiResult;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Ldc {
@@ -23,7 +23,7 @@ pub struct Ldc_w {
 impl ConstantRearrangeable for Ldc_w {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.index, rearrangements);
-        
+
         Ok(())
     }
 }
@@ -37,7 +37,7 @@ pub struct Ldc2_w {
 impl ConstantRearrangeable for Ldc2_w {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.index, rearrangements);
-        
+
         Ok(())
     }
 }
@@ -47,9 +47,25 @@ pub struct GetStatic {
     pub index: u16,
 }
 
+impl ConstantRearrangeable for GetStatic {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct PutStatic {
     pub index: u16,
+}
+
+impl ConstantRearrangeable for PutStatic {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -57,9 +73,25 @@ pub struct GetField {
     pub index: u16,
 }
 
+impl ConstantRearrangeable for GetField {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct PutField {
     pub index: u16,
+}
+
+impl ConstantRearrangeable for PutField {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -67,14 +99,38 @@ pub struct InvokeVirtual {
     pub index: u16,
 }
 
+impl ConstantRearrangeable for InvokeVirtual {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeSpecial {
     pub index: u16,
 }
 
+impl ConstantRearrangeable for InvokeSpecial {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeStatic {
     pub index: u16,
+}
+
+impl ConstantRearrangeable for InvokeStatic {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -83,9 +139,25 @@ pub struct InvokeInterface {
     pub count: u8,
 }
 
+impl ConstantRearrangeable for InvokeInterface {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeDynamic {
     pub index: u16,
+}
+
+impl ConstantRearrangeable for InvokeDynamic {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -93,9 +165,25 @@ pub struct New {
     pub index: u16,
 }
 
+impl ConstantRearrangeable for New {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ANewArray {
     pub index: u16,
+}
+
+impl ConstantRearrangeable for ANewArray {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -103,9 +191,25 @@ pub struct CheckCast {
     pub index: u16,
 }
 
+impl ConstantRearrangeable for CheckCast {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InstanceOf {
     pub index: u16,
+}
+
+impl ConstantRearrangeable for InstanceOf {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -134,4 +238,12 @@ pub enum WideLoad {
 pub struct MultiANewArray {
     pub index: u16,
     pub dimensions: u8,
+}
+
+impl ConstantRearrangeable for MultiANewArray {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.index, rearrangements);
+
+        Ok(())
+    }
 }
