@@ -1,0 +1,624 @@
+---
+source: test/compile_class_file.rs
+expression: class_tree
+---
+java_version: V17
+constant_pool_count: 34
+constant_pool:
+  len: 34
+  entries:
+    1:
+      MethodRef:
+        class_index: 2
+        name_and_type_index: 3
+    2:
+      Class:
+        name_index: 4
+    3:
+      NameAndType:
+        name_index: 5
+        type_index: 6
+    4:
+      Utf8:
+        length: 16
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 79
+          - 98
+          - 106
+          - 101
+          - 99
+          - 116
+    5:
+      Utf8:
+        length: 6
+        bytes:
+          - 60
+          - 105
+          - 110
+          - 105
+          - 116
+          - 62
+    6:
+      Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 86
+    7:
+      FieldRef:
+        class_index: 8
+        name_and_type_index: 9
+    8:
+      Class:
+        name_index: 10
+    9:
+      NameAndType:
+        name_index: 11
+        type_index: 12
+    10:
+      Utf8:
+        length: 16
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 121
+          - 115
+          - 116
+          - 101
+          - 109
+    11:
+      Utf8:
+        length: 3
+        bytes:
+          - 111
+          - 117
+          - 116
+    12:
+      Utf8:
+        length: 21
+        bytes:
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 105
+          - 111
+          - 47
+          - 80
+          - 114
+          - 105
+          - 110
+          - 116
+          - 83
+          - 116
+          - 114
+          - 101
+          - 97
+          - 109
+          - 59
+    13:
+      String:
+        string_index: 14
+    14:
+      Utf8:
+        length: 12
+        bytes:
+          - 72
+          - 101
+          - 108
+          - 108
+          - 111
+          - 32
+          - 119
+          - 111
+          - 114
+          - 108
+          - 100
+          - 33
+    15:
+      MethodRef:
+        class_index: 16
+        name_and_type_index: 17
+    16:
+      Class:
+        name_index: 18
+    17:
+      NameAndType:
+        name_index: 19
+        type_index: 20
+    18:
+      Utf8:
+        length: 19
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 105
+          - 111
+          - 47
+          - 80
+          - 114
+          - 105
+          - 110
+          - 116
+          - 83
+          - 116
+          - 114
+          - 101
+          - 97
+          - 109
+    19:
+      Utf8:
+        length: 7
+        bytes:
+          - 112
+          - 114
+          - 105
+          - 110
+          - 116
+          - 108
+          - 110
+    20:
+      Utf8:
+        length: 21
+        bytes:
+          - 40
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+          - 41
+          - 86
+    21:
+      Class:
+        name_index: 22
+    22:
+      Utf8:
+        length: 4
+        bytes:
+          - 77
+          - 97
+          - 105
+          - 110
+    23:
+      Utf8:
+        length: 4
+        bytes:
+          - 67
+          - 111
+          - 100
+          - 101
+    24:
+      Utf8:
+        length: 15
+        bytes:
+          - 76
+          - 105
+          - 110
+          - 101
+          - 78
+          - 117
+          - 109
+          - 98
+          - 101
+          - 114
+          - 84
+          - 97
+          - 98
+          - 108
+          - 101
+    25:
+      Utf8:
+        length: 18
+        bytes:
+          - 76
+          - 111
+          - 99
+          - 97
+          - 108
+          - 86
+          - 97
+          - 114
+          - 105
+          - 97
+          - 98
+          - 108
+          - 101
+          - 84
+          - 97
+          - 98
+          - 108
+          - 101
+    26:
+      Utf8:
+        length: 4
+        bytes:
+          - 116
+          - 104
+          - 105
+          - 115
+    27:
+      Utf8:
+        length: 6
+        bytes:
+          - 76
+          - 77
+          - 97
+          - 105
+          - 110
+          - 59
+    28:
+      Utf8:
+        length: 4
+        bytes:
+          - 109
+          - 97
+          - 105
+          - 110
+    29:
+      Utf8:
+        length: 22
+        bytes:
+          - 40
+          - 91
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+          - 41
+          - 86
+    30:
+      Utf8:
+        length: 4
+        bytes:
+          - 97
+          - 114
+          - 103
+          - 115
+    31:
+      Utf8:
+        length: 19
+        bytes:
+          - 91
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+    32:
+      Utf8:
+        length: 10
+        bytes:
+          - 83
+          - 111
+          - 117
+          - 114
+          - 99
+          - 101
+          - 70
+          - 105
+          - 108
+          - 101
+    33:
+      Utf8:
+        length: 9
+        bytes:
+          - 77
+          - 97
+          - 105
+          - 110
+          - 46
+          - 106
+          - 97
+          - 118
+          - 97
+access_flags:
+  - Public
+  - Super
+this_class: 21
+super_class: 2
+interfaces_count: 0
+interfaces: []
+fields_count: 0
+fields: []
+methods_count: 2
+methods:
+  - access_flags:
+      - Public
+    name_index: 5
+    descriptor_index: 6
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 23
+        attribute_len: 47
+        info:
+          - 0
+          - 1
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 5
+          - 42
+          - 183
+          - 0
+          - 1
+          - 177
+          - 0
+          - 0
+          - 0
+          - 2
+          - 0
+          - 24
+          - 0
+          - 0
+          - 0
+          - 6
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 1
+          - 0
+          - 25
+          - 0
+          - 0
+          - 0
+          - 12
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 5
+          - 0
+          - 26
+          - 0
+          - 27
+          - 0
+          - 0
+        attribute:
+          Code:
+            max_stack: 1
+            max_locals: 1
+            code_length: 5
+            code:
+              - 42
+              - 183
+              - 0
+              - 1
+              - 177
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 2
+            attributes:
+              - attribute_name_index: 24
+                attribute_len: 6
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 1
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 1
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 1
+              - attribute_name_index: 25
+                attribute_len: 12
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 5
+                  - 0
+                  - 26
+                  - 0
+                  - 27
+                  - 0
+                  - 0
+                attribute: ~
+  - access_flags:
+      - Public
+      - Static
+    name_index: 28
+    descriptor_index: 29
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 23
+        attribute_len: 55
+        info:
+          - 0
+          - 2
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 9
+          - 178
+          - 0
+          - 7
+          - 18
+          - 13
+          - 182
+          - 0
+          - 15
+          - 177
+          - 0
+          - 0
+          - 0
+          - 2
+          - 0
+          - 24
+          - 0
+          - 0
+          - 0
+          - 10
+          - 0
+          - 2
+          - 0
+          - 0
+          - 0
+          - 3
+          - 0
+          - 8
+          - 0
+          - 4
+          - 0
+          - 25
+          - 0
+          - 0
+          - 0
+          - 12
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 9
+          - 0
+          - 30
+          - 0
+          - 31
+          - 0
+          - 0
+        attribute:
+          Code:
+            max_stack: 2
+            max_locals: 1
+            code_length: 9
+            code:
+              - 178
+              - 0
+              - 7
+              - 18
+              - 13
+              - 182
+              - 0
+              - 15
+              - 177
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 2
+            attributes:
+              - attribute_name_index: 24
+                attribute_len: 10
+                info:
+                  - 0
+                  - 2
+                  - 0
+                  - 0
+                  - 0
+                  - 3
+                  - 0
+                  - 8
+                  - 0
+                  - 4
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 2
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 3
+                      - start_pc: 8
+                        line_number: 4
+              - attribute_name_index: 25
+                attribute_len: 12
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 9
+                  - 0
+                  - 30
+                  - 0
+                  - 31
+                  - 0
+                  - 0
+                attribute: ~
+attributes_count: 1
+attributes:
+  - attribute_name_index: 32
+    attribute_len: 2
+    info:
+      - 0
+      - 33
+    attribute:
+      SourceFile:
+        source_file_index: 33
+
