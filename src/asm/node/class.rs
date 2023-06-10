@@ -1,11 +1,14 @@
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::asm::node::access_flag::ClassAccessFlag;
 use crate::asm::node::attribute::AttributeInfo;
-use crate::asm::node::constant::ConstantPool;
+use crate::asm::node::constant::{Constant, ConstantPool};
 use crate::asm::node::field::Field;
 use crate::asm::node::method::Method;
+use crate::asm::node::ConstantRearrangeable;
+use crate::error::KapiResult;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Class {
@@ -23,6 +26,64 @@ pub struct Class {
     pub methods: Vec<Method>,
     pub attributes_count: u16,
     pub attributes: Vec<AttributeInfo>,
+}
+
+impl Class {
+    pub fn this_class(&self) -> Option<&crate::asm::node::constant::Class> {
+        if let Some(Constant::Class(class)) = self.constant_pool.get(self.this_class) {
+            Some(class)
+        } else {
+            None
+        }
+    }
+
+    pub fn super_class(&self) -> Option<&crate::asm::node::constant::Class> {
+        if let Some(Constant::Class(class)) = self.constant_pool.get(self.super_class) {
+            Some(class)
+        } else {
+            None
+        }
+    }
+
+    pub fn interface(&self, index: usize) -> Option<&crate::asm::node::constant::Class> {
+        if let Some(Constant::Class(class)) = self
+            .interfaces
+            .get(index)
+            .map(|interface_index| self.constant_pool.get(*interface_index))
+            .flatten()
+        {
+            Some(class)
+        } else {
+            None
+        }
+    }
+}
+
+impl ConstantRearrangeable for Class {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.this_class, rearrangements);
+        Self::rearrange_index(&mut self.super_class, rearrangements);
+
+        self.constant_pool.rearrange(rearrangements)?;
+
+        for interface in &mut self.interfaces {
+            Self::rearrange_index(interface, rearrangements);
+        }
+
+        for field in &mut self.fields {
+            field.rearrange(rearrangements)?;
+        }
+
+        for method in &mut self.methods {
+            method.rearrange(rearrangements)?;
+        }
+
+        for attribute in &mut self.attributes {
+            attribute.rearrange(rearrangements)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[repr(u32)]
