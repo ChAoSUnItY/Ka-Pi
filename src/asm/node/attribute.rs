@@ -9,6 +9,7 @@ use crate::asm::node::attribute::annotation::{
     Annotation, ElementValue, ParameterAnnotation, TypeAnnotation,
 };
 use crate::asm::node::attribute::module::{Exports, Opens, Provides, Requires};
+use crate::asm::node::constant::{Class, Constant, ConstantPool, MethodHandle, NameAndType, Utf8};
 use crate::asm::node::opcode::Instruction;
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
@@ -98,7 +99,7 @@ pub enum Attribute {
     BootstrapMethods(BootstrapMethods),
     MethodParameters(MethodParameters),
     Module(Module),
-    ModulePackages(ModulePackage),
+    ModulePackages(ModulePackages),
     ModuleMainClass(ModuleMainClass),
     NestHost(NestHost),
     NestMembers(NestMembers),
@@ -260,6 +261,15 @@ pub struct ConstantValue {
     pub constant_value_index: u16,
 }
 
+impl ConstantValue {
+    pub fn constant<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Constant> {
+        constant_pool.get(self.constant_value_index)
+    }
+}
+
 impl ConstantRearrangeable for ConstantValue {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.constant_value_index, rearrangements);
@@ -349,6 +359,30 @@ pub struct EnclosingMethod {
     pub method_index: u16,
 }
 
+impl EnclosingMethod {
+    pub fn class<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = constant_pool.get(self.class_index) {
+            Some(class)
+        } else {
+            None
+        }
+    }
+
+    pub fn method_name_and_type<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool NameAndType> {
+        if let Some(Constant::NameAndType(name_and_type)) = constant_pool.get(self.method_index) {
+            Some(name_and_type)
+        } else {
+            None
+        }
+    }
+}
+
 impl ConstantRearrangeable for EnclosingMethod {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.class_index, rearrangements);
@@ -363,6 +397,20 @@ pub struct Signature {
     pub signature_index: u16,
 }
 
+//noinspection DuplicatedCode
+impl Signature {
+    pub fn signature<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.signature_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+}
+
 impl ConstantRearrangeable for Signature {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.signature_index, rearrangements);
@@ -374,6 +422,19 @@ impl ConstantRearrangeable for Signature {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SourceFile {
     pub source_file_index: u16,
+}
+
+impl SourceFile {
+    pub fn source_file<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.source_file_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
 }
 
 impl ConstantRearrangeable for SourceFile {
@@ -433,6 +494,7 @@ pub struct RuntimeVisibleAnnotations {
     pub annotations: Vec<Annotation>,
 }
 
+//noinspection DuplicatedCode
 impl ConstantRearrangeable for RuntimeVisibleAnnotations {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for annotation in &mut self.annotations {
@@ -449,6 +511,7 @@ pub struct RuntimeInvisibleAnnotations {
     pub annotations: Vec<Annotation>,
 }
 
+//noinspection DuplicatedCode
 impl ConstantRearrangeable for RuntimeInvisibleAnnotations {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for annotation in &mut self.annotations {
@@ -465,6 +528,7 @@ pub struct RuntimeVisibleParameterAnnotations {
     pub parameter_annotations: Vec<ParameterAnnotation>,
 }
 
+//noinspection DuplicatedCode
 impl ConstantRearrangeable for RuntimeVisibleParameterAnnotations {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for annotation in &mut self.parameter_annotations {
@@ -481,6 +545,7 @@ pub struct RuntimeInvisibleParameterAnnotations {
     pub parameter_annotations: Vec<ParameterAnnotation>,
 }
 
+//noinspection DuplicatedCode
 impl ConstantRearrangeable for RuntimeInvisibleParameterAnnotations {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for annotation in &mut self.parameter_annotations {
@@ -497,6 +562,7 @@ pub struct RuntimeVisibleTypeAnnotations {
     pub type_annotations: Vec<TypeAnnotation>,
 }
 
+//noinspection DuplicatedCode
 impl ConstantRearrangeable for RuntimeVisibleTypeAnnotations {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for annotation in &mut self.type_annotations {
@@ -513,6 +579,7 @@ pub struct RuntimeInvisibleTypeAnnotations {
     pub type_annotations: Vec<TypeAnnotation>,
 }
 
+//noinspection DuplicatedCode
 impl ConstantRearrangeable for RuntimeInvisibleTypeAnnotations {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for annotation in &mut self.type_annotations {
@@ -583,6 +650,47 @@ pub struct Module {
     pub provides: Vec<Provides>,
 }
 
+impl Module {
+    pub fn module_name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.module_name_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+
+    pub fn module_version<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.module_version_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+
+    pub fn uses<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        index: usize,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = self
+            .uses_index
+            .get(index)
+            .map(|uses_index| constant_pool.get(*uses_index))
+            .flatten()
+        {
+            Some(class)
+        } else {
+            None
+        }
+    }
+}
+
 impl ConstantRearrangeable for Module {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.module_name_index, rearrangements);
@@ -613,12 +721,31 @@ impl ConstantRearrangeable for Module {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct ModulePackage {
+pub struct ModulePackages {
     pub package_count: u16,
     pub package_index: Vec<u16>,
 }
 
-impl ConstantRearrangeable for ModulePackage {
+impl ModulePackages {
+    pub fn package<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        index: usize,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = self
+            .package_index
+            .get(index)
+            .map(|package_index| constant_pool.get(*package_index))
+            .flatten()
+        {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+}
+
+impl ConstantRearrangeable for ModulePackages {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for package_index in &mut self.package_index {
             Self::rearrange_index(package_index, rearrangements);
@@ -633,6 +760,19 @@ pub struct ModuleMainClass {
     pub main_class_index: u16,
 }
 
+impl ModuleMainClass {
+    pub fn main_class<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = constant_pool.get(self.main_class_index) {
+            Some(class)
+        } else {
+            None
+        }
+    }
+}
+
 impl ConstantRearrangeable for ModuleMainClass {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.main_class_index, rearrangements);
@@ -644,6 +784,19 @@ impl ConstantRearrangeable for ModuleMainClass {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct NestHost {
     pub host_class_index: u16,
+}
+
+impl NestHost {
+    pub fn main_class<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = constant_pool.get(self.host_class_index) {
+            Some(class)
+        } else {
+            None
+        }
+    }
 }
 
 impl ConstantRearrangeable for NestHost {
@@ -660,6 +813,27 @@ pub struct NestMembers {
     pub classes: Vec<u16>,
 }
 
+//noinspection DuplicatedCode
+impl NestMembers {
+    pub fn class<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        index: usize,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = self
+            .classes
+            .get(index)
+            .map(|class_index| constant_pool.get(*class_index))
+            .flatten()
+        {
+            Some(class)
+        } else {
+            None
+        }
+    }
+}
+
+//noinspection DuplicatedCode
 impl ConstantRearrangeable for NestMembers {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for class in &mut self.classes {
@@ -692,6 +866,27 @@ pub struct PermittedSubclasses {
     pub classes: Vec<u16>,
 }
 
+//noinspection DuplicatedCode
+impl PermittedSubclasses {
+    pub fn class<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        index: usize,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = self
+            .classes
+            .get(index)
+            .map(|class_index| constant_pool.get(*class_index))
+            .flatten()
+        {
+            Some(class)
+        } else {
+            None
+        }
+    }
+}
+
+//noinspection DuplicatedCode
 impl ConstantRearrangeable for PermittedSubclasses {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for class in &mut self.classes {
@@ -713,10 +908,23 @@ pub struct Exception {
 }
 
 impl Exception {
-    fn rearrange_index(&mut self, rearrangements: &HashMap<u16, u16>) {
-        if let Some(target_index) = rearrangements.get(&self.catch_type) {
-            self.catch_type = *target_index;
+    pub fn catch_type<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = constant_pool.get(self.catch_type) {
+            Some(class)
+        } else {
+            None
         }
+    }
+}
+
+impl ConstantRearrangeable for Exception {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.catch_type, rearrangements);
+
+        Ok(())
     }
 }
 
@@ -833,7 +1041,7 @@ impl ConstantRearrangeable for StackMapFrameEntry {
     }
 }
 
-// noinspection ALL
+//noinspection SpellCheckingInspection
 #[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum VerificationType {
@@ -844,18 +1052,8 @@ pub enum VerificationType {
     Long,
     Null,
     UninitializedThis,
-    Object { cpool_index: u16 },
+    Object(Object),
     Uninitialized { offset: u16 },
-}
-
-impl ConstantRearrangeable for VerificationType {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        if let Self::Object { cpool_index } = self {
-            Self::rearrange_index(cpool_index, rearrangements);
-        }
-
-        Ok(())
-    }
 }
 
 impl VerificationType {
@@ -867,12 +1065,85 @@ impl VerificationType {
     }
 }
 
+impl ConstantRearrangeable for VerificationType {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        if let Self::Object(object) = self {
+            object.rearrange(rearrangements)?;
+        }
+
+        Ok(())
+    }
+}
+
+//noinspection SpellCheckingInspection
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Object {
+    cpool_index: u16,
+}
+
+//noinspection DuplicatedCode
+impl Object {
+    pub fn class<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = constant_pool.get(self.cpool_index) {
+            Some(class)
+        } else {
+            None
+        }
+    }
+}
+
+impl ConstantRearrangeable for Object {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.cpool_index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct InnerClass {
     pub inner_class_info_index: u16,
     pub outer_class_info_index: u16,
     pub inner_name_index: u16,
     pub inner_class_access_flags: Vec<NestedClassAccessFlag>,
+}
+
+impl InnerClass {
+    pub fn inner_class<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = constant_pool.get(self.inner_class_info_index) {
+            Some(class)
+        } else {
+            None
+        }
+    }
+
+    pub fn outer_class<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Class> {
+        if let Some(Constant::Class(class)) = constant_pool.get(self.outer_class_info_index) {
+            Some(class)
+        } else {
+            None
+        }
+    }
+
+    pub fn inner_name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.inner_name_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
 }
 
 impl ConstantRearrangeable for InnerClass {
@@ -900,6 +1171,31 @@ pub struct LocalVariable {
     pub index: u16,
 }
 
+//noinspection DuplicatedCode
+impl LocalVariable {
+    pub fn name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.name_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+
+    pub fn descriptor<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.descriptor_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+}
+
 impl ConstantRearrangeable for LocalVariable {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.name_index, rearrangements);
@@ -916,6 +1212,31 @@ pub struct LocalVariableType {
     pub name_index: u16,
     pub signature_index: u16,
     pub index: u16,
+}
+
+//noinspection DuplicatedCode
+impl LocalVariableType {
+    pub fn name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.name_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+
+    pub fn signature<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.signature_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
 }
 
 impl ConstantRearrangeable for LocalVariableType {
@@ -942,6 +1263,30 @@ impl BootstrapMethod {
             bootstrap_arguments: boostrap_arguments_indices,
         }
     }
+
+    pub fn bootstrap_method_handle<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool MethodHandle> {
+        if let Some(Constant::MethodHandle(method_handle)) =
+            constant_pool.get(self.bootstrap_method_ref)
+        {
+            Some(method_handle)
+        } else {
+            None
+        }
+    }
+
+    pub fn bootstrap_argument<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        index: usize,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Constant> {
+        self.bootstrap_arguments
+            .get(index)
+            .map(|argument_index| constant_pool.get(*argument_index))
+            .flatten()
+    }
 }
 
 impl ConstantRearrangeable for BootstrapMethod {
@@ -962,6 +1307,20 @@ pub struct MethodParameter {
     pub access_flags: Vec<ParameterAccessFlag>,
 }
 
+//noinspection DuplicatedCode
+impl MethodParameter {
+    pub fn name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.name_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+}
+
 impl ConstantRearrangeable for MethodParameter {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.name_index, rearrangements);
@@ -976,6 +1335,31 @@ pub struct RecordComponent {
     pub descriptor_index: u16,
     pub attributes_count: u16,
     pub attributes: Vec<AttributeInfo>,
+}
+
+//noinspection DuplicatedCode
+impl RecordComponent {
+    pub fn name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.name_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+
+    pub fn descriptor<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.descriptor_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
 }
 
 impl ConstantRearrangeable for RecordComponent {
