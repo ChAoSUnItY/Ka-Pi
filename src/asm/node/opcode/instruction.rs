@@ -14,10 +14,10 @@ pub struct Ldc {
 }
 
 impl Ldc {
-    pub fn constant<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn constant<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant Constant> {
+    ) -> Option<&'instruction Constant> {
         constant_pool.get(self.index as u16)
     }
 }
@@ -35,10 +35,10 @@ pub struct Ldc_W {
 }
 
 impl Ldc_W {
-    pub fn constant<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn constant<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant Constant> {
+    ) -> Option<&'instruction Constant> {
         constant_pool.get(self.index)
     }
 }
@@ -58,10 +58,10 @@ pub struct Ldc2_W {
 }
 
 impl Ldc2_W {
-    pub fn constant<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn constant<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant Constant> {
+    ) -> Option<&'instruction Constant> {
         constant_pool.get(self.index)
     }
 }
@@ -81,10 +81,10 @@ pub struct GetStatic {
 
 //noinspection DuplicatedCode
 impl GetStatic {
-    pub fn field_ref<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant FieldRef> {
+    ) -> Option<&'instruction FieldRef> {
         if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
             Some(field_ref)
         } else {
@@ -108,10 +108,10 @@ pub struct PutStatic {
 
 //noinspection DuplicatedCode
 impl PutStatic {
-    pub fn field_ref<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant FieldRef> {
+    ) -> Option<&'instruction FieldRef> {
         if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
             Some(field_ref)
         } else {
@@ -135,10 +135,10 @@ pub struct GetField {
 
 //noinspection DuplicatedCode
 impl GetField {
-    pub fn field_ref<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant FieldRef> {
+    ) -> Option<&'instruction FieldRef> {
         if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
             Some(field_ref)
         } else {
@@ -162,10 +162,10 @@ pub struct PutField {
 
 //noinspection DuplicatedCode
 impl PutField {
-    pub fn field_ref<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant FieldRef> {
+    ) -> Option<&'instruction FieldRef> {
         if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
             Some(field_ref)
         } else {
@@ -189,10 +189,10 @@ pub struct InvokeVirtual {
 
 //noinspection DuplicatedCode
 impl InvokeVirtual {
-    pub fn method_ref<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn method_ref<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant MethodRef> {
+    ) -> Option<&'instruction MethodRef> {
         if let Some(Constant::MethodRef(method_ref)) = constant_pool.get(self.index) {
             Some(method_ref)
         } else {
@@ -216,10 +216,10 @@ pub struct InvokeSpecial {
 
 //noinspection DuplicatedCode
 impl InvokeSpecial {
-    pub fn method_ref<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn method_ref<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant MethodRef> {
+    ) -> Option<&'instruction MethodRef> {
         if let Some(Constant::MethodRef(method_ref)) = constant_pool.get(self.index) {
             Some(method_ref)
         } else {
@@ -243,10 +243,10 @@ pub struct InvokeStatic {
 
 //noinspection DuplicatedCode
 impl InvokeStatic {
-    pub fn method_ref<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn method_ref<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant MethodRef> {
+    ) -> Option<&'instruction MethodRef> {
         if let Some(Constant::MethodRef(method_ref)) = constant_pool.get(self.index) {
             Some(method_ref)
         } else {
@@ -271,10 +271,10 @@ pub struct InvokeInterface {
 
 //noinspection DuplicatedCode
 impl InvokeInterface {
-    pub fn interface_method_ref<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn interface_method_ref<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant InterfaceMethodRef> {
+    ) -> Option<&'instruction InterfaceMethodRef> {
         if let Some(Constant::InterfaceMethodRef(interface_method_ref)) =
             constant_pool.get(self.index)
         {
@@ -300,10 +300,10 @@ pub struct InvokeDynamic {
 
 //noinspection DuplicatedCode
 impl InvokeDynamic {
-    pub fn invoke_dynamic<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn invoke_dynamic<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant crate::asm::node::constant::InvokeDynamic> {
+    ) -> Option<&'instruction crate::asm::node::constant::InvokeDynamic> {
         if let Some(Constant::InvokeDynamic(invoke_dynamic)) = constant_pool.get(self.index) {
             Some(invoke_dynamic)
         } else {
@@ -327,10 +327,10 @@ pub struct New {
 
 //noinspection DuplicatedCode
 impl New {
-    pub fn class<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn class<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant Class> {
+    ) -> Option<&'instruction Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
@@ -354,10 +354,10 @@ pub struct ANewArray {
 
 //noinspection DuplicatedCode
 impl ANewArray {
-    pub fn class<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn class<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant Class> {
+    ) -> Option<&'instruction Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
@@ -381,10 +381,10 @@ pub struct CheckCast {
 
 //noinspection DuplicatedCode
 impl CheckCast {
-    pub fn class<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn class<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant Class> {
+    ) -> Option<&'instruction Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
@@ -408,10 +408,10 @@ pub struct InstanceOf {
 
 //noinspection DuplicatedCode
 impl InstanceOf {
-    pub fn class<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn class<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant Class> {
+    ) -> Option<&'instruction Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
@@ -453,10 +453,10 @@ pub struct MultiANewArray {
 
 //noinspection DuplicatedCode
 impl MultiANewArray {
-    pub fn class<'constant, 'constant_pool: 'constant>(
-        &'constant self,
+    pub fn class<'instruction, 'constant_pool: 'instruction>(
+        &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'constant Class> {
+    ) -> Option<&'instruction Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
