@@ -1,7 +1,7 @@
 use crate::asm::node::opcode::RefKind;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Handle {
     pub tag: RefKind,
     pub owner: String,

@@ -7,12 +7,13 @@ use itertools::Itertools;
 
 use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::generate::label::Label;
+use crate::asm::generate::opcode::{ConstantObject, Instruction};
 use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::generate::types::Type;
 use crate::asm::node::access_flag::{AccessFlags, MethodAccessFlag};
 use crate::asm::node::attribute;
 use crate::asm::node::class::JavaVersion;
-use crate::asm::node::opcode::{ConstantObject, Instruction, Opcode};
+use crate::asm::node::opcode::Opcode;
 use crate::error::{KapiError, KapiResult};
 
 pub trait MethodVisitor {
@@ -313,7 +314,7 @@ impl MethodWriter {
         self.code_byte_vec.put_u8s(companion_data);
     }
 
-    /// Emit instruction with a [Instruction]. This is useful when exist functions
+    /// Emit opcode with a [Instruction]. This is useful when exist functions
     /// does not have such feature implementation, however, using this might results in unexpected
     /// errors.
     ///
@@ -1024,10 +1025,10 @@ impl MethodWriter {
                 self.pop_stack_expect(Type::Long)?;
                 self.push_stack(Type::Long);
             }
-            Instruction::IINC(index, val) => {
+            Instruction::IINC { index, value } => {
                 self.put_opcode(inst.opcode());
                 self.code_byte_vec.put_be(*index);
-                self.code_byte_vec.put_be(*val);
+                self.code_byte_vec.put_be(*value);
             }
             Instruction::I2L => {
                 self.put_opcode(inst.opcode());
@@ -1238,8 +1239,8 @@ impl MethodWriter {
                     )))
                 }
             }
-            Instruction::TABLESWITCH => {}
-            Instruction::LOOKUPSWITCH => {}
+            Instruction::TABLESWITCH { .. } => {}
+            Instruction::LOOKUPSWITCH { .. } => {}
             Instruction::IRETURN
             | Instruction::LRETURN
             | Instruction::FRETURN
@@ -1248,27 +1249,27 @@ impl MethodWriter {
             | Instruction::RETURN => {
                 self.visit_return(inst.opcode())?;
             }
-            Instruction::GETSTATIC => {}
-            Instruction::PUTSTATIC => {}
-            Instruction::GETFIELD => {}
-            Instruction::PUTFIELD => {}
-            Instruction::INVOKEVIRTUAL => {}
-            Instruction::INVOKESPECIAL => {}
-            Instruction::INVOKESTATIC => {}
-            Instruction::INVOKEINTERFACE => {}
-            Instruction::INVOKEDYNAMIC => {}
-            Instruction::NEW => {}
-            Instruction::NEWARRAY => {}
-            Instruction::ANEWARRAY => {}
+            Instruction::GETSTATIC(..) => {}
+            Instruction::PUTSTATIC(..) => {}
+            Instruction::GETFIELD(..) => {}
+            Instruction::PUTFIELD(..) => {}
+            Instruction::INVOKEVIRTUAL(..) => {}
+            Instruction::INVOKESPECIAL(..) => {}
+            Instruction::INVOKESTATIC(..) => {}
+            Instruction::INVOKEINTERFACE { .. } => {}
+            Instruction::INVOKEDYNAMIC(..) => {}
+            Instruction::NEW(..) => {}
+            Instruction::NEWARRAY(..) => {}
+            Instruction::ANEWARRAY(..) => {}
             Instruction::ARRAYLENGTH => {}
             Instruction::ATHROW => {}
-            Instruction::CHECKCAST => {}
-            Instruction::INSTANCEOF => {}
+            Instruction::CHECKCAST(..) => {}
+            Instruction::INSTANCEOF(..) => {}
             Instruction::MONITORENTER => {}
             Instruction::MONITOREXIT => {}
-            Instruction::MULTIANEWARRAY => {}
-            Instruction::IFNULL => {}
-            Instruction::IFNONNULL => {}
+            Instruction::MULTIANEWARRAY { .. } => {}
+            Instruction::IFNULL(..) => {}
+            Instruction::IFNONNULL(..) => {}
         }
 
         Ok(())

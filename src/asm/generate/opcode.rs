@@ -1,293 +1,12 @@
-use std::collections::HashMap;
-
-use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
-use crate::asm::node::opcode::instruction::{
-    ANewArray, CheckCast, GetField, GetStatic, InstanceOf, InvokeDynamic, InvokeInterface,
-    InvokeSpecial, InvokeStatic, InvokeVirtual, Ldc, Ldc2_W, Ldc_W, MultiANewArray, New, PutField,
-    PutStatic, Wide,
-};
-use crate::asm::node::ConstantRearrangeable;
+use crate::asm::generate::types::Type;
+use crate::asm::node::handle::Handle;
+use crate::asm::node::opcode::{ArrayType, Opcode, RefKind};
 use crate::error::KapiResult;
 
-pub mod instruction;
-
-#[repr(u8)]
-#[derive(
-    Debug,
-    Copy,
-    Clone,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    Hash,
-    Serialize,
-    Deserialize,
-    TryFromPrimitive,
-)]
-pub enum ArrayType {
-    Boolean = 4,
-    Char = 5,
-    Float = 6,
-    Double = 7,
-    Byte = 8,
-    Short = 9,
-    Int = 10,
-    Long = 11,
-}
-
-#[repr(u8)]
-#[derive(
-    Debug,
-    Copy,
-    Clone,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    Hash,
-    Serialize,
-    Deserialize,
-    TryFromPrimitive,
-)]
-pub enum RefKind {
-    GetField = 1,
-    GetStatic = 2,
-    PutField = 3,
-    PutStatic = 4,
-    InvokeVirtual = 5,
-    InvokeStatic = 6,
-    InvokeSpecial = 7,
-    NewInvokeSpecial = 8,
-    InvokeInterface = 9,
-}
-
 // noinspection SpellCheckingInspection
-/// [Opcode] represents low level JVM bytecode opcodes without any accompany data.
-#[repr(u8)]
-#[derive(
-    Debug,
-    Copy,
-    Clone,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    Hash,
-    Serialize,
-    Deserialize,
-    TryFromPrimitive,
-)]
-#[allow(non_camel_case_types)]
-pub enum Opcode {
-    NOP = 0,
-    ACONST_NULL = 1,
-    ICONST_M1 = 2,
-    ICONST_0 = 3,
-    ICONST_1 = 4,
-    ICONST_2 = 5,
-    ICONST_3 = 6,
-    ICONST_4 = 7,
-    ICONST_5 = 8,
-    LCONST_0 = 9,
-    LCONST_1 = 10,
-    FCONST_0 = 11,
-    FCONST_1 = 12,
-    FCONST_2 = 13,
-    DCONST_0 = 14,
-    DCONST_1 = 15,
-    BIPUSH = 16,
-    SIPUSH = 17,
-    LDC = 18,
-    LDC_W = 19,
-    LDC2_W = 20,
-    ILOAD = 21,
-    LLOAD = 22,
-    FLOAD = 23,
-    DLOAD = 24,
-    ALOAD = 25,
-    ILOAD_0 = 26,
-    ILOAD_1 = 27,
-    ILOAD_2 = 28,
-    ILOAD_3 = 29,
-    LLOAD_0 = 30,
-    LLOAD_1 = 31,
-    LLOAD_2 = 32,
-    LLOAD_3 = 33,
-    FLOAD_0 = 34,
-    FLOAD_1 = 35,
-    FLOAD_2 = 36,
-    FLOAD_3 = 37,
-    DLOAD_0 = 38,
-    DLOAD_1 = 39,
-    DLOAD_2 = 40,
-    DLOAD_3 = 41,
-    ALOAD_0 = 42,
-    ALOAD_1 = 43,
-    ALOAD_2 = 44,
-    ALOAD_3 = 45,
-    IALOAD = 46,
-    LALOAD = 47,
-    FALOAD = 48,
-    DALOAD = 49,
-    AALOAD = 50,
-    BALOAD = 51,
-    CALOAD = 52,
-    SALOAD = 53,
-    ISTORE = 54,
-    LSTORE = 55,
-    FSTORE = 56,
-    DSTORE = 57,
-    ASTORE = 58,
-    ISTORE_0 = 59,
-    ISTORE_1 = 60,
-    ISTORE_2 = 61,
-    ISTORE_3 = 62,
-    LSTORE_0 = 63,
-    LSTORE_1 = 64,
-    LSTORE_2 = 65,
-    LSTORE_3 = 66,
-    FSTORE_0 = 67,
-    FSTORE_1 = 68,
-    FSTORE_2 = 69,
-    FSTORE_3 = 70,
-    DSTORE_0 = 71,
-    DSTORE_1 = 72,
-    DSTORE_2 = 73,
-    DSTORE_3 = 74,
-    ASTORE_0 = 75,
-    ASTORE_1 = 76,
-    ASTORE_2 = 77,
-    ASTORE_3 = 78,
-    IASTORE = 79,
-    LASTORE = 80,
-    FASTORE = 81,
-    DASTORE = 82,
-    AASTORE = 83,
-    BASTORE = 84,
-    CASTORE = 85,
-    SASTORE = 86,
-    POP = 87,
-    POP2 = 88,
-    DUP = 89,
-    DUP_X1 = 90,
-    DUP_X2 = 91,
-    DUP2 = 92,
-    DUP2_X1 = 93,
-    DUP2_X2 = 94,
-    SWAP = 95,
-    IADD = 96,
-    LADD = 97,
-    FADD = 98,
-    DADD = 99,
-    ISUB = 100,
-    LSUB = 101,
-    FSUB = 102,
-    DSUB = 103,
-    IMUL = 104,
-    LMUL = 105,
-    FMUL = 106,
-    DMUL = 107,
-    IDIV = 108,
-    LDIV = 109,
-    FDIV = 110,
-    DDIV = 111,
-    IREM = 112,
-    LREM = 113,
-    FREM = 114,
-    DREM = 115,
-    INEG = 116,
-    LNEG = 117,
-    FNEG = 118,
-    DNEG = 119,
-    ISHL = 120,
-    LSHL = 121,
-    ISHR = 122,
-    LSHR = 123,
-    IUSHR = 124,
-    LUSHR = 125,
-    IAND = 126,
-    LAND = 127,
-    IOR = 128,
-    LOR = 129,
-    IXOR = 130,
-    LXOR = 131,
-    IINC = 132,
-    I2L = 133,
-    I2F = 134,
-    I2D = 135,
-    L2I = 136,
-    L2F = 137,
-    L2D = 138,
-    F2I = 139,
-    F2L = 140,
-    F2D = 141,
-    D2I = 142,
-    D2L = 143,
-    D2F = 144,
-    I2B = 145,
-    I2C = 146,
-    I2S = 147,
-    LCMP = 148,
-    FCMPL = 149,
-    FCMPG = 150,
-    DCMPL = 151,
-    DCMPG = 152,
-    IFEQ = 153,
-    IFNE = 154,
-    IFLT = 155,
-    IFGE = 156,
-    IFGT = 157,
-    IFLE = 158,
-    IF_ICMPEQ = 159,
-    IF_ICMPNE = 160,
-    IF_ICMPLT = 161,
-    IF_ICMPGE = 162,
-    IF_ICMPGT = 163,
-    IF_ICMPLE = 164,
-    IF_ACMPEQ = 165,
-    IF_ACMPNE = 166,
-    GOTO = 167,
-    JSR = 168,
-    RET = 169,
-    TABLESWITCH = 170,
-    LOOKUPSWITCH = 171,
-    IRETURN = 172,
-    LRETURN = 173,
-    FRETURN = 174,
-    DRETURN = 175,
-    ARETURN = 176,
-    RETURN = 177,
-    GETSTATIC = 178,
-    PUTSTATIC = 179,
-    GETFIELD = 180,
-    PUTFIELD = 181,
-    INVOKEVIRTUAL = 182,
-    INVOKESPECIAL = 183,
-    INVOKESTATIC = 184,
-    INVOKEINTERFACE = 185,
-    INVOKEDYNAMIC = 186,
-    NEW = 187,
-    NEWARRAY = 188,
-    ANEWARRAY = 189,
-    ARRAYLENGTH = 190,
-    ATHROW = 191,
-    CHECKCAST = 192,
-    INSTANCEOF = 193,
-    MONITORENTER = 194,
-    MONITOREXIT = 195,
-    WIDE = 196,
-    MULTIANEWARRAY = 197,
-    IFNULL = 198,
-    IFNONNULL = 199,
-    GOTO_W = 200,
-    JSR_W = 201,
-}
-
-// noinspection SpellCheckingInspection
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {
     NOP,
@@ -308,9 +27,9 @@ pub enum Instruction {
     DCONST_1,
     BIPUSH(i8),
     SIPUSH(i16),
-    LDC(Ldc),
-    LDC_W(Ldc_W),
-    LDC2_W(Ldc2_W),
+    LDC(ConstantObject),
+    LDC_W(ConstantObject),
+    LDC2_W(ConstantObject),
     ILOAD(u8),
     LLOAD(u8),
     FLOAD(u8),
@@ -471,7 +190,6 @@ pub enum Instruction {
     },
     LOOKUPSWITCH {
         default: i32,
-        npairs: u32,
         pairs: Vec<(i32, i32)>,
     },
     IRETURN,
@@ -480,30 +198,33 @@ pub enum Instruction {
     DRETURN,
     ARETURN,
     RETURN,
-    GETSTATIC(GetStatic),
-    PUTSTATIC(PutStatic),
-    GETFIELD(GetField),
-    PUTFIELD(PutField),
-    INVOKEVIRTUAL(InvokeVirtual),
-    INVOKESPECIAL(InvokeSpecial),
-    INVOKESTATIC(InvokeStatic),
-    INVOKEINTERFACE(InvokeInterface),
-    INVOKEDYNAMIC(InvokeDynamic),
-    NEW(New),
+    GETSTATIC(u16),
+    PUTSTATIC(u16),
+    GETFIELD(u16),
+    PUTFIELD(u16),
+    INVOKEVIRTUAL(u16),
+    INVOKESPECIAL(u16),
+    INVOKESTATIC(u16),
+    INVOKEINTERFACE {
+        index: u16,
+        count: u8,
+    },
+    INVOKEDYNAMIC(u16),
+    NEW(u16),
     NEWARRAY(ArrayType),
-    ANEWARRAY(ANewArray),
+    ANEWARRAY(u16),
     ARRAYLENGTH,
     ATHROW,
-    CHECKCAST(CheckCast),
-    INSTANCEOF(InstanceOf),
+    CHECKCAST(u16),
+    INSTANCEOF(u16),
     MONITORENTER,
     MONITOREXIT,
-    WIDE(Wide),
-    MULTIANEWARRAY(MultiANewArray),
+    MULTIANEWARRAY {
+        index: u16,
+        dimensions: u8,
+    },
     IFNULL(i16),
     IFNONNULL(i16),
-    GOTO_W(i64),
-    JSR_W(i64),
 }
 
 impl Instruction {
@@ -705,46 +426,100 @@ impl Instruction {
             Instruction::INSTANCEOF(..) => Opcode::INSTANCEOF,
             Instruction::MONITORENTER => Opcode::MONITORENTER,
             Instruction::MONITOREXIT => Opcode::MONITOREXIT,
-            Instruction::WIDE(..) => Opcode::WIDE,
             Instruction::MULTIANEWARRAY { .. } => Opcode::MULTIANEWARRAY,
             Instruction::IFNULL(..) => Opcode::IFNULL,
             Instruction::IFNONNULL(..) => Opcode::IFNONNULL,
-            Instruction::GOTO_W(..) => Opcode::GOTO_W,
-            Instruction::JSR_W(..) => Opcode::JSR_W,
         }
     }
 }
 
-impl ConstantRearrangeable for Instruction {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        match self {
-            Instruction::LDC(ldc) => ldc.rearrange(rearrangements)?,
-            Instruction::LDC_W(ldc_w) => ldc_w.rearrange(rearrangements)?,
-            Instruction::LDC2_W(ldc2_w) => ldc2_w.rearrange(rearrangements)?,
-            Instruction::GETSTATIC(get_static) => get_static.rearrange(rearrangements)?,
-            Instruction::PUTSTATIC(put_static) => put_static.rearrange(rearrangements)?,
-            Instruction::GETFIELD(get_field) => get_field.rearrange(rearrangements)?,
-            Instruction::PUTFIELD(put_field) => put_field.rearrange(rearrangements)?,
-            Instruction::INVOKEVIRTUAL(invoke_virtual) => {
-                invoke_virtual.rearrange(rearrangements)?
-            }
-            Instruction::INVOKESPECIAL(invoke_special) => {
-                invoke_special.rearrange(rearrangements)?
-            }
-            Instruction::INVOKESTATIC(invoke_static) => invoke_static.rearrange(rearrangements)?,
-            Instruction::INVOKEINTERFACE(invoke_interface) => {
-                invoke_interface.rearrange(rearrangements)?
-            }
-            Instruction::NEW(new) => new.rearrange(rearrangements)?,
-            Instruction::ANEWARRAY(a_new_array) => a_new_array.rearrange(rearrangements)?,
-            Instruction::CHECKCAST(check_cast) => check_cast.rearrange(rearrangements)?,
-            Instruction::INSTANCEOF(instance_of) => instance_of.rearrange(rearrangements)?,
-            Instruction::MULTIANEWARRAY(multi_a_new_array) => {
-                multi_a_new_array.rearrange(rearrangements)?
-            }
-            _ => {}
-        }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum ConstantObject {
+    String(String),
+    Int(i32),
+    Float(f32),
+    Long(i64),
+    Double(f64),
+    Class(String),
+    /// # Arguments
+    /// - [RefKind]: reference kind
+    /// - [String]: class name
+    /// - [String]: method name
+    /// - [String]: method descriptor
+    MethodHandle(RefKind, String, String, String),
+    MethodType(String),
+    /// # Arguments
+    /// - [String]: method name
+    /// - [String]: method descriptor
+    /// - [Handle]: bootstrap method handle
+    /// - [Vec<ConstantObject>]: bootstrap method arguments
+    ConstantDynamic(String, String, Handle, Vec<ConstantObject>),
+}
 
-        Ok(())
+impl ConstantObject {
+    /// Returns true if [ConstantObject] is [ConstantObject::Long], [ConstantObject::Double].
+    pub(crate) const fn is_2(&self) -> bool {
+        match self {
+            ConstantObject::Long(..) | ConstantObject::Double(..) => true,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn constant_type(&self) -> KapiResult<Type> {
+        match self {
+            ConstantObject::String(_) => Ok(Type::string_type()),
+            ConstantObject::Int(_) => Ok(Type::Int),
+            ConstantObject::Float(_) => Ok(Type::Float),
+            ConstantObject::Long(_) => Ok(Type::Long),
+            ConstantObject::Double(_) => Ok(Type::Double),
+            ConstantObject::Class(_) => Ok(Type::ObjectRef("java/lang/Class".to_string())),
+            ConstantObject::MethodHandle(_, _, _, _) => {
+                Ok(Type::ObjectRef("java/lang/invoke/MethodHandle".to_string()))
+            }
+            ConstantObject::MethodType(_) => {
+                Ok(Type::ObjectRef("java/lang/invoke/MethodType".to_string()))
+            }
+            ConstantObject::ConstantDynamic(_, method_descriptor, _, _) => {
+                Type::from_method_descriptor(method_descriptor).map(|(.., return_type)| return_type)
+            }
+        }
+    }
+}
+
+impl Eq for ConstantObject {}
+
+impl From<String> for ConstantObject {
+    fn from(value: String) -> Self {
+        Self::String(value)
+    }
+}
+
+impl From<&str> for ConstantObject {
+    fn from(value: &str) -> Self {
+        Self::String(value.to_owned())
+    }
+}
+
+impl From<i32> for ConstantObject {
+    fn from(value: i32) -> Self {
+        Self::Int(value)
+    }
+}
+
+impl From<f32> for ConstantObject {
+    fn from(value: f32) -> Self {
+        Self::Float(value)
+    }
+}
+
+impl From<i64> for ConstantObject {
+    fn from(value: i64) -> Self {
+        Self::Long(value)
+    }
+}
+
+impl From<f64> for ConstantObject {
+    fn from(value: f64) -> Self {
+        Self::Double(value)
     }
 }

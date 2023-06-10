@@ -37,7 +37,7 @@ strum = { version = "0.24.1", features = ["derive"] }
 
 [dev-dependencies]
 insta = { version = "1.28.0", features = ["yaml"] }
-rstest = "0.16.0"
+rstest = "0.17.0"
 
 [features]
 default = []
