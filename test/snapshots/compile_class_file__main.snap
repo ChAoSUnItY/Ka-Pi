@@ -455,6 +455,11 @@ methods:
               - 0
               - 1
               - 177
+            instructions:
+              - ALOAD_0
+              - INVOKESPECIAL:
+                  index: 1
+              - RETURN
             exception_table_length: 0
             exception_table: []
             attributes_length: 2
@@ -570,6 +575,14 @@ methods:
               - 0
               - 15
               - 177
+            instructions:
+              - GETSTATIC:
+                  index: 7
+              - LDC:
+                  index: 13
+              - INVOKEVIRTUAL:
+                  index: 15
+              - RETURN
             exception_table_length: 0
             exception_table: []
             attributes_length: 2
