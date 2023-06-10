@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::asm::node::constant::{Constant, ConstantPool, Utf8};
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 // Used by
 // Attribute::RuntimeVisibleAnnotations
@@ -12,6 +15,20 @@ pub struct Annotation {
     pub type_index: u16,
     pub num_element_value_pairs: u16,
     pub element_value_pairs: Vec<ElementValuePair>,
+}
+
+//noinspection DuplicatedCode
+impl Annotation {
+    pub fn type_name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.type_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
 }
 
 //noinspection DuplicatedCode
@@ -37,6 +54,7 @@ pub struct ParameterAnnotation {
     pub annotations: Vec<Annotation>,
 }
 
+//noinspection DuplicatedCode
 impl ConstantRearrangeable for ParameterAnnotation {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         for annotation in &mut self.annotations {
@@ -59,6 +77,20 @@ pub struct TypeAnnotation {
     pub type_index: u16,
     pub num_element_value_pairs: u16,
     pub element_value_pairs: Vec<ElementValuePair>,
+}
+
+//noinspection DuplicatedCode
+impl TypeAnnotation {
+    pub fn type_name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.type_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
 }
 
 //noinspection DuplicatedCode
@@ -206,6 +238,15 @@ pub struct ConstValue {
     pub const_value_index: u16,
 }
 
+impl ConstValue {
+    pub fn const_value<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Constant> {
+        constant_pool.get(self.const_value_index)
+    }
+}
+
 impl ConstantRearrangeable for ConstValue {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.const_value_index, rearrangements);
@@ -220,6 +261,30 @@ pub struct EnumConstValue {
     pub const_name_index: u16,
 }
 
+impl EnumConstValue {
+    pub fn type_name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.type_name_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+
+    pub fn const_name<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.const_name_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
+}
+
 impl ConstantRearrangeable for EnumConstValue {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.type_name_index, rearrangements);
@@ -232,6 +297,19 @@ impl ConstantRearrangeable for EnumConstValue {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ClassInfo {
     pub class_info_index: u16,
+}
+
+impl ClassInfo {
+    pub fn class<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> Option<&'constant_pool Utf8> {
+        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.class_info_index) {
+            Some(utf8)
+        } else {
+            None
+        }
+    }
 }
 
 impl ConstantRearrangeable for ClassInfo {

@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+// TODO: Move ConstantValue to generate module
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ConstantValue {
     Int(i32),
