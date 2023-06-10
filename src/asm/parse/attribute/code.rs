@@ -12,7 +12,7 @@ use crate::asm::node::constant::ConstantPool;
 use crate::asm::node::opcode::instruction::{
     ANewArray, CheckCast, GetField, GetStatic, InstanceOf, InvokeDynamic, InvokeInterface,
     InvokeSpecial, InvokeStatic, InvokeVirtual, Ldc, Ldc2_W, Ldc_W, MultiANewArray, New, PutField,
-    PutStatic, Wide, WideLoad,
+    PutStatic, Wide,
 };
 use crate::asm::node::opcode::{ArrayType, Instruction, Opcode};
 use crate::asm::parse::attribute::{attribute_infos, exception};
@@ -539,63 +539,63 @@ fn wide(input: &[u8]) -> IResult<&[u8], Wide> {
             Opcode::ILOAD => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::ILOAD(index))))
+                Ok((input, Wide::ILOAD(index)))
             }
             Opcode::FLOAD => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::FLOAD(index))))
+                Ok((input, Wide::FLOAD(index)))
             }
             Opcode::ALOAD => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::ALOAD(index))))
+                Ok((input, Wide::ALOAD(index)))
             }
             Opcode::LLOAD => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::LLOAD(index))))
+                Ok((input, Wide::LLOAD(index)))
             }
             Opcode::DLOAD => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::DLOAD(index))))
+                Ok((input, Wide::DLOAD(index)))
             }
             Opcode::ISTORE => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::ISTORE(index))))
+                Ok((input, Wide::ISTORE(index)))
             }
             Opcode::FSTORE => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::FSTORE(index))))
+                Ok((input, Wide::FSTORE(index)))
             }
             Opcode::ASTORE => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::ASTORE(index))))
+                Ok((input, Wide::ASTORE(index)))
             }
             Opcode::LSTORE => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::LSTORE(index))))
+                Ok((input, Wide::LSTORE(index)))
             }
             Opcode::DSTORE => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::DSTORE(index))))
+                Ok((input, Wide::DSTORE(index)))
             }
             Opcode::RET => {
                 let (input, index) = be_u16(input)?;
 
-                Ok((input, Wide::Load(WideLoad::RET(index))))
+                Ok((input, Wide::RET(index)))
             }
             Opcode::IINC => {
                 let (input, index) = be_u16(input)?;
                 let (input, value) = be_i16(input)?;
 
-                Ok((input, Wide::Inc(index, value)))
+                Ok((input, Wide::IINC(index, value)))
             }
             _ => Err(Error(make_error(input, ErrorKind::NoneOf))),
         }
@@ -617,7 +617,6 @@ mod test {
     use itertools::Itertools;
 
     use crate::asm::node::opcode::instruction::Wide;
-    use crate::asm::node::opcode::instruction::WideLoad::ILOAD;
     use crate::asm::node::opcode::{Instruction, Opcode};
     use crate::asm::parse::attribute::code::instruction;
 
@@ -647,11 +646,11 @@ mod test {
     fn test_wide_opcodes() {
         let test_cases = vec![
             (
-                Instruction::WIDE(Wide::Load(ILOAD(10))),
+                Instruction::WIDE(Wide::ILOAD(10)),
                 vec![Opcode::WIDE as u8, Opcode::ILOAD as u8, 0, 10],
             ),
             (
-                Instruction::WIDE(Wide::Inc(10, 20)),
+                Instruction::WIDE(Wide::IINC(10, 20)),
                 vec![Opcode::WIDE as u8, Opcode::IINC as u8, 0, 10, 0, 20],
             ),
         ];
