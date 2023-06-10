@@ -17,7 +17,7 @@ impl Ldc {
     pub fn constant<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction Constant> {
+    ) -> Option<&'constant_pool Constant> {
         constant_pool.get(self.index as u16)
     }
 }
@@ -38,7 +38,7 @@ impl Ldc_W {
     pub fn constant<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction Constant> {
+    ) -> Option<&'constant_pool Constant> {
         constant_pool.get(self.index)
     }
 }
@@ -61,7 +61,7 @@ impl Ldc2_W {
     pub fn constant<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction Constant> {
+    ) -> Option<&'constant_pool Constant> {
         constant_pool.get(self.index)
     }
 }
@@ -84,7 +84,7 @@ impl GetStatic {
     pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction FieldRef> {
+    ) -> Option<&'constant_pool FieldRef> {
         if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
             Some(field_ref)
         } else {
@@ -111,7 +111,7 @@ impl PutStatic {
     pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction FieldRef> {
+    ) -> Option<&'constant_pool FieldRef> {
         if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
             Some(field_ref)
         } else {
@@ -138,7 +138,7 @@ impl GetField {
     pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction FieldRef> {
+    ) -> Option<&'constant_pool FieldRef> {
         if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
             Some(field_ref)
         } else {
@@ -165,7 +165,7 @@ impl PutField {
     pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction FieldRef> {
+    ) -> Option<&'constant_pool FieldRef> {
         if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
             Some(field_ref)
         } else {
@@ -192,7 +192,7 @@ impl InvokeVirtual {
     pub fn method_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction MethodRef> {
+    ) -> Option<&'constant_pool MethodRef> {
         if let Some(Constant::MethodRef(method_ref)) = constant_pool.get(self.index) {
             Some(method_ref)
         } else {
@@ -219,7 +219,7 @@ impl InvokeSpecial {
     pub fn method_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction MethodRef> {
+    ) -> Option<&'constant_pool MethodRef> {
         if let Some(Constant::MethodRef(method_ref)) = constant_pool.get(self.index) {
             Some(method_ref)
         } else {
@@ -246,7 +246,7 @@ impl InvokeStatic {
     pub fn method_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction MethodRef> {
+    ) -> Option<&'constant_pool MethodRef> {
         if let Some(Constant::MethodRef(method_ref)) = constant_pool.get(self.index) {
             Some(method_ref)
         } else {
@@ -274,7 +274,7 @@ impl InvokeInterface {
     pub fn interface_method_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction InterfaceMethodRef> {
+    ) -> Option<&'constant_pool InterfaceMethodRef> {
         if let Some(Constant::InterfaceMethodRef(interface_method_ref)) =
             constant_pool.get(self.index)
         {
@@ -303,7 +303,7 @@ impl InvokeDynamic {
     pub fn invoke_dynamic<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction crate::asm::node::constant::InvokeDynamic> {
+    ) -> Option<&'constant_pool crate::asm::node::constant::InvokeDynamic> {
         if let Some(Constant::InvokeDynamic(invoke_dynamic)) = constant_pool.get(self.index) {
             Some(invoke_dynamic)
         } else {
@@ -330,7 +330,7 @@ impl New {
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction Class> {
+    ) -> Option<&'constant_pool Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
@@ -357,7 +357,7 @@ impl ANewArray {
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction Class> {
+    ) -> Option<&'constant_pool Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
@@ -384,7 +384,7 @@ impl CheckCast {
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction Class> {
+    ) -> Option<&'constant_pool Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
@@ -411,7 +411,7 @@ impl InstanceOf {
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction Class> {
+    ) -> Option<&'constant_pool Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
@@ -456,7 +456,7 @@ impl MultiANewArray {
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> Option<&'instruction Class> {
+    ) -> Option<&'constant_pool Class> {
         if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
             Some(class)
         } else {
