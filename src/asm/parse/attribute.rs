@@ -93,8 +93,6 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
     }
 }
 
-
-
 fn exception(input: &[u8]) -> IResult<&[u8], Exception> {
     map(
         tuple((be_u16, be_u16, be_u16, be_u16)),

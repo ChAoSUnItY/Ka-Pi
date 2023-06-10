@@ -16,11 +16,11 @@ impl ConstantRearrangeable for Ldc {
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
-pub struct Ldc_w {
+pub struct Ldc_W {
     pub index: u16,
 }
 
-impl ConstantRearrangeable for Ldc_w {
+impl ConstantRearrangeable for Ldc_W {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.index, rearrangements);
 
@@ -30,11 +30,11 @@ impl ConstantRearrangeable for Ldc_w {
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
-pub struct Ldc2_w {
+pub struct Ldc2_W {
     pub index: u16,
 }
 
-impl ConstantRearrangeable for Ldc2_w {
+impl ConstantRearrangeable for Ldc2_W {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
         Self::rearrange_index(&mut self.index, rearrangements);
 

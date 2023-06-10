@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::asm::node::opcode::instruction::{
     ANewArray, CheckCast, GetField, GetStatic, InstanceOf, InvokeDynamic, InvokeInterface,
-    InvokeSpecial, InvokeStatic, InvokeVirtual, Ldc, Ldc2_w, Ldc_w, MultiANewArray, New, PutField,
+    InvokeSpecial, InvokeStatic, InvokeVirtual, Ldc, Ldc2_W, Ldc_W, MultiANewArray, New, PutField,
     PutStatic, Wide,
 };
 use crate::asm::node::ConstantRearrangeable;
@@ -309,8 +309,8 @@ pub enum Instruction {
     BIPUSH(i8),
     SIPUSH(i16),
     LDC(Ldc),
-    LDC_W(Ldc_w),
-    LDC2_W(Ldc2_w),
+    LDC_W(Ldc_W),
+    LDC2_W(Ldc2_W),
     ILOAD(u8),
     LLOAD(u8),
     FLOAD(u8),
@@ -471,6 +471,7 @@ pub enum Instruction {
     },
     LOOKUPSWITCH {
         default: i32,
+        npairs: u32,
         pairs: Vec<(i32, i32)>,
     },
     IRETURN,

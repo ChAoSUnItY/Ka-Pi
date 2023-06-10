@@ -3,10 +3,10 @@ use std::io::Read;
 use std::ops::RangeFrom;
 use std::path::Path;
 
-use nom::error::ParseError;
-use nom::{IResult, InputIter, InputLength, Slice};
 use crate::asm::node::class::Class;
 use crate::error::{KapiError, KapiResult};
+use nom::error::ParseError;
+use nom::{IResult, InputIter, InputLength, Slice};
 
 pub mod attribute;
 pub mod class;
