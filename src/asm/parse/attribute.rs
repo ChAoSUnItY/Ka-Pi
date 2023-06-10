@@ -11,7 +11,7 @@ use nom::{error, error_position, IResult};
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
     Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, ConstantValue, Exception,
-    Exceptions, LineNumber, LineNumberTable, NestHost, NestMembers, PermittedSubclasses,
+    Exceptions, LineNumber, LineNumberTable, NestHost, NestMembers, Object, PermittedSubclasses,
     SourceFile, StackMapFrameEntry, StackMapTable, VerificationType,
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
@@ -193,8 +193,8 @@ fn verification_type(input: &[u8]) -> IResult<&[u8], VerificationType> {
         4 => Ok((input, VerificationType::Long)),
         5 => Ok((input, VerificationType::Null)),
         6 => Ok((input, VerificationType::UninitializedThis)),
-        7 => map(be_u16, |cpool_index| VerificationType::Object {
-            cpool_index,
+        7 => map(be_u16, |cpool_index| {
+            VerificationType::Object(Object { cpool_index })
         })(input),
         8 => map(be_u16, |offset| VerificationType::Uninitialized { offset })(input),
         _ => Err(Error(error_position!(input, ErrorKind::OneOf))),

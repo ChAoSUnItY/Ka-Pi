@@ -1078,7 +1078,7 @@ impl ConstantRearrangeable for VerificationType {
 //noinspection SpellCheckingInspection
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Object {
-    cpool_index: u16,
+    pub(crate) cpool_index: u16,
 }
 
 //noinspection DuplicatedCode
