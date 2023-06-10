@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
@@ -6,6 +6,7 @@ use strum::IntoStaticStr;
 
 use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods};
 use crate::asm::node::opcode::RefKind;
+use crate::asm::node::ConstantRearrangeable;
 use crate::error::{KapiError, KapiResult};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -29,6 +30,24 @@ impl ConstantPool {
 
     pub fn get(&self, index: u16) -> Option<&Constant> {
         self.entries.get(&index)
+    }
+}
+
+impl ConstantRearrangeable for ConstantPool {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        let mut remapped_entries = BTreeMap::new();
+
+        for (&from, &to) in rearrangements {
+            if let Some(entry) = self.get(from) {
+                remapped_entries.insert(to, entry.clone());
+            } else {
+                return Err(KapiError::StateError(format!("Unable to remap constant entry from #{from} to #{to}: Constant #{from} does not exists")));
+            }
+        }
+
+        self.entries = remapped_entries;
+
+        Ok(())
     }
 }
 
@@ -212,6 +231,14 @@ impl Class {
     }
 }
 
+impl ConstantRearrangeable for Class {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.name_index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct String {
     pub string_index: u16,
@@ -227,6 +254,14 @@ impl String {
         } else {
             None
         }
+    }
+}
+
+impl ConstantRearrangeable for String {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.string_index, rearrangements);
+
+        Ok(())
     }
 }
 
@@ -263,6 +298,16 @@ impl FieldRef {
     }
 }
 
+//noinspection DuplicatedCode
+impl ConstantRearrangeable for FieldRef {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.class_index, rearrangements);
+        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodRef {
     pub class_index: u16,
@@ -296,6 +341,16 @@ impl MethodRef {
     }
 }
 
+//noinspection DuplicatedCode
+impl ConstantRearrangeable for MethodRef {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.class_index, rearrangements);
+        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InterfaceMethodRef {
     pub class_index: u16,
@@ -326,6 +381,16 @@ impl InterfaceMethodRef {
         } else {
             None
         }
+    }
+}
+
+//noinspection DuplicatedCode
+impl ConstantRearrangeable for InterfaceMethodRef {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.class_index, rearrangements);
+        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
+
+        Ok(())
     }
 }
 
@@ -437,6 +502,14 @@ impl MethodHandle {
     }
 }
 
+impl ConstantRearrangeable for MethodHandle {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.reference_index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodType {
     pub descriptor_index: u16,
@@ -452,6 +525,14 @@ impl MethodType {
         } else {
             None
         }
+    }
+}
+
+impl ConstantRearrangeable for MethodType {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.descriptor_index, rearrangements);
+
+        Ok(())
     }
 }
 
@@ -501,6 +582,14 @@ impl Dynamic {
     }
 }
 
+impl ConstantRearrangeable for Dynamic {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeDynamic {
     pub bootstrap_method_attr_index: u16,
@@ -547,6 +636,14 @@ impl InvokeDynamic {
     }
 }
 
+impl ConstantRearrangeable for InvokeDynamic {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Module {
     pub name_index: u16,
@@ -566,6 +663,14 @@ impl Module {
     }
 }
 
+impl ConstantRearrangeable for Module {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.name_index, rearrangements);
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Package {
     pub name_index: u16,
@@ -582,5 +687,13 @@ impl Package {
         } else {
             None
         }
+    }
+}
+
+impl ConstantRearrangeable for Package {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        Self::rearrange_index(&mut self.name_index, rearrangements);
+
+        Ok(())
     }
 }
