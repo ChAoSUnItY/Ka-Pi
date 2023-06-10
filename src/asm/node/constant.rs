@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
@@ -6,6 +6,7 @@ use strum::IntoStaticStr;
 
 use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods};
 use crate::asm::node::opcode::RefKind;
+use crate::asm::node::ConstantRearrangeable;
 use crate::error::{KapiError, KapiResult};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -29,6 +30,24 @@ impl ConstantPool {
 
     pub fn get(&self, index: u16) -> Option<&Constant> {
         self.entries.get(&index)
+    }
+}
+
+impl ConstantRearrangeable for ConstantPool {
+    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
+        let mut remapped_entries = BTreeMap::new();
+
+        for (&from, &to) in rearrangements {
+            if let Some(entry) = self.get(from) {
+                remapped_entries.insert(to, entry.clone());
+            } else {
+                return Err(KapiError::StateError(format!("Unable to remap constant entry from #{from} to #{to}: Constant #{from} does not exists")));
+            }
+        }
+
+        self.entries = remapped_entries;
+
+        Ok(())
     }
 }
 
