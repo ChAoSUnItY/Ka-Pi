@@ -19,6 +19,7 @@ use crate::asm::parse::attribute::code::code;
 use crate::asm::parse::attribute::inner_classes::inner_classes;
 use crate::asm::parse::attribute::line_number_table::line_number_table;
 use crate::asm::parse::attribute::local_variable_table::local_variable_table;
+use crate::asm::parse::attribute::local_variable_type_table::local_variable_type_table;
 use crate::asm::parse::attribute::stack_map_table::stack_map_table;
 use crate::asm::parse::collect;
 
@@ -28,6 +29,7 @@ mod inner_classes;
 mod stack_map_table;
 mod line_number_table;
 mod local_variable_table;
+mod local_variable_type_table;
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
@@ -105,6 +107,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::SOURCE_DEBUG_EXTENSION => source_debug_extension(input, attribute_len),
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
         attribute::LOCAL_VARIABLE_TABLE => local_variable_table(input),
+        attribute::LOCAL_VARIABLE_TYPE_TABLE => local_variable_type_table(input),
         attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
         attribute::NEST_HOST => nest_host(input),
         attribute::NEST_MEMBERS => nest_members(input),
