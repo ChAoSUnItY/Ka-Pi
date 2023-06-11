@@ -87,6 +87,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         })(input),
         attribute::CODE => code(input, constant_pool),
         attribute::STACK_MAP_TABLE => stack_map_table(input),
+        attribute::EXCEPTIONS => exceptions(input),
         attribute::SOURCE_FILE => source_file(input),
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
         attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
