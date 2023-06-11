@@ -15,7 +15,7 @@ use crate::asm::node::constant::{
     MethodHandle, MethodRef, Module, NameAndType, Package, Utf8,
 };
 use crate::asm::node::handle::Handle;
-use crate::asm::node::opcode::RefKind;
+use crate::asm::node::constant::RefKind;
 use crate::asm::node::{constant, ConstantRearrangeable};
 
 #[derive(Default, Serialize, Deserialize)]

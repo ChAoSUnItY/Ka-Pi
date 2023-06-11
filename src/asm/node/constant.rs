@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use strum::IntoStaticStr;
 
 use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods};
-use crate::asm::node::opcode::RefKind;
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::{KapiError, KapiResult};
 
@@ -696,4 +695,30 @@ impl ConstantRearrangeable for Package {
 
         Ok(())
     }
+}
+
+#[repr(u8)]
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    Serialize,
+    Deserialize,
+    TryFromPrimitive,
+)]
+pub enum RefKind {
+    GetField = 1,
+    GetStatic = 2,
+    PutField = 3,
+    PutStatic = 4,
+    InvokeVirtual = 5,
+    InvokeStatic = 6,
+    InvokeSpecial = 7,
+    NewInvokeSpecial = 8,
+    InvokeInterface = 9,
 }
