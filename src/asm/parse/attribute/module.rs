@@ -74,10 +74,10 @@ fn exports(input: &[u8]) -> IResult<&[u8], Exports> {
 
 fn opens(input: &[u8]) -> IResult<&[u8], Opens> {
     map(
-        tuple((be_u16, be_u16, collect(be_u16, be_u16))),
+        tuple((be_u16, access_flag, collect(be_u16, be_u16))),
         |(opens_index, opens_flags, (opens_to_count, opens_to_index))| Opens {
             opens_index,
-            opens_flags: OpensAccessFlag::mask_access_flags(opens_flags),
+            opens_flags,
             opens_to_count,
             opens_to_index,
         },
