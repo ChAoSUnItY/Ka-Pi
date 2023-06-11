@@ -35,8 +35,8 @@ mod inner_classes;
 mod line_number_table;
 mod local_variable_table;
 mod local_variable_type_table;
-mod stack_map_table;
 mod method_parameters;
+mod stack_map_table;
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],

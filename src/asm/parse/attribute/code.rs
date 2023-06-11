@@ -1,6 +1,6 @@
 use nom::bytes::complete::take;
 use nom::combinator::{complete, map};
-use nom::error::{ErrorKind, make_error};
+use nom::error::{make_error, ErrorKind};
 use nom::multi::{count, many0};
 use nom::number::complete::{be_i16, be_i32, be_i64, be_i8, be_u16, be_u32, be_u8};
 use nom::sequence::tuple;

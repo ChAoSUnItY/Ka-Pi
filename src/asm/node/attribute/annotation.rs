@@ -111,10 +111,10 @@ impl ConstantRearrangeable for TypeAnnotation {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TargetInfo {
     TypeParameter {
-        type_parameter_index: u8
+        type_parameter_index: u8,
     },
     SuperType {
-        super_type_index: u16
+        super_type_index: u16,
     },
     TypeParameterBound {
         type_parameter_index: u8,

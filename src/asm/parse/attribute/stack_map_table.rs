@@ -1,11 +1,13 @@
-use nom::{error_position, IResult};
+use crate::asm::node::attribute::{
+    Attribute, Object, StackMapFrameEntry, StackMapTable, VerificationType,
+};
+use crate::asm::parse::collect;
 use nom::combinator::map;
+use nom::error::ErrorKind;
 use nom::number::complete::{be_u16, be_u8};
 use nom::sequence::tuple;
 use nom::Err::Error;
-use nom::error::ErrorKind;
-use crate::asm::node::attribute::{Attribute, Object, StackMapFrameEntry, StackMapTable, VerificationType};
-use crate::asm::parse::collect;
+use nom::{error_position, IResult};
 
 pub(crate) fn stack_map_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
