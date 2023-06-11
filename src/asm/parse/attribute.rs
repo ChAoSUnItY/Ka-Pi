@@ -108,6 +108,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
         attribute::LOCAL_VARIABLE_TABLE => local_variable_table(input),
         attribute::LOCAL_VARIABLE_TYPE_TABLE => local_variable_type_table(input),
+        attribute::DEPRECATED => Ok((&[], Some(Attribute::Deprecate))),
         attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
         attribute::NEST_HOST => nest_host(input),
         attribute::NEST_MEMBERS => nest_members(input),
