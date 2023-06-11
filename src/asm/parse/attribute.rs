@@ -41,6 +41,7 @@ mod local_variable_type_table;
 mod method_parameters;
 mod module;
 mod stack_map_table;
+mod record;
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
