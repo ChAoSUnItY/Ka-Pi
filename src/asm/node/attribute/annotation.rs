@@ -9,6 +9,8 @@ use crate::error::KapiResult;
 // Used by
 // Attribute::RuntimeVisibleAnnotations
 // Attribute::RuntimeInvisibleAnnotations
+// Attribute::RuntimeVisibleParameterAnnotations
+// Attribute::RuntimeInvisibleParameterAnnotations
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Annotation {
@@ -72,7 +74,7 @@ impl ConstantRearrangeable for ParameterAnnotation {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TypeAnnotation {
     pub target_type: u16,
-    pub target_info: TargetType,
+    pub target_info: TargetInfo,
     pub type_path: TypePath,
     pub type_index: u16,
     pub num_element_value_pairs: u16,
@@ -107,7 +109,7 @@ impl ConstantRearrangeable for TypeAnnotation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum TargetType {
+pub enum TargetInfo {
     TypeParameter {
         type_parameter_index: u8
     },
