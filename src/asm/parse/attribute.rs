@@ -10,9 +10,8 @@ use nom::{error, IResult};
 
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
-    Attribute, AttributeInfo, ConstantValue, EnclosingMethod,
-    Exceptions, NestHost, NestMembers, PermittedSubclasses, Signature, SourceDebugExtension,
-    SourceFile,
+    Attribute, AttributeInfo, ConstantValue, EnclosingMethod, Exceptions, ModulePackages, NestHost,
+    NestMembers, PermittedSubclasses, Signature, SourceDebugExtension, SourceFile,
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
 use crate::asm::parse::attribute::annotation::{
@@ -32,15 +31,15 @@ use crate::asm::parse::attribute::stack_map_table::stack_map_table;
 use crate::asm::parse::collect;
 
 mod annotation;
+mod bootstrap_methods;
 mod code;
 mod inner_classes;
 mod line_number_table;
 mod local_variable_table;
 mod local_variable_type_table;
 mod method_parameters;
-mod stack_map_table;
 mod module;
-mod bootstrap_methods;
+mod stack_map_table;
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
@@ -134,6 +133,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::BOOTSTRAP_METHODS => bootstrap_methods(input),
         attribute::METHOD_PARAMETERS => method_parameters(input),
         attribute::MODULE => module(input),
+        attribute::MODULE_PACKAGES => module_packages(input),
         attribute::NEST_HOST => nest_host(input),
         attribute::NEST_MEMBERS => nest_members(input),
         attribute::PERMITTED_SUBCLASSES => permitted_subclasses(input),
@@ -178,6 +178,15 @@ fn source_debug_extension(input: &[u8], attribute_len: u32) -> IResult<&[u8], Op
     map(count(be_u8, attribute_len as usize), |debug_extension| {
         Some(Attribute::SourceDebugExtension(SourceDebugExtension {
             debug_extension,
+        }))
+    })(input)
+}
+
+fn module_packages(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(collect(be_u16, be_u16), |(package_count, package_index)| {
+        Some(Attribute::ModulePackages(ModulePackages {
+            package_count,
+            package_index,
         }))
     })(input)
 }
