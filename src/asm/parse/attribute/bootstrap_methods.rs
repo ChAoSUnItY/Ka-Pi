@@ -1,8 +1,8 @@
-use nom::IResult;
-use nom::combinator::map;
-use nom::number::complete::be_u16;
 use crate::asm::node::attribute::{Attribute, BootstrapMethod, BootstrapMethods};
 use crate::asm::parse::collect;
+use nom::combinator::map;
+use nom::number::complete::be_u16;
+use nom::IResult;
 
 pub fn bootstrap_methods(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
