@@ -8,16 +8,16 @@ use crate::asm::node::constant::{
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
 
-/// Represents a ldc instruction.
+/// Represents a `ldc` instruction.
 ///
-/// See [6.5.ldc](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=563)
+/// See [6.5.ldc](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=563).
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Ldc {
     pub index: u8,
 }
 
 impl Ldc {
-    /// Get target constant loaded by ldc instruction from constant pool.
+    /// Get target constant loaded by `ldc` instruction from constant pool.
     pub fn constant<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -32,6 +32,9 @@ impl ConstantRearrangeable for Ldc {
     }
 }
 
+/// Represents a `ldc_w` instruction.
+///
+/// See [6.5.ldc_w](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=566).
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub struct Ldc_W {
@@ -39,7 +42,7 @@ pub struct Ldc_W {
 }
 
 impl Ldc_W {
-    /// Get target constant loaded by ldc instruction from constant pool.
+    /// Get target constant loaded by `ldc_w` instruction from constant pool.
     pub fn constant<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -56,6 +59,9 @@ impl ConstantRearrangeable for Ldc_W {
     }
 }
 
+/// Represents a `ldc2_w` instruction.
+///
+/// See [6.5.ldc2_w](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=568).
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub struct Ldc2_W {
@@ -63,6 +69,7 @@ pub struct Ldc2_W {
 }
 
 impl Ldc2_W {
+    /// Get target constant loaded by `ldc2_w` instruction from constant pool.
     pub fn constant<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -79,6 +86,9 @@ impl ConstantRearrangeable for Ldc2_W {
     }
 }
 
+/// Represents a `getstatic` instruction.
+///
+/// See [6.5.getstatic](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=491)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct GetStatic {
     pub index: u16,
@@ -86,6 +96,7 @@ pub struct GetStatic {
 
 //noinspection DuplicatedCode
 impl GetStatic {
+    /// Get target field's reference loaded by `getstatic` instruction from constant pool.
     pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -106,6 +117,9 @@ impl ConstantRearrangeable for GetStatic {
     }
 }
 
+/// Represents a `putstatic` instruction.
+///
+/// See [6.5.putstatic](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=602)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct PutStatic {
     pub index: u16,
@@ -113,6 +127,7 @@ pub struct PutStatic {
 
 //noinspection DuplicatedCode
 impl PutStatic {
+    /// Get target field's reference loaded by `putstatic` instruction from constant pool.
     pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -133,6 +148,9 @@ impl ConstantRearrangeable for PutStatic {
     }
 }
 
+/// Represents a `getfield` instruction.
+///
+/// See [6.5.getfield](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=490)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct GetField {
     pub index: u16,
@@ -140,6 +158,7 @@ pub struct GetField {
 
 //noinspection DuplicatedCode
 impl GetField {
+    /// Get target field's reference loaded by `getfield` instruction from constant pool.
     pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -160,6 +179,9 @@ impl ConstantRearrangeable for GetField {
     }
 }
 
+/// Represents a `putfield` instruction.
+///
+/// See [6.5.putfield](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=600)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct PutField {
     pub index: u16,
@@ -167,6 +189,7 @@ pub struct PutField {
 
 //noinspection DuplicatedCode
 impl PutField {
+    /// Get target field's reference loaded by `putfield` instruction from constant pool.
     pub fn field_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -187,6 +210,9 @@ impl ConstantRearrangeable for PutField {
     }
 }
 
+/// Represents a `invokevirtual` instruction.
+///
+/// See [6.5.invokevirtual](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=535)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeVirtual {
     pub index: u16,
@@ -194,6 +220,7 @@ pub struct InvokeVirtual {
 
 //noinspection DuplicatedCode
 impl InvokeVirtual {
+    /// Get target method's reference invoked by `invokevirtual` instruction from constant pool.
     pub fn method_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -214,6 +241,9 @@ impl ConstantRearrangeable for InvokeVirtual {
     }
 }
 
+/// Represents a `invokespecial` instruction.
+///
+/// See [6.5.invokespecial](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=527)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeSpecial {
     pub index: u16,
@@ -221,6 +251,7 @@ pub struct InvokeSpecial {
 
 //noinspection DuplicatedCode
 impl InvokeSpecial {
+    /// Get target method's reference invoked by `invokespecial` instruction from constant pool.
     pub fn method_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -241,6 +272,9 @@ impl ConstantRearrangeable for InvokeSpecial {
     }
 }
 
+/// Represents a `invokestatic` instruction.
+///
+/// See [6.5.invokestatic](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=532)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeStatic {
     pub index: u16,
@@ -248,6 +282,7 @@ pub struct InvokeStatic {
 
 //noinspection DuplicatedCode
 impl InvokeStatic {
+    /// Get target method's reference invoked by `invokestatic` instruction from constant pool.
     pub fn method_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -268,6 +303,9 @@ impl ConstantRearrangeable for InvokeStatic {
     }
 }
 
+/// Represents a `invokeinterface` instruction.
+///
+/// See [6.5.invokeinterface](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=523)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeInterface {
     pub index: u16,
@@ -276,6 +314,7 @@ pub struct InvokeInterface {
 
 //noinspection DuplicatedCode
 impl InvokeInterface {
+    /// Get target interface method's reference invoked by `invokeinterface` instruction from constant pool.
     pub fn interface_method_ref<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -298,6 +337,9 @@ impl ConstantRearrangeable for InvokeInterface {
     }
 }
 
+/// Represents a `invokedynamic` instruction.
+///
+/// See [6.5.invokedynamic](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=521)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeDynamic {
     pub index: u16,
@@ -305,6 +347,7 @@ pub struct InvokeDynamic {
 
 //noinspection DuplicatedCode
 impl InvokeDynamic {
+    /// Get target constant invoke dynamic invoked by `invokeinterface` instruction from constant pool.
     pub fn invoke_dynamic<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -325,6 +368,9 @@ impl ConstantRearrangeable for InvokeDynamic {
     }
 }
 
+/// Represents a `new` instruction.
+///
+/// See [6.5.new](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=593)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct New {
     pub index: u16,
@@ -332,6 +378,7 @@ pub struct New {
 
 //noinspection DuplicatedCode
 impl New {
+    /// Get target class created by `new` instruction from constant pool.
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -352,6 +399,9 @@ impl ConstantRearrangeable for New {
     }
 }
 
+/// Represents a `anewarray` instruction.
+///
+/// See [6.5.anewarray](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=542)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ANewArray {
     pub index: u16,
@@ -359,6 +409,7 @@ pub struct ANewArray {
 
 //noinspection DuplicatedCode
 impl ANewArray {
+    /// Get target class' based class created by `anewarray` instruction from constant pool.
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -379,6 +430,9 @@ impl ConstantRearrangeable for ANewArray {
     }
 }
 
+/// Represents a `checkcast` instruction.
+///
+/// See [6.5.checkcast](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=437)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct CheckCast {
     pub index: u16,
@@ -386,6 +440,7 @@ pub struct CheckCast {
 
 //noinspection DuplicatedCode
 impl CheckCast {
+    /// Get target cast class checked by `checkcast` instruction from constant pool.
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -406,6 +461,9 @@ impl ConstantRearrangeable for CheckCast {
     }
 }
 
+/// Represents a `instanceof` instruction.
+///
+/// See [6.5.instanceof](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=519)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InstanceOf {
     pub index: u16,
@@ -413,6 +471,7 @@ pub struct InstanceOf {
 
 //noinspection DuplicatedCode
 impl InstanceOf {
+    /// Get target class checked by `instanceof` instruction from constant pool.
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -434,6 +493,9 @@ impl ConstantRearrangeable for InstanceOf {
 }
 
 //noinspection SpellCheckingInspection
+/// Represents a `wide` instruction.
+///
+/// See [6.5.wide](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=612)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Wide {
     ILOAD(u16),
@@ -450,6 +512,9 @@ pub enum Wide {
     IINC(u16, i16),
 }
 
+/// Represents a `multianewarray` instruction.
+///
+/// See [6.5.multianewarray](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=591)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MultiANewArray {
     pub index: u16,
@@ -458,6 +523,7 @@ pub struct MultiANewArray {
 
 //noinspection DuplicatedCode
 impl MultiANewArray {
+    /// Get target class' based class created by `multianewarray` instruction from constant pool.
     pub fn class<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
