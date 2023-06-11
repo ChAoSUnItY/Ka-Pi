@@ -10,7 +10,7 @@ use nom::{error, IResult};
 
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
-    Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, ConstantValue, EnclosingMethod,
+    Attribute, AttributeInfo, ConstantValue, EnclosingMethod,
     Exceptions, NestHost, NestMembers, PermittedSubclasses, Signature, SourceDebugExtension,
     SourceFile,
 };
@@ -20,12 +20,14 @@ use crate::asm::parse::attribute::annotation::{
     runtime_invisible_type_annotations, runtime_visible_annotations,
     runtime_visible_parameter_annotations, runtime_visible_type_annotations,
 };
+use crate::asm::parse::attribute::bootstrap_methods::bootstrap_methods;
 use crate::asm::parse::attribute::code::code;
 use crate::asm::parse::attribute::inner_classes::inner_classes;
 use crate::asm::parse::attribute::line_number_table::line_number_table;
 use crate::asm::parse::attribute::local_variable_table::local_variable_table;
 use crate::asm::parse::attribute::local_variable_type_table::local_variable_type_table;
 use crate::asm::parse::attribute::method_parameters::method_parameters;
+use crate::asm::parse::attribute::module::module;
 use crate::asm::parse::attribute::stack_map_table::stack_map_table;
 use crate::asm::parse::collect;
 
@@ -37,6 +39,8 @@ mod local_variable_table;
 mod local_variable_type_table;
 mod method_parameters;
 mod stack_map_table;
+mod module;
+mod bootstrap_methods;
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
@@ -127,8 +131,9 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::RUNTIME_VISIBLE_TYPE_ANNOTATIONS => runtime_visible_type_annotations(input),
         attribute::RUNTIME_INVISIBLE_TYPE_ANNOTATIONS => runtime_invisible_type_annotations(input),
         attribute::ANNOTATION_DEFAULT => annotation_default(input),
-        attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
+        attribute::BOOTSTRAP_METHODS => bootstrap_methods(input),
         attribute::METHOD_PARAMETERS => method_parameters(input),
+        attribute::MODULE => module(input),
         attribute::NEST_HOST => nest_host(input),
         attribute::NEST_MEMBERS => nest_members(input),
         attribute::PERMITTED_SUBCLASSES => permitted_subclasses(input),
@@ -175,32 +180,6 @@ fn source_debug_extension(input: &[u8], attribute_len: u32) -> IResult<&[u8], Op
             debug_extension,
         }))
     })(input)
-}
-
-fn bootstrap_methods_attribute(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
-    map(
-        collect(be_u16, bootstrap_method),
-        |(num_bootstrap_methods, bootstrap_methods)| {
-            Some(Attribute::BootstrapMethods(BootstrapMethods {
-                num_bootstrap_methods,
-                bootstrap_methods,
-            }))
-        },
-    )(input)
-}
-
-fn bootstrap_method(input: &[u8]) -> IResult<&[u8], BootstrapMethod> {
-    let (input, bootstrap_method_ref) = be_u16(input)?;
-    let (input, (num_bootstrap_arguments, bootstrap_arguments)) = collect(be_u16, be_u16)(input)?;
-
-    Ok((
-        input,
-        BootstrapMethod {
-            bootstrap_method_ref,
-            num_bootstrap_arguments,
-            bootstrap_arguments,
-        },
-    ))
 }
 
 fn nest_host(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
