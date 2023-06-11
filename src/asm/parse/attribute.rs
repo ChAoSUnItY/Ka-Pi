@@ -11,10 +11,15 @@ use nom::{error, IResult};
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
     Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, ConstantValue, EnclosingMethod,
-    Exceptions, NestHost, NestMembers, PermittedSubclasses, Signature,
-    SourceDebugExtension, SourceFile,
+    Exceptions, NestHost, NestMembers, PermittedSubclasses, Signature, SourceDebugExtension,
+    SourceFile,
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
+use crate::asm::parse::attribute::annotation::{
+    annotation_default, runtime_invisible_annotations, runtime_invisible_parameter_annotations,
+    runtime_invisible_type_annotations, runtime_visible_annotations,
+    runtime_visible_parameter_annotations, runtime_visible_type_annotations,
+};
 use crate::asm::parse::attribute::code::code;
 use crate::asm::parse::attribute::inner_classes::inner_classes;
 use crate::asm::parse::attribute::line_number_table::line_number_table;
@@ -26,10 +31,10 @@ use crate::asm::parse::collect;
 mod annotation;
 mod code;
 mod inner_classes;
-mod stack_map_table;
 mod line_number_table;
 mod local_variable_table;
 mod local_variable_type_table;
+mod stack_map_table;
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
@@ -109,6 +114,17 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::LOCAL_VARIABLE_TABLE => local_variable_table(input),
         attribute::LOCAL_VARIABLE_TYPE_TABLE => local_variable_type_table(input),
         attribute::DEPRECATED => Ok((&[], Some(Attribute::Deprecate))),
+        attribute::RUNTIME_VISIBLE_ANNOTATIONS => runtime_visible_annotations(input),
+        attribute::RUNTIME_INVISIBLE_ANNOTATIONS => runtime_invisible_annotations(input),
+        attribute::RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS => {
+            runtime_visible_parameter_annotations(input)
+        }
+        attribute::RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS => {
+            runtime_invisible_parameter_annotations(input)
+        }
+        attribute::RUNTIME_VISIBLE_TYPE_ANNOTATIONS => runtime_visible_type_annotations(input),
+        attribute::RUNTIME_INVISIBLE_TYPE_ANNOTATIONS => runtime_invisible_type_annotations(input),
+        attribute::ANNOTATION_DEFAULT => annotation_default(input),
         attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
         attribute::NEST_HOST => nest_host(input),
         attribute::NEST_MEMBERS => nest_members(input),
