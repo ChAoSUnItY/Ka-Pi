@@ -256,7 +256,6 @@ impl ConstantRearrangeable for Attribute {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConstantValue {
     pub constant_value_index: u16,
@@ -278,7 +277,6 @@ impl ConstantRearrangeable for ConstantValue {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Code {
@@ -307,7 +305,6 @@ impl ConstantRearrangeable for Code {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct StackMapTable {
     pub number_of_entries: u16,
@@ -323,7 +320,6 @@ impl ConstantRearrangeable for StackMapTable {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Exceptions {
@@ -341,7 +337,6 @@ impl ConstantRearrangeable for Exceptions {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InnerClasses {
     pub number_of_classes: u16,
@@ -357,7 +352,6 @@ impl ConstantRearrangeable for InnerClasses {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct EnclosingMethod {
@@ -398,7 +392,6 @@ impl ConstantRearrangeable for EnclosingMethod {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Signature {
     pub signature_index: u16,
@@ -426,7 +419,6 @@ impl ConstantRearrangeable for Signature {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct SourceFile {
     pub source_file_index: u16,
@@ -453,19 +445,16 @@ impl ConstantRearrangeable for SourceFile {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct SourceDebugExtension {
     pub debug_extension: Vec<u8>,
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct LineNumberTable {
     pub line_number_table_length: u16,
     pub line_number_table: Vec<LineNumber>,
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct LocalVariableTable {
@@ -483,7 +472,6 @@ impl ConstantRearrangeable for LocalVariableTable {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct LocalVariableTypeTable {
     pub local_variable_type_table_length: u16,
@@ -499,7 +487,6 @@ impl ConstantRearrangeable for LocalVariableTypeTable {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RuntimeVisibleAnnotations {
@@ -518,7 +505,6 @@ impl ConstantRearrangeable for RuntimeVisibleAnnotations {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RuntimeInvisibleAnnotations {
     pub num_annotations: u16,
@@ -535,7 +521,6 @@ impl ConstantRearrangeable for RuntimeInvisibleAnnotations {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RuntimeVisibleParameterAnnotations {
@@ -554,7 +539,6 @@ impl ConstantRearrangeable for RuntimeVisibleParameterAnnotations {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RuntimeInvisibleParameterAnnotations {
     pub num_parameters: u16,
@@ -571,7 +555,6 @@ impl ConstantRearrangeable for RuntimeInvisibleParameterAnnotations {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RuntimeVisibleTypeAnnotations {
@@ -590,7 +573,6 @@ impl ConstantRearrangeable for RuntimeVisibleTypeAnnotations {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RuntimeInvisibleTypeAnnotations {
     pub num_annotations: u16,
@@ -608,7 +590,6 @@ impl ConstantRearrangeable for RuntimeInvisibleTypeAnnotations {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct AnnotationDefault {
     pub default_value: ElementValue,
@@ -619,7 +600,6 @@ impl ConstantRearrangeable for AnnotationDefault {
         self.default_value.rearrange(rearrangements)
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct BootstrapMethods {
@@ -637,7 +617,6 @@ impl ConstantRearrangeable for BootstrapMethods {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodParameters {
     pub parameters_count: u8,
@@ -653,7 +632,6 @@ impl ConstantRearrangeable for MethodParameters {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Module {
@@ -742,7 +720,6 @@ impl ConstantRearrangeable for Module {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ModulePackages {
     pub package_count: u16,
@@ -778,7 +755,6 @@ impl ConstantRearrangeable for ModulePackages {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ModuleMainClass {
     pub main_class_index: u16,
@@ -805,7 +781,6 @@ impl ConstantRearrangeable for ModuleMainClass {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct NestHost {
     pub host_class_index: u16,
@@ -831,7 +806,6 @@ impl ConstantRearrangeable for NestHost {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct NestMembers {
@@ -870,7 +844,6 @@ impl ConstantRearrangeable for NestMembers {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Record {
     pub components_count: u16,
@@ -886,7 +859,6 @@ impl ConstantRearrangeable for Record {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct PermittedSubclasses {
@@ -927,7 +899,6 @@ impl ConstantRearrangeable for PermittedSubclasses {
 
 // Inner structs
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Exception {
     pub start_pc: u16,
@@ -958,7 +929,6 @@ impl ConstantRearrangeable for Exception {
 }
 
 #[repr(u8)]
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum StackMapFrameEntry {
     Same {
@@ -1073,7 +1043,6 @@ impl ConstantRearrangeable for StackMapFrameEntry {
 
 //noinspection SpellCheckingInspection
 #[repr(u8)]
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum VerificationType {
     Top,
@@ -1135,7 +1104,6 @@ impl ConstantRearrangeable for Object {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InnerClass {
     pub inner_class_info_index: u16,
@@ -1189,13 +1157,11 @@ impl ConstantRearrangeable for InnerClass {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct LineNumber {
     pub start_pc: u16,
     pub line_number: u16,
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct LocalVariable {
@@ -1240,7 +1206,6 @@ impl ConstantRearrangeable for LocalVariable {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct LocalVariableType {
     pub start_pc: u16,
@@ -1283,7 +1248,6 @@ impl ConstantRearrangeable for LocalVariableType {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct BootstrapMethod {
@@ -1338,7 +1302,6 @@ impl ConstantRearrangeable for BootstrapMethod {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodParameter {
     pub name_index: u16,
@@ -1366,7 +1329,6 @@ impl ConstantRearrangeable for MethodParameter {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RecordComponent {

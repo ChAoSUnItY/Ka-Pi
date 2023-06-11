@@ -12,7 +12,6 @@ use crate::error::KapiResult;
 // Attribute::RuntimeVisibleParameterAnnotations
 // Attribute::RuntimeInvisibleParameterAnnotations
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Annotation {
     pub type_index: u16,
@@ -51,7 +50,6 @@ impl ConstantRearrangeable for Annotation {
 // Attribute::RuntimeVisibleParameterAnnotations
 // Attribute::RuntimeInvisibleParameterAnnotations
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ParameterAnnotation {
     pub num_annotations: u16,
@@ -72,7 +70,6 @@ impl ConstantRearrangeable for ParameterAnnotation {
 // Used by:
 // Attribute::RuntimeVisibleTypeAnnotations
 // Attribute::RuntimeInvisibleTypeAnnotations
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct TypeAnnotation {
@@ -111,7 +108,6 @@ impl ConstantRearrangeable for TypeAnnotation {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum TargetInfo {
     TypeParameter {
@@ -147,7 +143,6 @@ pub enum TargetInfo {
     },
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct TableEntry {
     pub start_pc: u16,
@@ -155,13 +150,11 @@ pub struct TableEntry {
     pub index: u16,
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct TypePath {
     pub path_length: u8,
     pub path: Vec<PathSegment>,
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct PathSegment {
@@ -170,7 +163,6 @@ pub struct PathSegment {
 }
 
 // Common inner structures
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ElementValuePair {
@@ -185,7 +177,6 @@ impl ConstantRearrangeable for ElementValuePair {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ElementValue {
     pub tag: u8,
@@ -197,7 +188,6 @@ impl ConstantRearrangeable for ElementValue {
         self.value.rearrange(rearrangements)
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Value {
@@ -220,7 +210,6 @@ impl ConstantRearrangeable for Value {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConstValue {
     pub const_value_index: u16,
@@ -242,7 +231,6 @@ impl ConstantRearrangeable for ConstValue {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct EnumConstValue {
@@ -283,7 +271,6 @@ impl ConstantRearrangeable for EnumConstValue {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ClassInfo {
     pub class_info_index: u16,
@@ -309,7 +296,6 @@ impl ConstantRearrangeable for ClassInfo {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ArrayValue {

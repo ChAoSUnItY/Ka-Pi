@@ -7,7 +7,6 @@ use crate::asm::node::constant::{Constant, ConstantPool, Module, Package, Utf8};
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Requires {
     pub requires_index: u16,
@@ -47,7 +46,6 @@ impl ConstantRearrangeable for Requires {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Exports {
@@ -99,7 +97,6 @@ impl ConstantRearrangeable for Exports {
     }
 }
 
-
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Opens {
     pub opens_index: u16,
@@ -149,7 +146,6 @@ impl ConstantRearrangeable for Opens {
         Ok(())
     }
 }
-
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Provides {

@@ -97,7 +97,17 @@ impl ConstantRearrangeable for Class {
 /// See [Table 4.1-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=83).
 #[repr(u32)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize, TryFromPrimitive,
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    Serialize,
+    Deserialize,
+    TryFromPrimitive,
 )]
 pub enum JavaVersion {
     V1_1 = 3 << 16 | 45,

@@ -94,7 +94,9 @@ pub enum ConstantTag {
     Package = 20,
 }
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize, IntoStaticStr)]
+#[derive(
+    Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize, IntoStaticStr,
+)]
 pub enum Constant {
     Utf8(Utf8),
     Integer(Integer),
