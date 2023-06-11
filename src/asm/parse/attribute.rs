@@ -10,8 +10,9 @@ use nom::{error, IResult};
 
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
-    Attribute, AttributeInfo, ConstantValue, EnclosingMethod, Exceptions, ModulePackages, NestHost,
-    NestMembers, PermittedSubclasses, Signature, SourceDebugExtension, SourceFile,
+    Attribute, AttributeInfo, ConstantValue, EnclosingMethod, Exceptions, ModuleMainClass,
+    ModulePackages, NestHost, NestMembers, PermittedSubclasses, Signature, SourceDebugExtension,
+    SourceFile,
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
 use crate::asm::parse::attribute::annotation::{
@@ -134,6 +135,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::METHOD_PARAMETERS => method_parameters(input),
         attribute::MODULE => module(input),
         attribute::MODULE_PACKAGES => module_packages(input),
+        attribute::MODULE_MAIN_CLASS => module_main_class(input),
         attribute::NEST_HOST => nest_host(input),
         attribute::NEST_MEMBERS => nest_members(input),
         attribute::PERMITTED_SUBCLASSES => permitted_subclasses(input),
@@ -187,6 +189,14 @@ fn module_packages(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
         Some(Attribute::ModulePackages(ModulePackages {
             package_count,
             package_index,
+        }))
+    })(input)
+}
+
+fn module_main_class(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(be_u16, |main_class_index| {
+        Some(Attribute::ModuleMainClass(ModuleMainClass {
+            main_class_index,
         }))
     })(input)
 }
