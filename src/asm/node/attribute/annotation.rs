@@ -108,48 +108,37 @@ impl ConstantRearrangeable for TypeAnnotation {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TargetType {
-    TypeParameter(TypeParameter),
-    SuperType(SuperType),
-    TypeParameterBound(TypeParameterBound),
+    TypeParameter {
+        type_parameter_index: u8
+    },
+    SuperType {
+        super_type_index: u16
+    },
+    TypeParameterBound {
+        type_parameter_index: u8,
+        bound_index: u8,
+    },
     Empty,
-    FormalParameter(FormalParameter),
-    Throws(Throws),
-    LocalVar(LocalVar),
-    Catch(Catch),
-    Offset(Offset),
-    TypeArgument(TypeArgument),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct TypeParameter {
-    pub type_parameter_index: u8,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct SuperType {
-    pub super_type_index: u16,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct TypeParameterBound {
-    pub type_parameter_index: u8,
-    pub bound_index: u8,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct FormalParameter {
-    pub formal_parameter_index: u8,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct Throws {
-    pub throws_type_index: u16,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct LocalVar {
-    pub table_length: u16,
-    pub table: Vec<TableEntry>,
+    FormalParameter {
+        formal_parameter_index: u8,
+    },
+    Throws {
+        throws_type_index: u16,
+    },
+    LocalVar {
+        table_length: u16,
+        table: Vec<TableEntry>,
+    },
+    Catch {
+        exception_table_index: u16,
+    },
+    Offset {
+        offset: u16,
+    },
+    TypeArgument {
+        offset: u16,
+        type_argument_index: u8,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -157,22 +146,6 @@ pub struct TableEntry {
     pub start_pc: u16,
     pub length: u16,
     pub index: u16,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct Catch {
-    pub exception_table_index: u16,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct Offset {
-    pub offset: u16,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct TypeArgument {
-    pub offset: u16,
-    pub type_argument_index: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
