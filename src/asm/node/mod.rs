@@ -1,3 +1,9 @@
+//! `node` module contains all specification-described data structures from 
+//! [The JVM Specification - Java SE 20 Edition](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf).
+//! 
+//! Some of the structures are made to be user-friendly, at the same time makes it much more 
+//! straightforward to use.
+
 use crate::error::{KapiError, KapiResult};
 use std::collections::HashMap;
 
@@ -11,6 +17,8 @@ pub mod method;
 pub mod opcode;
 pub mod signature;
 
+/// This trait indicates the implemented supertype's field can be rearrange based on given map of 
+/// rearrangement set.
 pub(crate) trait ConstantRearrangeable {
     /// Rearranges indices into new indices according to parameter `rearrangements`.
     ///
@@ -23,7 +31,10 @@ pub(crate) trait ConstantRearrangeable {
 
     /// Rearranges indices into new indices according to parameter `rearrangements`.
     ///
-    /// This will rearrange an original u8 index, see wider rearrangement function [Self::rearrange_index]
+    /// This will rearrange an original u8 index, see wider rearrangement function [Self::rearrange_index].
+    /// 
+    /// Returns an [Err] if the target index of the given rearrangement entry is larger than [u8::MAX],
+    /// which is impossible to rearrange to.
     fn rearrange_narrow_index(
         original: &mut u8,
         rearrangements: &HashMap<u16, u16>,
@@ -42,5 +53,6 @@ pub(crate) trait ConstantRearrangeable {
         Ok(())
     }
 
+    /// Rearranges the implemented supertype's field based given map of rearrangement set.
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()>;
 }
