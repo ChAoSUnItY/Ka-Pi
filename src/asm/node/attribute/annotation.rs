@@ -219,6 +219,7 @@ pub enum Value {
     ConstValue(ConstValue),
     EnumConstValue(EnumConstValue),
     ClassInfo(ClassInfo),
+    AnnotationValue(Annotation),
     ArrayValue(ArrayValue),
 }
 
@@ -228,6 +229,7 @@ impl ConstantRearrangeable for Value {
             Value::ConstValue(const_value) => const_value.rearrange(rearrangements),
             Value::EnumConstValue(enum_const_value) => enum_const_value.rearrange(rearrangements),
             Value::ClassInfo(class_info) => class_info.rearrange(rearrangements),
+            Value::AnnotationValue(annotation) => annotation.rearrange(rearrangements),
             Value::ArrayValue(array_value) => array_value.rearrange(rearrangements),
         }
     }
