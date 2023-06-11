@@ -619,14 +619,14 @@ impl ConstantRearrangeable for BootstrapMethods {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MethodParameters {
-    pub parameters_count: u16,
-    pub method_parameters: Vec<MethodParameter>,
+    pub parameters_count: u8,
+    pub parameters: Vec<MethodParameter>,
 }
 
 impl ConstantRearrangeable for MethodParameters {
     fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        for method_parameter in &mut self.method_parameters {
-            method_parameter.rearrange(rearrangements)?;
+        for parameter in &mut self.parameters {
+            parameter.rearrange(rearrangements)?;
         }
 
         Ok(())
