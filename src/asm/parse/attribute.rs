@@ -12,11 +12,7 @@ use nom::Err::Error;
 use nom::{error, IResult};
 
 use crate::asm::node::attribute;
-use crate::asm::node::attribute::{
-    Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, ConstantValue,
-    Exceptions, LineNumber, LineNumberTable, NestHost, NestMembers, PermittedSubclasses,
-    SourceFile,
-};
+use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, ConstantValue, EnclosingMethod, Exceptions, LineNumber, LineNumberTable, NestHost, NestMembers, PermittedSubclasses, SourceFile};
 use crate::asm::node::constant::{Constant, ConstantPool};
 use crate::asm::parse::attribute::code::code;
 use crate::asm::parse::attribute::inner_classes::inner_classes;
@@ -91,6 +87,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::STACK_MAP_TABLE => stack_map_table(input),
         attribute::EXCEPTIONS => exceptions(input),
         attribute::INNER_CLASSES => inner_classes(input),
+        attribute::ENCLOSING_METHOD => enclosing_method(input),
         attribute::SOURCE_FILE => source_file(input),
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
         attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
@@ -111,6 +108,13 @@ fn exceptions(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
             }))
         },
     )(input)
+}
+
+fn enclosing_method(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(tuple((be_u16, be_u16)), |(class_index, method_index)| Some(Attribute::EnclosingMethod(EnclosingMethod {
+        class_index,
+        method_index
+    })))(input)
 }
 
 fn source_file(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
