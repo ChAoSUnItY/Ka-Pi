@@ -15,7 +15,7 @@ use crate::asm::node::constant::{
     Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, Long,
     MethodHandle, MethodRef, Module, NameAndType, Package, Utf8,
 };
-use crate::asm::node::handle::Handle;
+use crate::asm::generate::handle::Handle;
 use crate::asm::node::{constant, ConstantRearrangeable};
 
 #[derive(Default, Serialize, Deserialize)]

@@ -12,7 +12,6 @@ pub mod attribute;
 pub mod class;
 pub mod constant;
 pub mod field;
-pub mod handle;
 pub mod method;
 pub mod opcode;
 pub mod signature;
