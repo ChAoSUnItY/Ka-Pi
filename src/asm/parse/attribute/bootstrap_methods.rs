@@ -1,8 +1,10 @@
-use crate::asm::node::attribute::{Attribute, BootstrapMethod, BootstrapMethods};
-use crate::asm::parse::collect;
 use nom::combinator::map;
 use nom::number::complete::be_u16;
+use nom::sequence::tuple;
 use nom::IResult;
+
+use crate::asm::node::attribute::{Attribute, BootstrapMethod, BootstrapMethods};
+use crate::asm::parse::collect;
 
 pub fn bootstrap_methods(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
@@ -17,15 +19,12 @@ pub fn bootstrap_methods(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
 }
 
 fn bootstrap_method(input: &[u8]) -> IResult<&[u8], BootstrapMethod> {
-    let (input, bootstrap_method_ref) = be_u16(input)?;
-    let (input, (num_bootstrap_arguments, bootstrap_arguments)) = collect(be_u16, be_u16)(input)?;
-
-    Ok((
-        input,
-        BootstrapMethod {
+    map(
+        tuple((be_u16, collect(be_u16, be_u16))),
+        |(bootstrap_method_ref, (num_bootstrap_arguments, bootstrap_arguments))| BootstrapMethod {
             bootstrap_method_ref,
             num_bootstrap_arguments,
             bootstrap_arguments,
         },
-    ))
+    )(input)
 }

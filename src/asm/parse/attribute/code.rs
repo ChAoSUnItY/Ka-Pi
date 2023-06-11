@@ -15,8 +15,8 @@ use crate::asm::node::opcode::instruction::{
     PutStatic, Wide,
 };
 use crate::asm::node::opcode::{ArrayType, Instruction, Opcode};
-use crate::asm::parse::attribute::attribute_infos;
-use crate::asm::parse::collect;
+use crate::asm::parse::attribute::attribute_info;
+use crate::asm::parse::{collect, collect_with_constant_pool};
 
 pub(crate) fn code<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
@@ -27,7 +27,8 @@ pub(crate) fn code<'input: 'constant_pool, 'constant_pool>(
     let (input, code_length) = be_u32(input)?;
     let (input, code) = take(code_length as usize)(input)?;
     let (input, (exception_table_length, exception_table)) = collect(be_u16, exception)(input)?;
-    let (input, (attributes_length, attributes)) = attribute_infos(input, constant_pool)?;
+    let (input, (attributes_length, attributes)) =
+        collect_with_constant_pool(be_u16, attribute_info, constant_pool)(input)?;
     let (_, instructions) = instructions(code)?;
 
     Ok((

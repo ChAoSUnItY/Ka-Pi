@@ -29,7 +29,7 @@ use crate::asm::parse::attribute::local_variable_type_table::local_variable_type
 use crate::asm::parse::attribute::method_parameters::method_parameters;
 use crate::asm::parse::attribute::module::module;
 use crate::asm::parse::attribute::stack_map_table::stack_map_table;
-use crate::asm::parse::{collect, collect_with_constant_pool};
+use crate::asm::parse::collect;
 
 mod annotation;
 mod bootstrap_methods;
@@ -43,14 +43,7 @@ mod module;
 mod record;
 mod stack_map_table;
 
-pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
-    input: &'input [u8],
-    constant_pool: &'constant_pool ConstantPool,
-) -> IResult<&'input [u8], (u16, Vec<AttributeInfo>)> {
-    collect_with_constant_pool(be_u16, attribute_info, constant_pool)(input)
-}
-
-fn attribute_info<'input: 'constant_pool, 'constant_pool>(
+pub(crate) fn attribute_info<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
     constant_pool: &'constant_pool ConstantPool,
 ) -> IResult<&'input [u8], AttributeInfo> {

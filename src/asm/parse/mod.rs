@@ -3,9 +3,12 @@ use std::io::Read;
 use std::ops::RangeFrom;
 use std::path::Path;
 
+use nom::combinator::map;
 use nom::error::ParseError;
+use nom::number::complete::be_u16;
 use nom::{IResult, InputIter, InputLength, Slice};
 
+use crate::asm::node::access_flag::AccessFlag;
 use crate::asm::node::class::Class;
 use crate::asm::node::constant::ConstantPool;
 use crate::error::{KapiError, KapiResult};
@@ -107,4 +110,11 @@ where
 
         Ok((input, (len, items)))
     }
+}
+
+fn access_flag<F>(input: &[u8]) -> IResult<&[u8], Vec<F>>
+where
+    F: AccessFlag,
+{
+    map(be_u16, F::mask_access_flags)(input)
 }

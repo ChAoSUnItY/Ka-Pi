@@ -494,7 +494,15 @@ methods:
                   - 27
                   - 0
                   - 0
-                attribute: ~
+                attribute:
+                  LocalVariableTable:
+                    local_variable_table_length: 1
+                    local_variable_table:
+                      - start_pc: 0
+                        length: 5
+                        name_index: 26
+                        descriptor_index: 27
+                        index: 0
   - access_flags:
       - Public
       - Static
@@ -623,7 +631,15 @@ methods:
                   - 31
                   - 0
                   - 0
-                attribute: ~
+                attribute:
+                  LocalVariableTable:
+                    local_variable_table_length: 1
+                    local_variable_table:
+                      - start_pc: 0
+                        length: 9
+                        name_index: 30
+                        descriptor_index: 31
+                        index: 0
 attributes_count: 1
 attributes:
   - attribute_name_index: 32

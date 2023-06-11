@@ -3,18 +3,16 @@ use nom::number::complete::be_u16;
 use nom::sequence::tuple;
 use nom::IResult;
 
-use crate::asm::node::access_flag::{
-    AccessFlag, ExportsAccessFlag, ModuleAccessFlag, OpensAccessFlag, RequiresAccessFlag,
-};
+use crate::asm::node::access_flag::{AccessFlag, OpensAccessFlag};
 use crate::asm::node::attribute::module::{Exports, Opens, Provides, Requires};
 use crate::asm::node::attribute::{Attribute, Module};
-use crate::asm::parse::collect;
+use crate::asm::parse::{access_flag, collect};
 
 pub(crate) fn module(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
         tuple((
             be_u16,
-            be_u16,
+            access_flag,
             be_u16,
             collect(be_u16, requires),
             collect(be_u16, exports),
@@ -34,7 +32,7 @@ pub(crate) fn module(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
         )| {
             Some(Attribute::Module(Module {
                 module_name_index,
-                module_flags: ModuleAccessFlag::mask_access_flags(module_flags),
+                module_flags,
                 module_version_index,
                 requires_count,
                 requires,
@@ -53,10 +51,10 @@ pub(crate) fn module(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
 
 fn requires(input: &[u8]) -> IResult<&[u8], Requires> {
     map(
-        tuple((be_u16, be_u16, be_u16)),
+        tuple((be_u16, access_flag, be_u16)),
         |(requires_index, requires_flags, requires_version_index)| Requires {
             requires_index,
-            requires_flags: RequiresAccessFlag::mask_access_flags(requires_flags),
+            requires_flags,
             requires_version_index,
         },
     )(input)
@@ -64,10 +62,10 @@ fn requires(input: &[u8]) -> IResult<&[u8], Requires> {
 
 fn exports(input: &[u8]) -> IResult<&[u8], Exports> {
     map(
-        tuple((be_u16, be_u16, collect(be_u16, be_u16))),
+        tuple((be_u16, access_flag, collect(be_u16, be_u16))),
         |(exports_index, exports_flags, (exports_to_count, exports_to_index))| Exports {
             exports_index,
-            exports_flags: ExportsAccessFlag::mask_access_flags(exports_flags),
+            exports_flags,
             exports_to_count,
             exports_to_index,
         },
