@@ -8,7 +8,7 @@ use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, Boo
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::{KapiError, KapiResult};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConstantPool {
     len: u16,
     entries: BTreeMap<u16, Constant>,
@@ -68,6 +68,7 @@ impl Default for ConstantPool {
     PartialOrd,
     Eq,
     PartialEq,
+    Hash,
     Serialize,
     Deserialize,
     TryFromPrimitive,
@@ -93,7 +94,7 @@ pub enum ConstantTag {
     Package = 20,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize, IntoStaticStr)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize, IntoStaticStr)]
 pub enum Constant {
     Utf8(Utf8),
     Integer(Integer),
@@ -138,7 +139,7 @@ impl Constant {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Utf8 {
     pub length: u16,
     pub bytes: Vec<u8>,
@@ -157,7 +158,7 @@ impl Utf8 {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Integer {
     pub bytes: [u8; 4],
 }
@@ -168,7 +169,7 @@ impl Integer {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Float {
     pub bytes: [u8; 4],
 }
@@ -179,7 +180,7 @@ impl Float {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Long {
     pub high_bytes: [u8; 4],
     pub low_bytes: [u8; 4],
@@ -195,7 +196,7 @@ impl Long {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Double {
     pub high_bytes: [u8; 4],
     pub low_bytes: [u8; 4],
@@ -211,7 +212,7 @@ impl Double {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Class {
     pub name_index: u16,
 }
@@ -238,7 +239,7 @@ impl ConstantRearrangeable for Class {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct String {
     pub string_index: u16,
 }
@@ -264,7 +265,7 @@ impl ConstantRearrangeable for String {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct FieldRef {
     pub class_index: u16,
     pub name_and_type_index: u16,
@@ -307,7 +308,7 @@ impl ConstantRearrangeable for FieldRef {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodRef {
     pub class_index: u16,
     pub name_and_type_index: u16,
@@ -350,7 +351,7 @@ impl ConstantRearrangeable for MethodRef {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InterfaceMethodRef {
     pub class_index: u16,
     pub name_and_type_index: u16,
@@ -393,7 +394,7 @@ impl ConstantRearrangeable for InterfaceMethodRef {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct NameAndType {
     pub name_index: u16,
     pub type_index: u16,
@@ -424,7 +425,7 @@ impl NameAndType {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodHandle {
     pub reference_kind: u8,
     pub reference_index: u16,
@@ -509,7 +510,7 @@ impl ConstantRearrangeable for MethodHandle {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodType {
     pub descriptor_index: u16,
 }
@@ -535,7 +536,7 @@ impl ConstantRearrangeable for MethodType {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Dynamic {
     pub bootstrap_method_attr_index: u16,
     pub name_and_type_index: u16,
@@ -589,7 +590,7 @@ impl ConstantRearrangeable for Dynamic {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeDynamic {
     pub bootstrap_method_attr_index: u16,
     pub name_and_type_index: u16,
@@ -643,7 +644,7 @@ impl ConstantRearrangeable for InvokeDynamic {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Module {
     pub name_index: u16,
 }
@@ -670,7 +671,7 @@ impl ConstantRearrangeable for Module {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Package {
     pub name_index: u16,
 }

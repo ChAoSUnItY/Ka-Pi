@@ -11,7 +11,7 @@ use crate::error::KapiResult;
 /// Represents a class field.
 ///
 /// See [4.5 Fields](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=109).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Field {
     pub access_flags: Vec<FieldAccessFlag>,
     pub name_index: u16,

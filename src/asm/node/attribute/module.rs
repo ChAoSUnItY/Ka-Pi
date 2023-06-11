@@ -7,7 +7,8 @@ use crate::asm::node::constant::{Constant, ConstantPool, Module, Package, Utf8};
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Requires {
     pub requires_index: u16,
     pub requires_flags: Vec<RequiresAccessFlag>,
@@ -47,7 +48,8 @@ impl ConstantRearrangeable for Requires {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Exports {
     pub exports_index: u16,
     pub exports_flags: Vec<ExportsAccessFlag>,
@@ -97,7 +99,8 @@ impl ConstantRearrangeable for Exports {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Opens {
     pub opens_index: u16,
     pub opens_flags: Vec<OpensAccessFlag>,
@@ -147,7 +150,8 @@ impl ConstantRearrangeable for Opens {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Provides {
     pub provides_index: u16,
     pub provides_with_count: u16,

@@ -1,11 +1,12 @@
 use std::ops::BitOr;
 
-use crate::asm::node;
 use itertools::Itertools;
 use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 use strum::IntoEnumIterator;
+
+use crate::asm::node;
 
 /// This trait marks implemented supertype (specifically an enum) as an access flag type.
 pub trait AccessFlag
@@ -54,6 +55,7 @@ impl<'a, T> AccessFlags<'a, T> for &'a Vec<T> where T: AccessFlag {}
     PartialOrd,
     Eq,
     PartialEq,
+    Hash,
     IntoPrimitive,
     Serialize,
     Deserialize,
@@ -85,6 +87,7 @@ impl AccessFlag for ClassAccessFlag {}
     PartialOrd,
     Eq,
     PartialEq,
+    Hash,
     IntoPrimitive,
     Serialize,
     Deserialize,
@@ -116,6 +119,7 @@ impl AccessFlag for FieldAccessFlag {}
     PartialOrd,
     Eq,
     PartialEq,
+    Hash,
     IntoPrimitive,
     Serialize,
     Deserialize,

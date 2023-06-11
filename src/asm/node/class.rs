@@ -13,7 +13,7 @@ use crate::error::KapiResult;
 /// Represents a class file.
 ///
 /// See [4.1 The ClassFile Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=82).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Class {
     pub java_version: JavaVersion,
     pub constant_pool_count: u16,
@@ -97,7 +97,7 @@ impl ConstantRearrangeable for Class {
 /// See [Table 4.1-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=83).
 #[repr(u32)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, TryFromPrimitive,
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize, TryFromPrimitive,
 )]
 pub enum JavaVersion {
     V1_1 = 3 << 16 | 45,

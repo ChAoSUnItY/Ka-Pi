@@ -8,12 +8,16 @@ use crate::asm::node::constant::{
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
 
+/// Represents a ldc instruction.
+/// 
+/// See [6.5.ldc](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=563)
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Ldc {
     pub index: u8,
 }
 
 impl Ldc {
+    /// Get target constant loaded by ldc instruction from constant pool.
     pub fn constant<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
@@ -35,6 +39,7 @@ pub struct Ldc_W {
 }
 
 impl Ldc_W {
+    /// Get target constant loaded by ldc instruction from constant pool.
     pub fn constant<'instruction, 'constant_pool: 'instruction>(
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,

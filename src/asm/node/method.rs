@@ -11,7 +11,7 @@ use crate::error::KapiResult;
 /// Represents a class method.
 ///
 /// See [4.6 Methods](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=111).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Method {
     pub access_flags: Vec<MethodAccessFlag>,
     pub name_index: u16,
