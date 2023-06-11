@@ -11,7 +11,7 @@ use nom::{error, IResult};
 use crate::asm::node::attribute;
 use crate::asm::node::attribute::{
     Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, ConstantValue, EnclosingMethod,
-    Exceptions, LineNumber, LineNumberTable, NestHost, NestMembers, PermittedSubclasses, Signature,
+    Exceptions, NestHost, NestMembers, PermittedSubclasses, Signature,
     SourceDebugExtension, SourceFile,
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
@@ -24,6 +24,7 @@ mod annotation;
 mod code;
 mod inner_classes;
 mod stack_map_table;
+mod line_number_table;
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
@@ -99,7 +100,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::SYNTHETIC => Ok((&[], Some(Attribute::Synthetic))),
         attribute::SOURCE_FILE => source_file(input),
         attribute::SOURCE_DEBUG_EXTENSION => source_debug_extension(input, attribute_len),
-        attribute::LINE_NUMBER_TABLE => line_number_table(input),
+        attribute::LINE_NUMBER_TABLE => line_number_table::line_number_table(input),
         attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
         attribute::NEST_HOST => nest_host(input),
         attribute::NEST_MEMBERS => nest_members(input),
@@ -146,27 +147,6 @@ fn source_debug_extension(input: &[u8], attribute_len: u32) -> IResult<&[u8], Op
         Some(Attribute::SourceDebugExtension(SourceDebugExtension {
             debug_extension,
         }))
-    })(input)
-}
-
-fn line_number_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
-    map(
-        collect(be_u16, line_number),
-        |(line_number_table_length, line_number_table)| {
-            Some(Attribute::LineNumberTable(LineNumberTable {
-                line_number_table_length,
-                line_number_table,
-            }))
-        },
-    )(input)
-}
-
-fn line_number(input: &[u8]) -> IResult<&[u8], LineNumber> {
-    map(tuple((be_u16, be_u16)), |(start_pc, line_number)| {
-        LineNumber {
-            start_pc,
-            line_number,
-        }
     })(input)
 }
 
