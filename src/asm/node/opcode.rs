@@ -15,7 +15,7 @@ pub mod instruction;
 
 /// [ArrayType] represents all possible types for [Instruction::NEWARRAY] to use with.
 ///
-/// See [Table 6.5.newarray-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#595).
+/// See [Table 6.5.newarray-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=595).
 #[repr(u8)]
 #[derive(
     Debug,

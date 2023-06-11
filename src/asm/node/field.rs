@@ -8,6 +8,9 @@ use crate::asm::node::constant::{Constant, ConstantPool, Utf8};
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
 
+/// Represents a class field.
+///
+/// See [4.5 Fields](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=109).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Field {
     pub access_flags: Vec<FieldAccessFlag>,
@@ -19,6 +22,7 @@ pub struct Field {
 
 //noinspection DuplicatedCode
 impl Field {
+    /// Get name of field from constant pool.
     pub fn name<'method, 'constant_pool: 'method>(
         &'method self,
         constant_pool: &'constant_pool ConstantPool,
@@ -30,6 +34,7 @@ impl Field {
         }
     }
 
+    /// Get descriptor of field from constant pool.
     pub fn descriptor<'method, 'constant_pool: 'method>(
         &'method self,
         constant_pool: &'constant_pool ConstantPool,
