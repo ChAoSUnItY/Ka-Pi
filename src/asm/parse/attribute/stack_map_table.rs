@@ -7,7 +7,7 @@ use nom::error::ErrorKind;
 use crate::asm::node::attribute::{Attribute, Object, StackMapFrameEntry, StackMapTable, VerificationType};
 use crate::asm::parse::collect;
 
-pub fn stack_map_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+pub(crate) fn stack_map_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
         collect(be_u16, stack_map_frame_entry),
         |(number_of_entries, entries)| {

@@ -1,6 +1,7 @@
 mod code;
 mod annotation;
 mod stack_map_table;
+mod inner_classes;
 
 use nom::bytes::complete::take;
 use nom::combinator::map;
@@ -18,6 +19,7 @@ use crate::asm::node::attribute::{
 };
 use crate::asm::node::constant::{Constant, ConstantPool};
 use crate::asm::parse::attribute::code::code;
+use crate::asm::parse::attribute::inner_classes::inner_classes;
 use crate::asm::parse::attribute::stack_map_table::stack_map_table;
 use crate::asm::parse::collect;
 
@@ -88,6 +90,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::CODE => code(input, constant_pool),
         attribute::STACK_MAP_TABLE => stack_map_table(input),
         attribute::EXCEPTIONS => exceptions(input),
+        attribute::INNER_CLASSES => inner_classes(input),
         attribute::SOURCE_FILE => source_file(input),
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
         attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
