@@ -10,13 +10,21 @@ use crate::asm::node::constant::{
     InterfaceMethodRef, InvokeDynamic, Long, MethodHandle, MethodRef, MethodType, Module,
     NameAndType, Package, Utf8,
 };
+use crate::asm::parse::collect;
 
 pub(crate) fn constant_pool(input: &[u8]) -> IResult<&[u8], (u16, ConstantPool)> {
     let (mut input, len) = be_u16(input)?;
     let mut constants = ConstantPool::default();
+    let mut constant_counter = 0;
 
-    for _ in 0..len - 1 {
+    while constant_counter < len - 1 {
         let (remain, constant) = constant(input)?;
+
+        if matches!(constant, Constant::Float(_) | Constant::Long(_)) {
+            constant_counter += 2;
+        } else {
+            constant_counter += 1;
+        }
 
         constants.add(constant);
         input = remain;
@@ -28,18 +36,9 @@ pub(crate) fn constant_pool(input: &[u8]) -> IResult<&[u8], (u16, ConstantPool)>
 fn constant(input: &[u8]) -> IResult<&[u8], Constant> {
     let (input, tag) = map_res(be_u8, ConstantTag::try_from)(input)?;
     let (input, constant) = match tag {
-        ConstantTag::Utf8 => {
-            let (input, length) = be_u16(input)?;
-            let (input, bytes) = take(length)(input)?;
-
-            (
-                input,
-                Constant::Utf8(Utf8 {
-                    length,
-                    bytes: bytes.to_vec(),
-                }),
-            )
-        }
+        ConstantTag::Utf8 => map(collect(be_u16, be_u8), |(length, bytes)| {
+            Constant::Utf8(Utf8 { length, bytes })
+        })(input)?,
         ConstantTag::Integer => map(take(4usize), |bytes: &[u8]| {
             Constant::Integer(Integer {
                 bytes: bytes

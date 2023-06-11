@@ -1,5 +1,5 @@
 use nom::bytes::complete::take;
-use nom::combinator::complete;
+use nom::combinator::{complete, map};
 use nom::error::{make_error, ErrorKind};
 use nom::multi::{count, many0};
 use nom::number::complete::{be_i16, be_i32, be_i64, be_i8, be_u16, be_u32, be_u8};
@@ -7,7 +7,7 @@ use nom::sequence::tuple;
 use nom::Err::Error;
 use nom::{IResult, Offset};
 
-use crate::asm::node::attribute::{Attribute, Code};
+use crate::asm::node::attribute::{Attribute, Code, Exception};
 use crate::asm::node::constant::ConstantPool;
 use crate::asm::node::opcode::instruction::{
     ANewArray, CheckCast, GetField, GetStatic, InstanceOf, InvokeDynamic, InvokeInterface,
@@ -15,8 +15,8 @@ use crate::asm::node::opcode::instruction::{
     PutStatic, Wide,
 };
 use crate::asm::node::opcode::{ArrayType, Instruction, Opcode};
-use crate::asm::parse::attribute::{attribute_infos, exception};
-use crate::asm::parse::collect;
+use crate::asm::parse::attribute::attribute_info;
+use crate::asm::parse::{collect, collect_with_constant_pool};
 
 pub(crate) fn code<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
@@ -27,7 +27,8 @@ pub(crate) fn code<'input: 'constant_pool, 'constant_pool>(
     let (input, code_length) = be_u32(input)?;
     let (input, code) = take(code_length as usize)(input)?;
     let (input, (exception_table_length, exception_table)) = collect(be_u16, exception)(input)?;
-    let (input, (attributes_length, attributes)) = attribute_infos(input, constant_pool)?;
+    let (input, (attributes_length, attributes)) =
+        collect_with_constant_pool(be_u16, attribute_info, constant_pool)(input)?;
     let (_, instructions) = instructions(code)?;
 
     Ok((
@@ -44,6 +45,18 @@ pub(crate) fn code<'input: 'constant_pool, 'constant_pool>(
             attributes,
         })),
     ))
+}
+
+fn exception(input: &[u8]) -> IResult<&[u8], Exception> {
+    map(
+        tuple((be_u16, be_u16, be_u16, be_u16)),
+        |(start_pc, end_pc, handler_pc, catch_type)| Exception {
+            start_pc,
+            end_pc,
+            handler_pc,
+            catch_type,
+        },
+    )(input)
 }
 
 fn instructions(code: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
