@@ -5,7 +5,7 @@ use nom::number::complete::be_u16;
 use crate::asm::node::attribute::{Attribute, LineNumber, LineNumberTable};
 use crate::asm::parse::collect;
 
-pub fn line_number_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+pub(crate) fn line_number_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(
         collect(be_u16, line_number),
         |(line_number_table_length, line_number_table)| {
