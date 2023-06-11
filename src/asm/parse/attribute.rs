@@ -12,7 +12,7 @@ use nom::Err::Error;
 use nom::{error, IResult};
 
 use crate::asm::node::attribute;
-use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, ConstantValue, EnclosingMethod, Exceptions, LineNumber, LineNumberTable, NestHost, NestMembers, PermittedSubclasses, SourceFile};
+use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods, ConstantValue, EnclosingMethod, Exceptions, LineNumber, LineNumberTable, NestHost, NestMembers, PermittedSubclasses, Signature, SourceFile};
 use crate::asm::node::constant::{Constant, ConstantPool};
 use crate::asm::parse::attribute::code::code;
 use crate::asm::parse::attribute::inner_classes::inner_classes;
@@ -115,6 +115,12 @@ fn enclosing_method(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
     map(tuple((be_u16, be_u16)), |(class_index, method_index)| Some(Attribute::EnclosingMethod(EnclosingMethod {
         class_index,
         method_index
+    })))(input)
+}
+
+fn signature(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
+    map(be_u16, |signature_index| Some(Attribute::Signature(Signature {
+        signature_index
     })))(input)
 }
 
