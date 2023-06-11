@@ -88,6 +88,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
         attribute::EXCEPTIONS => exceptions(input),
         attribute::INNER_CLASSES => inner_classes(input),
         attribute::ENCLOSING_METHOD => enclosing_method(input),
+        attribute::SYNTHETIC => Some(Attribute::Synthetic),
         attribute::SOURCE_FILE => source_file(input),
         attribute::LINE_NUMBER_TABLE => line_number_table(input),
         attribute::BOOTSTRAP_METHODS => bootstrap_methods_attribute(input),
