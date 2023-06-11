@@ -8,6 +8,9 @@ use crate::asm::node::constant::{Constant, ConstantPool, Utf8};
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
 
+/// Represents a class method.
+///
+/// See [4.6 Methods](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=111).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Method {
     pub access_flags: Vec<MethodAccessFlag>,
@@ -19,6 +22,7 @@ pub struct Method {
 
 //noinspection DuplicatedCode
 impl Method {
+    /// Get name of method from constant pool.
     pub fn name<'method, 'constant_pool: 'method>(
         &'method self,
         constant_pool: &'constant_pool ConstantPool,
@@ -30,6 +34,7 @@ impl Method {
         }
     }
 
+    /// Get descriptor of method from constant pool.
     pub fn descriptor<'method, 'constant_pool: 'method>(
         &'method self,
         constant_pool: &'constant_pool ConstantPool,
