@@ -29,7 +29,7 @@ use crate::asm::parse::attribute::local_variable_type_table::local_variable_type
 use crate::asm::parse::attribute::method_parameters::method_parameters;
 use crate::asm::parse::attribute::module::module;
 use crate::asm::parse::attribute::stack_map_table::stack_map_table;
-use crate::asm::parse::collect;
+use crate::asm::parse::{collect, collect_with_constant_pool};
 
 mod annotation;
 mod bootstrap_methods;
@@ -40,24 +40,14 @@ mod local_variable_table;
 mod local_variable_type_table;
 mod method_parameters;
 mod module;
-mod stack_map_table;
 mod record;
+mod stack_map_table;
 
 pub(crate) fn attribute_infos<'input: 'constant_pool, 'constant_pool>(
     input: &'input [u8],
     constant_pool: &'constant_pool ConstantPool,
 ) -> IResult<&'input [u8], (u16, Vec<AttributeInfo>)> {
-    let (mut input, len) = be_u16(input)?;
-    let mut attributes = Vec::with_capacity(len as usize);
-
-    for _ in 0..len {
-        let (remain, attribute) = attribute_info(input, constant_pool)?;
-
-        attributes.push(attribute);
-        input = remain;
-    }
-
-    Ok((input, (len, attributes)))
+    collect_with_constant_pool(be_u16, attribute_info, constant_pool)(input)
 }
 
 fn attribute_info<'input: 'constant_pool, 'constant_pool>(
