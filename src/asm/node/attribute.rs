@@ -15,7 +15,6 @@ use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
 
 pub mod annotation;
-pub mod constant_value;
 pub mod module;
 
 pub(crate) const CONSTANT_VALUE: &'static str = "ConstantValue";

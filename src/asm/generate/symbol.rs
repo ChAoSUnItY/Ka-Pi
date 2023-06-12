@@ -7,10 +7,11 @@ use std::ops::Index;
 use indexmap::IndexSet;
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
+use crate::asm::generate::constant_value;
 
 use crate::asm::generate::handle::Handle;
 use crate::asm::generate::opcode::ConstantObject;
-use crate::asm::node::attribute::{constant_value, Attribute, BootstrapMethod, ConstantValue};
+use crate::asm::node::attribute::{Attribute, BootstrapMethod, ConstantValue};
 use crate::asm::node::constant::RefKind;
 use crate::asm::node::constant::{
     Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, Long,
