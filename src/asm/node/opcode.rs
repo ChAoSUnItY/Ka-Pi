@@ -42,7 +42,7 @@ pub enum ArrayType {
 }
 
 // noinspection SpellCheckingInspection
-/// [Opcode] represents JVM bytecode opcodes without any accompany data.
+/// Represents opcodes without any accompany data.
 #[repr(u8)]
 #[derive(
     Debug,
@@ -264,7 +264,7 @@ pub enum Opcode {
 }
 
 // noinspection SpellCheckingInspection
-/// [Instruction] represents JVM bytecode opcode with accompany data.
+/// Represents opcode with accompany data.
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {

@@ -8,6 +8,9 @@ use crate::asm::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, Boo
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::{KapiError, KapiResult};
 
+/// Represents a class constant pool.
+///
+/// See [4.4 The Constant Pool](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=93).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConstantPool {
     len: u16,
@@ -27,6 +30,14 @@ impl ConstantPool {
         }
     }
 
+    /// Get [Constant] reference from constant pool based on given index.
+    ///
+    /// ### Index
+    ///
+    /// There are two scenarios which will return a [None]:
+    /// 1. The given index is out of bound.
+    /// 2. The given index is located at an placeholder constant, which is followed after [Constant::Long]
+    ///    and [Constant::Double].
     pub fn get(&self, index: u16) -> Option<&Constant> {
         self.entries.get(&index)
     }
@@ -59,6 +70,9 @@ impl Default for ConstantPool {
     }
 }
 
+/// Represents JVM constant tags.
+///
+/// See [Table 4.4-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=94).
 #[repr(u8)]
 #[derive(
     Debug,
@@ -94,6 +108,9 @@ pub enum ConstantTag {
     Package = 20,
 }
 
+/// Represents JVM constants.
+///
+/// See [4.4 The Constant Pool](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=93).
 #[derive(
     Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize, IntoStaticStr,
 )]
@@ -118,6 +135,7 @@ pub enum Constant {
 }
 
 impl Constant {
+    /// Get corresponding [ConstantTag] for current constant.
     pub const fn tag(&self) -> ConstantTag {
         match self {
             Constant::Utf8(..) => ConstantTag::Utf8,
@@ -141,6 +159,9 @@ impl Constant {
     }
 }
 
+/// Represents constant UTF8.
+///
+/// See [4.4.7 The CONSTANT_Utf8_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=102).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Utf8 {
     pub length: u16,
@@ -148,6 +169,7 @@ pub struct Utf8 {
 }
 
 impl Utf8 {
+    /// Converts bytes into string.
     pub fn string(&self) -> KapiResult<std::string::String> {
         cesu8::from_java_cesu8(&self.bytes[..])
             .map_err(|err| {
@@ -160,28 +182,39 @@ impl Utf8 {
     }
 }
 
+/// Represents constant Integer.
+///
+/// See [4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=98).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Integer {
     pub bytes: [u8; 4],
 }
 
 impl Integer {
+    /// Converts bytes into i32.
     pub fn as_i32(&self) -> i32 {
         i32::from_be_bytes(self.bytes)
     }
 }
 
+/// Represents constant Float.
+///
+/// See [4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=98).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Float {
     pub bytes: [u8; 4],
 }
 
 impl Float {
+    /// Converts bytes into f32.
     pub fn as_f32(&self) -> f32 {
         f32::from_be_bytes(self.bytes)
     }
 }
 
+/// Represents constant Long.
+///
+/// See [4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=100).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Long {
     pub high_bytes: [u8; 4],
@@ -189,6 +222,7 @@ pub struct Long {
 }
 
 impl Long {
+    /// Converts bytes into i64.
     pub fn as_i64(&self) -> i64 {
         let mut bytes = [0u8; 8];
         bytes[..4].copy_from_slice(&self.high_bytes);
@@ -198,6 +232,9 @@ impl Long {
     }
 }
 
+/// Represents constant Double.
+///
+/// See [4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=100).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Double {
     pub high_bytes: [u8; 4],
@@ -205,6 +242,7 @@ pub struct Double {
 }
 
 impl Double {
+    /// Converts bytes into f64.
     pub fn as_f64(&self) -> f64 {
         let mut bytes = [0u8; 8];
         bytes[..4].copy_from_slice(&self.high_bytes);
@@ -214,6 +252,9 @@ impl Double {
     }
 }
 
+/// Represents constant Class.
+///
+/// See [4.4.1 The CONSTANT_Class_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=96).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Class {
     pub name_index: u16,
@@ -221,6 +262,7 @@ pub struct Class {
 
 //noinspection DuplicatedCode
 impl Class {
+    /// Get name of class.
     pub fn name<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -241,12 +283,16 @@ impl ConstantRearrangeable for Class {
     }
 }
 
+/// Represents constant String.
+///
+/// See [4.4.3 The CONSTANT_String_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=98).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct String {
     pub string_index: u16,
 }
 
 impl String {
+    /// Gets the string of [string](String).
     pub fn string<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -267,6 +313,9 @@ impl ConstantRearrangeable for String {
     }
 }
 
+/// Represents constant FieldRef.
+///
+/// See [4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=97).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct FieldRef {
     pub class_index: u16,
@@ -275,6 +324,7 @@ pub struct FieldRef {
 
 //noinspection DuplicatedCode
 impl FieldRef {
+    /// Gets owner class of field.
     pub fn class<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -286,6 +336,7 @@ impl FieldRef {
         }
     }
 
+    /// Gets [NameAndType] of field.
     pub fn name_and_type<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -310,6 +361,9 @@ impl ConstantRearrangeable for FieldRef {
     }
 }
 
+/// Represents constant MethodRef.
+///
+/// See [4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=97).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodRef {
     pub class_index: u16,
@@ -318,6 +372,7 @@ pub struct MethodRef {
 
 //noinspection DuplicatedCode
 impl MethodRef {
+    /// Gets owner class of method.
     pub fn class<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -329,6 +384,7 @@ impl MethodRef {
         }
     }
 
+    /// Gets [NameAndType] of method.
     pub fn name_and_type<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -353,6 +409,9 @@ impl ConstantRearrangeable for MethodRef {
     }
 }
 
+/// Represents constant InterfaceMethodRef.
+///
+/// See [4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=97).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InterfaceMethodRef {
     pub class_index: u16,
@@ -361,6 +420,7 @@ pub struct InterfaceMethodRef {
 
 //noinspection DuplicatedCode
 impl InterfaceMethodRef {
+    /// Gets owner class of interface method.
     pub fn class<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -372,6 +432,7 @@ impl InterfaceMethodRef {
         }
     }
 
+    /// Gets [NameAndType] of interface method.
     pub fn name_and_type<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -396,6 +457,9 @@ impl ConstantRearrangeable for InterfaceMethodRef {
     }
 }
 
+/// Represents constant NameAndType.
+///
+/// See [4.4.6 The CONSTANT_NameAndType_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=101).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct NameAndType {
     pub name_index: u16,
@@ -404,6 +468,7 @@ pub struct NameAndType {
 
 //noinspection DuplicatedCode
 impl NameAndType {
+    /// Gets the name of [NameAndType].
     pub fn name<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -415,6 +480,7 @@ impl NameAndType {
         }
     }
 
+    /// Gets the type of [NameAndType].
     pub fn typ<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -427,6 +493,9 @@ impl NameAndType {
     }
 }
 
+/// Represents constant MethodHandle.
+///
+/// See [4.4.8 The CONSTANT_MethodHandle_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=104).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodHandle {
     pub reference_kind: u8,
@@ -434,6 +503,7 @@ pub struct MethodHandle {
 }
 
 impl MethodHandle {
+    /// Gets [RefKind] of MethodHandle.
     pub fn reference_kind(&self) -> KapiResult<RefKind> {
         RefKind::try_from(self.reference_kind).map_err(|err| {
             KapiError::ClassParseError(format!(
@@ -444,6 +514,7 @@ impl MethodHandle {
         })
     }
 
+    /// Gets the referenced constant of MethodHandle.
     pub fn reference_constant<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -512,12 +583,16 @@ impl ConstantRearrangeable for MethodHandle {
     }
 }
 
+/// Represents constant MethodType.
+///
+/// See [4.4.9 The CONSTANT_MethodType_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=106).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MethodType {
     pub descriptor_index: u16,
 }
 
 impl MethodType {
+    /// Gets descriptor of the MethodType.
     pub fn descriptor<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -538,6 +613,9 @@ impl ConstantRearrangeable for MethodType {
     }
 }
 
+/// Represents constant Dynamic.
+///
+/// See [4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=106).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Dynamic {
     pub bootstrap_method_attr_index: u16,
@@ -546,6 +624,7 @@ pub struct Dynamic {
 
 //noinspection DuplicatedCode
 impl Dynamic {
+    /// Gets the [BootstrapMethod] reference [Dynamic] targeting to.
     pub fn bootstrap_method<'bootstrap_method, 'attributes: 'bootstrap_method>(
         &self,
         attribute_infos: &'attributes Vec<AttributeInfo>,
@@ -570,6 +649,7 @@ impl Dynamic {
         bootstrap_methods.get(self.bootstrap_method_attr_index as usize)
     }
 
+    /// Gets the descriptor of the [Dynamic].
     pub fn name_and_type<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -592,6 +672,9 @@ impl ConstantRearrangeable for Dynamic {
     }
 }
 
+/// Represents constant InvokeDynamic.
+///
+/// See [4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=106).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct InvokeDynamic {
     pub bootstrap_method_attr_index: u16,
@@ -600,6 +683,7 @@ pub struct InvokeDynamic {
 
 //noinspection DuplicatedCode
 impl InvokeDynamic {
+    /// Gets the [BootstrapMethod] reference [InvokeDynamic] targeting to.
     pub fn bootstrap_method<'bootstrap_method, 'attributes: 'bootstrap_method>(
         &self,
         attribute_infos: &'attributes Vec<AttributeInfo>,
@@ -624,6 +708,7 @@ impl InvokeDynamic {
         bootstrap_methods.get(self.bootstrap_method_attr_index as usize)
     }
 
+    /// Gets the descriptor of the [InvokeDynamic].
     pub fn name_and_type<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -646,6 +731,9 @@ impl ConstantRearrangeable for InvokeDynamic {
     }
 }
 
+/// Represents constant Module.
+///
+/// See [4.4.11 The CONSTANT_Module_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=107).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Module {
     pub name_index: u16,
@@ -653,6 +741,7 @@ pub struct Module {
 
 //noinspection DuplicatedCode
 impl Module {
+    /// Gets name of [Module].
     pub fn name<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -673,6 +762,9 @@ impl ConstantRearrangeable for Module {
     }
 }
 
+/// Represents constant Package.
+///
+/// See [4.4.12 The CONSTANT_Package_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=108).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Package {
     pub name_index: u16,
@@ -680,6 +772,7 @@ pub struct Package {
 
 //noinspection DuplicatedCode
 impl Package {
+    /// Gets name of [Package].
     pub fn name<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
@@ -700,6 +793,9 @@ impl ConstantRearrangeable for Package {
     }
 }
 
+/// Represents reference kind used by [MethodHandle].
+///
+/// See [Table 5.4.3.5-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=396)
 #[repr(u8)]
 #[derive(
     Debug,
