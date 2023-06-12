@@ -1,6 +1,7 @@
 pub mod annotation;
 pub mod byte_vec;
 pub mod class;
+pub mod constant_value;
 pub mod field;
 pub mod handle;
 pub mod label;
@@ -11,4 +12,3 @@ pub mod record;
 pub mod signature;
 pub(crate) mod symbol;
 pub mod types;
-pub mod constant_value;

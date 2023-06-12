@@ -4,10 +4,10 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Index;
 
+use crate::asm::generate::constant_value;
 use indexmap::IndexSet;
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
-use crate::asm::generate::constant_value;
 
 use crate::asm::generate::handle::Handle;
 use crate::asm::generate::opcode::ConstantObject;
