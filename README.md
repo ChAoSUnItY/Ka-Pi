@@ -24,7 +24,7 @@ use ka_pi::asm::parse::read_class;
 use ka_pi::error::KapiResult;
 
 fn main() -> KapiResult<()> {
-    let class_path = "path/to/class/file";
+    let class_path = "compiled_source/out/production/compiled_source/Main.class";
     let class_tree = read_class(class_path)?;
     
     println!("{:#?}", class_tree);
