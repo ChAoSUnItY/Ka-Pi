@@ -51,11 +51,13 @@ pub(crate) const NEST_MEMBERS: &'static str = "NestMembers";
 pub(crate) const PERMITTED_SUBCLASSES: &'static str = "PermittedSubclasses";
 pub(crate) const RECORD: &'static str = "Record";
 
+/// Represents an attribute info.
+///
+/// See [4.7 Attributes](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=371).
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct AttributeInfo {
     pub attribute_name_index: u16,
     pub attribute_len: u32,
-    /// `info` will not be available on generation process, it's an readonly field.
     pub info: Vec<u8>,
     pub attribute: Option<Attribute>,
 }
