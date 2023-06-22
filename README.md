@@ -1,5 +1,7 @@
 # Ka-Pi
 
+![crates.io](https://img.shields.io/crates/v/ka-pi.svg)
+
 ### A JVM Bytecode Manipulation Framework inspired by ASM.
 
 [Ka-Pi](https://en.wiktionary.org/wiki/ka-pi), known as coffee 
