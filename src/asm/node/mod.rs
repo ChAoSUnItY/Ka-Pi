@@ -14,6 +14,8 @@ pub mod constant;
 pub mod field;
 pub mod method;
 pub mod opcode;
+// TODO: Move visitors to this module
+#[cfg(feature = "generate")]
 pub mod signature;
 
 /// This trait indicates the implemented supertype's field can be rearrange based on given map of
