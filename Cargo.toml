@@ -1,23 +1,19 @@
 [package]
 name = "ka-pi"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 authors = ["ChAoS-UnItY"]
 description = "A JVM Bytecode Manipulation Framework inspired by ASM."
 license = "MIT"
 repository = "https://github.com/ChAoSUnItY/Ka-Pi/"
 readme = "README.md"
-keywords = ["jvm", "jvm-bytecode", "bytecode"]
+keywords = ["jvm", "jvm-bytecode", "bytecode", "bytecode-manipulation"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
 name = "ka_pi"
 path = "src/lib.rs"
-
-[[bin]]
-name = "local_output_validation"
-path = "src/bin/main.rs"
 
 [[test]]
 name = "compile_class_file"
@@ -40,4 +36,6 @@ insta = { version = "1.28.0", features = ["yaml"] }
 rstest = "0.17.0"
 
 [features]
-default = []
+default = ["parse"]
+parse = []
+generate = []
