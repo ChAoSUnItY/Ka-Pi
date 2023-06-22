@@ -15,10 +15,6 @@ keywords = ["jvm", "jvm-bytecode", "bytecode"]
 name = "ka_pi"
 path = "src/lib.rs"
 
-[[bin]]
-name = "local_output_validation"
-path = "src/bin/main.rs"
-
 [[test]]
 name = "compile_class_file"
 path = "test/compile_class_file.rs"
