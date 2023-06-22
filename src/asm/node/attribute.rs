@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::node::access_flag::{ModuleAccessFlag, NestedClassAccessFlag, ParameterAccessFlag};
 use crate::asm::node::attribute::annotation::{
     Annotation, ElementValue, ParameterAnnotation, TypeAnnotation,
@@ -148,6 +146,8 @@ impl Attribute {
         }
     }
 
+    // TODO: Make it a trait function
+    #[cfg(feature = "generate")]
     pub(crate) fn put_u8s(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) {
         let name_index = symbol_table.add_utf8(self.name());
         byte_vec.put_be(name_index);
