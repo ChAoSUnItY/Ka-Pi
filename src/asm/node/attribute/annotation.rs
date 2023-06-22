@@ -12,7 +12,7 @@ use crate::error::KapiResult;
 // Attribute::RuntimeVisibleParameterAnnotations
 // Attribute::RuntimeInvisibleParameterAnnotations
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Annotation {
     pub type_index: u16,
     pub num_element_value_pairs: u16,
@@ -50,7 +50,7 @@ impl ConstantRearrangeable for Annotation {
 // Attribute::RuntimeVisibleParameterAnnotations
 // Attribute::RuntimeInvisibleParameterAnnotations
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ParameterAnnotation {
     pub num_annotations: u16,
     pub annotations: Vec<Annotation>,
@@ -71,7 +71,7 @@ impl ConstantRearrangeable for ParameterAnnotation {
 // Attribute::RuntimeVisibleTypeAnnotations
 // Attribute::RuntimeInvisibleTypeAnnotations
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct TypeAnnotation {
     pub target_type: u16,
     pub target_info: TargetInfo,
@@ -108,7 +108,7 @@ impl ConstantRearrangeable for TypeAnnotation {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum TargetInfo {
     TypeParameter {
         type_parameter_index: u8,
@@ -143,20 +143,20 @@ pub enum TargetInfo {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct TableEntry {
     pub start_pc: u16,
     pub length: u16,
     pub index: u16,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct TypePath {
     pub path_length: u8,
     pub path: Vec<PathSegment>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct PathSegment {
     pub type_path_kind: u8,
     pub type_argument_index: u8,
@@ -164,7 +164,7 @@ pub struct PathSegment {
 
 // Common inner structures
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ElementValuePair {
     pub element_name_index: u16,
     pub value: ElementValue,
@@ -177,7 +177,7 @@ impl ConstantRearrangeable for ElementValuePair {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ElementValue {
     pub tag: u8,
     pub value: Value,
@@ -189,7 +189,7 @@ impl ConstantRearrangeable for ElementValue {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Value {
     ConstValue(ConstValue),
     EnumConstValue(EnumConstValue),
@@ -210,7 +210,7 @@ impl ConstantRearrangeable for Value {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConstValue {
     pub const_value_index: u16,
 }
@@ -232,7 +232,7 @@ impl ConstantRearrangeable for ConstValue {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct EnumConstValue {
     pub type_name_index: u16,
     pub const_name_index: u16,
@@ -271,7 +271,7 @@ impl ConstantRearrangeable for EnumConstValue {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ClassInfo {
     pub class_info_index: u16,
 }
@@ -297,7 +297,7 @@ impl ConstantRearrangeable for ClassInfo {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ArrayValue {
     pub num_values: u16,
     pub values: Vec<ElementValue>,

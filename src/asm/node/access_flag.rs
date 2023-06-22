@@ -6,22 +6,33 @@ use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 use strum::IntoEnumIterator;
 
+use crate::asm::node;
+
+/// This trait marks implemented supertype (specifically an enum) as an access flag type.
 pub trait AccessFlag
 where
     Self: Into<u16> + Copy + IntoEnumIterator,
 {
-    fn mask_access_flags(bytes: u16) -> Vec<Self> {
+    /// Extract the given bytes into vector of access flags.
+    fn extract_flags(bytes: u16) -> Vec<Self> {
         Self::iter()
-            .filter(|&access_flag| access_flag.into() & bytes >= 1)
+            .filter(|&access_flag| {
+                let access_flag = access_flag.into();
+
+                bytes & access_flag == access_flag
+            })
             .collect_vec()
     }
 }
 
+/// This trait requires implemented supertype to be an iterable access flag (commonly [std::slice] and [Vec]),
+/// which makes vector of access flags able to convert into u16.
 pub trait AccessFlags<'a, T>
 where
     T: AccessFlag + 'a,
     Self: IntoIterator<Item = &'a T> + Sized,
 {
+    /// Folds access flags into u16.
     fn fold_flags(self) -> u16 {
         self.into_iter()
             .map(|flag| (*flag).into())
@@ -32,6 +43,9 @@ where
 impl<'a, T> AccessFlags<'a, T> for &'a [T] where T: AccessFlag {}
 impl<'a, T> AccessFlags<'a, T> for &'a Vec<T> where T: AccessFlag {}
 
+/// Access flag for [node::class::Class].
+///
+/// See [Table 4.1-B](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=85).
 #[repr(u16)]
 #[derive(
     Debug,
@@ -41,6 +55,7 @@ impl<'a, T> AccessFlags<'a, T> for &'a Vec<T> where T: AccessFlag {}
     PartialOrd,
     Eq,
     PartialEq,
+    Hash,
     IntoPrimitive,
     Serialize,
     Deserialize,
@@ -60,6 +75,9 @@ pub enum ClassAccessFlag {
 
 impl AccessFlag for ClassAccessFlag {}
 
+/// Access flag for [node::field::Field].
+///
+/// See [Table 4.5-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=110).
 #[repr(u16)]
 #[derive(
     Debug,
@@ -69,6 +87,7 @@ impl AccessFlag for ClassAccessFlag {}
     PartialOrd,
     Eq,
     PartialEq,
+    Hash,
     IntoPrimitive,
     Serialize,
     Deserialize,
@@ -88,6 +107,9 @@ pub enum FieldAccessFlag {
 
 impl AccessFlag for FieldAccessFlag {}
 
+/// Access flag for [node::method::Method].
+///
+/// See [Table 4.6-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=112).
 #[repr(u16)]
 #[derive(
     Debug,
@@ -97,6 +119,7 @@ impl AccessFlag for FieldAccessFlag {}
     PartialOrd,
     Eq,
     PartialEq,
+    Hash,
     IntoPrimitive,
     Serialize,
     Deserialize,
@@ -119,6 +142,9 @@ pub enum MethodAccessFlag {
 
 impl AccessFlag for MethodAccessFlag {}
 
+/// Access flag for [node::attribute::InnerClass].
+///
+/// See [Table 4.7.6-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=138).
 #[repr(u16)]
 #[derive(
     Debug,
@@ -149,6 +175,9 @@ pub enum NestedClassAccessFlag {
 
 impl AccessFlag for NestedClassAccessFlag {}
 
+/// Access flag for [node::attribute::MethodParameter].
+///
+/// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=183).
 #[repr(u16)]
 #[derive(
     Debug,
@@ -167,10 +196,14 @@ impl AccessFlag for NestedClassAccessFlag {}
 pub enum ParameterAccessFlag {
     Final = 0x0010,
     Synthetic = 0x1000,
+    Mandated = 0x8000,
 }
 
 impl AccessFlag for ParameterAccessFlag {}
 
+/// Access flag for [node::attribute::Module].
+///
+/// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=186).
 #[repr(u16)]
 #[derive(
     Debug,
@@ -194,6 +227,9 @@ pub enum ModuleAccessFlag {
 
 impl AccessFlag for ModuleAccessFlag {}
 
+/// Access flag for [node::attribute::module::Requires].
+///
+/// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=187).
 #[repr(u16)]
 #[derive(
     Debug,
@@ -218,6 +254,9 @@ pub enum RequiresAccessFlag {
 
 impl AccessFlag for RequiresAccessFlag {}
 
+/// Access flag for [node::attribute::module::Exports].
+///
+/// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=188).
 #[repr(u16)]
 #[derive(
     Debug,
@@ -240,6 +279,9 @@ pub enum ExportsAccessFlag {
 
 impl AccessFlag for ExportsAccessFlag {}
 
+/// Access flag for [node::attribute::module::Opens].
+///
+/// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=189).
 #[repr(u16)]
 #[derive(
     Debug,

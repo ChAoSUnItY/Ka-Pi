@@ -13,6 +13,9 @@ use crate::error::KapiResult;
 
 pub mod instruction;
 
+/// [ArrayType] represents all possible types for [Instruction::NEWARRAY] to use with.
+///
+/// See [Table 6.5.newarray-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=595).
 #[repr(u8)]
 #[derive(
     Debug,
@@ -38,34 +41,8 @@ pub enum ArrayType {
     Long = 11,
 }
 
-#[repr(u8)]
-#[derive(
-    Debug,
-    Copy,
-    Clone,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    Hash,
-    Serialize,
-    Deserialize,
-    TryFromPrimitive,
-)]
-pub enum RefKind {
-    GetField = 1,
-    GetStatic = 2,
-    PutField = 3,
-    PutStatic = 4,
-    InvokeVirtual = 5,
-    InvokeStatic = 6,
-    InvokeSpecial = 7,
-    NewInvokeSpecial = 8,
-    InvokeInterface = 9,
-}
-
 // noinspection SpellCheckingInspection
-/// [Opcode] represents low level JVM bytecode opcodes without any accompany data.
+/// Represents opcodes without any accompany data.
 #[repr(u8)]
 #[derive(
     Debug,
@@ -287,6 +264,7 @@ pub enum Opcode {
 }
 
 // noinspection SpellCheckingInspection
+/// Represents opcode with accompany data.
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {
@@ -507,6 +485,7 @@ pub enum Instruction {
 }
 
 impl Instruction {
+    /// Returns corresponding [Opcode] for current [Instruction].
     pub const fn opcode(&self) -> Opcode {
         match self {
             Instruction::NOP => Opcode::NOP,

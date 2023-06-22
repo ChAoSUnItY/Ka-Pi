@@ -1,4 +1,4 @@
-use crate::asm::node::opcode::RefKind;
+use crate::asm::node::constant::RefKind;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

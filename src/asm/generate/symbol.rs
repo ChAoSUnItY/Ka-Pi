@@ -4,18 +4,19 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Index;
 
+use crate::asm::generate::constant_value;
 use indexmap::IndexSet;
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
+use crate::asm::generate::handle::Handle;
 use crate::asm::generate::opcode::ConstantObject;
-use crate::asm::node::attribute::{constant_value, Attribute, BootstrapMethod, ConstantValue};
+use crate::asm::node::attribute::{Attribute, BootstrapMethod, ConstantValue};
+use crate::asm::node::constant::RefKind;
 use crate::asm::node::constant::{
     Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, Long,
     MethodHandle, MethodRef, Module, NameAndType, Package, Utf8,
 };
-use crate::asm::node::handle::Handle;
-use crate::asm::node::opcode::RefKind;
 use crate::asm::node::{constant, ConstantRearrangeable};
 
 #[derive(Default, Serialize, Deserialize)]

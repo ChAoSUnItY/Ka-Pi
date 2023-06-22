@@ -1,6 +1,4 @@
-//! # Ka-Pi
-//! ### A JVM Bytecode Manipulation Framework inspired by ASM.
-//!
+#![doc = include_str!("../README.md")]
 
 // no_std placeholder here
 

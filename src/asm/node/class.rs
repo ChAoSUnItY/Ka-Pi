@@ -10,7 +10,10 @@ use crate::asm::node::method::Method;
 use crate::asm::node::ConstantRearrangeable;
 use crate::error::KapiResult;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// Represents a class file.
+///
+/// See [4.1 The ClassFile Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=82).
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Class {
     pub java_version: JavaVersion,
     pub constant_pool_count: u16,
@@ -29,6 +32,7 @@ pub struct Class {
 }
 
 impl Class {
+    /// Get current class from constant pool.
     pub fn this_class(&self) -> Option<&crate::asm::node::constant::Class> {
         if let Some(Constant::Class(class)) = self.constant_pool.get(self.this_class) {
             Some(class)
@@ -37,6 +41,7 @@ impl Class {
         }
     }
 
+    /// Get super class from constant pool.
     pub fn super_class(&self) -> Option<&crate::asm::node::constant::Class> {
         if let Some(Constant::Class(class)) = self.constant_pool.get(self.super_class) {
             Some(class)
@@ -45,6 +50,7 @@ impl Class {
         }
     }
 
+    /// Get interface from constant pool at given index.
     pub fn interface(&self, index: usize) -> Option<&crate::asm::node::constant::Class> {
         if let Some(Constant::Class(class)) = self
             .interfaces
@@ -86,9 +92,22 @@ impl ConstantRearrangeable for Class {
     }
 }
 
+/// Represents java version documented in specification (combines `major_version` and `minor_version`).
+///
+/// See [Table 4.1-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=83).
 #[repr(u32)]
 #[derive(
-    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, TryFromPrimitive,
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    Serialize,
+    Deserialize,
+    TryFromPrimitive,
 )]
 pub enum JavaVersion {
     V1_1 = 3 << 16 | 45,

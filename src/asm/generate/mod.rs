@@ -1,7 +1,9 @@
 pub mod annotation;
 pub mod byte_vec;
 pub mod class;
+pub mod constant_value;
 pub mod field;
+pub mod handle;
 pub mod label;
 pub mod method;
 pub mod module;

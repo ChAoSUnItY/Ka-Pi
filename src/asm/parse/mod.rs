@@ -85,15 +85,15 @@ where
     }
 }
 
-fn collect_with_constant_pool<'parser, 'constant_pool: 'parser, I, LP, TP, L, T, E: ParseError<I>>(
+fn collect_with_constant_pool<'constant_pool, I, LP, TP, L, T, E: ParseError<I>>(
     mut len_parser: LP,
     mut item_parser: TP,
     constant_pool: &'constant_pool ConstantPool,
 ) -> impl FnMut(I) -> IResult<I, (L, Vec<T>), E> + '_
 where
     I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
-    LP: FnMut(I) -> IResult<I, L, E> + 'parser + 'constant_pool,
-    TP: FnMut(I, &'constant_pool ConstantPool) -> IResult<I, T, E> + 'parser + 'constant_pool,
+    LP: FnMut(I) -> IResult<I, L, E> + 'constant_pool,
+    TP: FnMut(I, &'constant_pool ConstantPool) -> IResult<I, T, E> + 'constant_pool,
     L: Into<u64> + Copy,
 {
     move |input: I| {
@@ -116,5 +116,5 @@ fn access_flag<F>(input: &[u8]) -> IResult<&[u8], Vec<F>>
 where
     F: AccessFlag,
 {
-    map(be_u16, F::mask_access_flags)(input)
+    map(be_u16, F::extract_flags)(input)
 }
