@@ -128,4 +128,4 @@ There are other related jvm projects developed by me may help the production of 
 ### License
 
 Copyright © 2023, [Kyle Lin (ChAoS-UnItY)](https://github.com/ChAoSUnItY).
-Released under the [MIT License](LICENSE) and [ASM License](ASM-LICENSE).
+Released under the [MIT License](LICENSE).
