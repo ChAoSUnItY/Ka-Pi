@@ -187,7 +187,7 @@ dependencies = [
 
 [[package]]
 name = "ka-pi"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "cesu8",
  "either",
