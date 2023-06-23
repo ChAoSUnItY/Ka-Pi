@@ -1,5 +1,6 @@
 use crate::asm::generate::byte_vec::ByteVecImpl;
 use crate::asm::generate::symbol::SymbolTable;
+use crate::error::KapiResult;
 
 pub mod annotation;
 pub(crate) mod attribute;
@@ -18,5 +19,5 @@ pub(crate) mod symbol;
 pub mod types;
 
 pub(crate) trait ByteVecGen {
-    fn put(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable);
+    fn put(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) -> KapiResult<()>;
 }

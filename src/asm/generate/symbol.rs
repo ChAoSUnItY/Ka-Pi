@@ -18,6 +18,7 @@ use crate::asm::node::constant::{
     MethodHandle, MethodRef, Module, NameAndType, Package, Utf8,
 };
 use crate::asm::node::{constant, ConstantRearrangeable};
+use crate::error::KapiResult;
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct SymbolTable {
@@ -86,7 +87,7 @@ impl SymbolTable {
     /// # Rearrangement Map
     /// The returned [HashMap]<u16, u16> indicates the transformation of constant pool index from key
     /// as original position to value as modified position.
-    pub(crate) fn merge(&mut self, other: &mut SymbolTable) -> HashMap<u16, u16> {
+    pub(crate) fn merge(&mut self, other: &SymbolTable) -> KapiResult<HashMap<u16, u16>> {
         let SymbolTable {
             constants,
             attributes,
@@ -104,13 +105,11 @@ impl SymbolTable {
         for attribute in attributes.iter() {
             let mut attribute = attribute.clone();
 
-            attribute.rearrange(&rearrangements);
+            attribute.rearrange(&rearrangements)?;
             rearranged_attrs.insert(attribute);
         }
 
-        other.attributes = rearranged_attrs;
-
-        rearrangements
+        Ok(rearrangements)
     }
 
     pub(crate) fn get_utf8(&self, index: u16) -> Option<String> {

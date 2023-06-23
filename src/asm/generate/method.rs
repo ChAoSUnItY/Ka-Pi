@@ -10,29 +10,18 @@ use crate::asm::generate::label::Label;
 use crate::asm::generate::opcode::{ConstantObject, Instruction};
 use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::generate::types::Type;
+use crate::asm::generate::ByteVecGen;
 use crate::asm::node::access_flag::{AccessFlags, MethodAccessFlag};
 use crate::asm::node::attribute;
 use crate::asm::node::class::JavaVersion;
 use crate::asm::node::opcode::Opcode;
 use crate::error::{KapiError, KapiResult};
 
-pub trait MethodVisitor {
-    fn visit_end(&mut self) -> KapiResult<()> {
-        Ok(())
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct MethodVisitorImpl {}
-
-impl MethodVisitor for MethodVisitorImpl {}
-
 pub struct MethodWriter {
     // Class file predefined info
     java_version: JavaVersion,
     // Internal writing buffers
-    byte_vec: Rc<RefCell<ByteVecImpl>>,
-    symbol_table: Rc<RefCell<SymbolTable>>,
+    symbol_table: SymbolTable,
     code_byte_vec: ByteVecImpl,
     // Class file format defined fields
     access_flags: Vec<MethodAccessFlag>,
@@ -49,8 +38,6 @@ pub struct MethodWriter {
 impl MethodWriter {
     pub(crate) fn new<F>(
         java_version: &JavaVersion,
-        byte_vec: &Rc<RefCell<ByteVecImpl>>,
-        symbol_table: &Rc<RefCell<SymbolTable>>,
         access_flags: F,
         name: &str,
         descriptor: &str,
@@ -58,9 +45,10 @@ impl MethodWriter {
     where
         F: IntoIterator<Item = MethodAccessFlag>,
     {
+        let mut symbol_table = SymbolTable::default();
         let access_flags = access_flags.into_iter().collect::<Vec<_>>();
-        let name_index = symbol_table.borrow_mut().add_utf8(name);
-        let descriptor_index = symbol_table.borrow_mut().add_utf8(descriptor);
+        let name_index = symbol_table.add_utf8(name);
+        let descriptor_index = symbol_table.add_utf8(descriptor);
 
         let mut initial_locals = Type::from_method_descriptor(descriptor)?
             .0
@@ -73,8 +61,7 @@ impl MethodWriter {
 
         Ok(Self {
             java_version: *java_version,
-            byte_vec: byte_vec.clone(),
-            symbol_table: symbol_table.clone(),
+            symbol_table,
             access_flags,
             name_index,
             descriptor_index,
@@ -1280,10 +1267,7 @@ impl MethodWriter {
         C: Into<ConstantObject>,
     {
         let constant_object = constant_object.into();
-        let constant_index = self
-            .symbol_table
-            .borrow_mut()
-            .add_constant_object(&constant_object);
+        let constant_index = self.symbol_table.add_constant_object(&constant_object);
 
         match constant_object {
             ConstantObject::Long(_) | ConstantObject::Double(_) => {
@@ -1354,29 +1338,21 @@ impl MethodWriter {
     }
 }
 
-impl MethodVisitor for MethodWriter {
-    fn visit_end(&mut self) -> KapiResult<()> {
-        let Self {
-            java_version: _,
-            byte_vec,
-            symbol_table,
-            code_byte_vec,
-            access_flags,
-            name_index,
-            descriptor_index,
-            max_stack,
-            max_locals,
-            locals: _,
-            stack_status: _,
-            labels,
-        } = self;
+impl ByteVecGen for MethodWriter {
+    fn put(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) -> KapiResult<()> {
+        let rearrangements = symbol_table.merge(&self.symbol_table)?;
+        let name_index = rearrangements
+            .get(&self.name_index)
+            .unwrap_or(&self.name_index);
+        let descriptor_index = rearrangements
+            .get(&self.descriptor_index)
+            .unwrap_or(&self.descriptor_index);
 
-        let mut byte_vec = byte_vec.borrow_mut();
-        let mut symbol_table = symbol_table.borrow_mut();
+        let mut code_byte_vec = self.code_byte_vec.clone();
 
         if code_byte_vec.len() != 0 {
             // Retrieve label's offset and put back to correct position
-            for (start_index, label) in labels {
+            for (start_index, label) in &self.labels {
                 let index = *start_index as usize;
                 let label = label.borrow();
 
@@ -1387,7 +1363,7 @@ impl MethodVisitor for MethodWriter {
         }
 
         // Generate method
-        byte_vec.put_be(access_flags.fold_flags());
+        byte_vec.put_be(self.access_flags.fold_flags());
         byte_vec.put_be(*name_index);
         byte_vec.put_be(*descriptor_index);
         // TODO: Remove attribute_len hardcode
@@ -1407,11 +1383,11 @@ impl MethodVisitor for MethodWriter {
 
             byte_vec.put_be(attribute_name_index); // attribute_name_index
             byte_vec.put_be(attribute_len as u32); // attribute_length
-            byte_vec.put_be(*max_stack as u16); // max_stack
-            byte_vec.put_be(*max_locals as u16); // max_locals
+            byte_vec.put_be(self.max_stack as u16); // max_stack
+            byte_vec.put_be(self.max_locals as u16); // max_locals
             byte_vec.put_be(code_len as u32); // code_length
-            byte_vec.append(code_byte_vec); // code[code_length]
-                                            // TODO: Implement exceptions
+            byte_vec.append(&mut code_byte_vec); // code[code_length]
+                                                 // TODO: Implement exceptions
             byte_vec.put_be(0u16);
             // TODO_END
             // TODO: Implement attributes

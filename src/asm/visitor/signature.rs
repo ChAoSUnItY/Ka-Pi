@@ -4,7 +4,6 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::asm::generate::field::FieldVisitor;
 use crate::asm::node::signature::{BaseType, Wildcard};
 use crate::error::{KapiError, KapiResult};
 
