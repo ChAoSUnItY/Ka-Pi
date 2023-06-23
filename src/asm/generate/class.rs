@@ -2,8 +2,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::generate::field::{FieldVisitor, FieldWriter};
-use crate::asm::generate::method::{MethodVisitor, MethodWriter};
+use crate::asm::generate::field::FieldWriter;
+use crate::asm::generate::method::MethodWriter;
 use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::node::access_flag::{
     AccessFlags, ClassAccessFlag, FieldAccessFlag, MethodAccessFlag,
@@ -15,32 +15,6 @@ use crate::asm::node::constant::{
     Long, MethodHandle, MethodRef, MethodType, Module, NameAndType, Package, Utf8,
 };
 use crate::error::KapiResult;
-
-pub trait ClassVisitor {
-    type Output;
-    type MethodVisitor: MethodVisitor + Sized;
-    type FieldVisitor: FieldVisitor + Sized;
-
-    fn visit_method<F>(
-        &mut self,
-        access_flags: F,
-        name: &str,
-        descriptor: &str,
-    ) -> KapiResult<Self::MethodVisitor>
-    where
-        F: IntoIterator<Item = MethodAccessFlag>;
-
-    fn visit_field<F>(
-        &mut self,
-        access_flags: F,
-        name: &str,
-        descriptor: &str,
-    ) -> KapiResult<Self::FieldVisitor>
-    where
-        F: IntoIterator<Item = FieldAccessFlag>;
-
-    fn visit_end(self) -> Self::Output;
-}
 
 pub struct ClassWriter {
     byte_vec: Rc<RefCell<ByteVecImpl>>,
@@ -55,7 +29,7 @@ pub struct ClassWriter {
 }
 
 impl ClassWriter {
-    pub fn new_class_writer<F, I>(
+    pub fn new<F, I>(
         version: JavaVersion,
         access_flags: F,
         class_name: &str,
@@ -87,21 +61,15 @@ impl ClassWriter {
             methods: Vec::new(),
         }
     }
-}
 
-impl ClassVisitor for ClassWriter {
-    type Output = Vec<u8>;
-    type MethodVisitor = MethodWriter;
-    type FieldVisitor = FieldWriter;
-
-    fn visit_method<F>(
+    fn write_method<F>(
         &mut self,
         access_flags: F,
         name: &str,
         descriptor: &str,
-    ) -> KapiResult<Self::MethodVisitor>
-    where
-        F: IntoIterator<Item = MethodAccessFlag>,
+    ) -> KapiResult<MethodWriter>
+        where
+            F: IntoIterator<Item = MethodAccessFlag>,
     {
         let method_byte_vec = Rc::new(RefCell::new(ByteVecImpl::with_capacity(8)));
 
@@ -117,14 +85,14 @@ impl ClassVisitor for ClassWriter {
         )
     }
 
-    fn visit_field<F>(
+    fn write_field<F>(
         &mut self,
         access_flags: F,
         name: &str,
         descriptor: &str,
-    ) -> KapiResult<Self::FieldVisitor>
-    where
-        F: IntoIterator<Item = FieldAccessFlag>,
+    ) -> KapiResult<FieldWriter>
+        where
+            F: IntoIterator<Item = FieldAccessFlag>,
     {
         let field_byte_vec = Rc::new(RefCell::new(ByteVecImpl::with_capacity(8)));
 
@@ -139,7 +107,7 @@ impl ClassVisitor for ClassWriter {
         )
     }
 
-    fn visit_end(self) -> Self::Output {
+    fn visit_end(self) -> ByteVecImpl {
         let Self {
             byte_vec,
             symbol_table,
@@ -167,23 +135,23 @@ impl ClassVisitor for ClassWriter {
                     byte_vec.put_be(*name_index);
                 }
                 Constant::FieldRef(FieldRef {
-                    class_index,
-                    name_and_type_index,
-                }) => {
+                                       class_index,
+                                       name_and_type_index,
+                                   }) => {
                     byte_vec.put_be(*class_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
                 Constant::MethodRef(MethodRef {
-                    class_index,
-                    name_and_type_index,
-                }) => {
+                                        class_index,
+                                        name_and_type_index,
+                                    }) => {
                     byte_vec.put_be(*class_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
                 Constant::InterfaceMethodRef(InterfaceMethodRef {
-                    class_index,
-                    name_and_type_index,
-                }) => {
+                                                 class_index,
+                                                 name_and_type_index,
+                                             }) => {
                     byte_vec.put_be(*class_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
@@ -197,23 +165,23 @@ impl ClassVisitor for ClassWriter {
                     byte_vec.extend_from_slice(bytes);
                 }
                 Constant::Long(Long {
-                    high_bytes,
-                    low_bytes,
-                }) => {
+                                   high_bytes,
+                                   low_bytes,
+                               }) => {
                     byte_vec.extend_from_slice(high_bytes);
                     byte_vec.extend_from_slice(low_bytes);
                 }
                 Constant::Double(Double {
-                    high_bytes,
-                    low_bytes,
-                }) => {
+                                     high_bytes,
+                                     low_bytes,
+                                 }) => {
                     byte_vec.extend_from_slice(high_bytes);
                     byte_vec.extend_from_slice(low_bytes);
                 }
                 Constant::NameAndType(NameAndType {
-                    name_index,
-                    type_index,
-                }) => {
+                                          name_index,
+                                          type_index,
+                                      }) => {
                     byte_vec.put_be(*name_index);
                     byte_vec.put_be(*type_index);
                 }
@@ -221,28 +189,28 @@ impl ClassVisitor for ClassWriter {
                     byte_vec.put_u8s(bytes);
                 }
                 Constant::MethodHandle(MethodHandle {
-                    reference_kind,
-                    reference_index,
-                }) => {
+                                           reference_kind,
+                                           reference_index,
+                                       }) => {
                     byte_vec.put_be(*reference_kind);
                     byte_vec.put_be(*reference_index);
                 }
                 Constant::MethodType(MethodType {
-                    descriptor_index: descriptor,
-                }) => {
+                                         descriptor_index: descriptor,
+                                     }) => {
                     byte_vec.put_be(*descriptor);
                 }
                 Constant::Dynamic(Dynamic {
-                    bootstrap_method_attr_index,
-                    name_and_type_index,
-                }) => {
+                                      bootstrap_method_attr_index,
+                                      name_and_type_index,
+                                  }) => {
                     byte_vec.put_be(*bootstrap_method_attr_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
                 Constant::InvokeDynamic(InvokeDynamic {
-                    bootstrap_method_attr_index,
-                    name_and_type_index,
-                }) => {
+                                            bootstrap_method_attr_index,
+                                            name_and_type_index,
+                                        }) => {
                     byte_vec.put_be(*bootstrap_method_attr_index);
                     byte_vec.put_be(*name_and_type_index);
                 }
@@ -275,7 +243,7 @@ impl ClassVisitor for ClassWriter {
         }
 
         byte_vec.put_be(symbol_table.attributes.len() as u16); // attributes length
-                                                               // TODO: implement attributes
+        // TODO: implement attributes
 
         byte_vec.clone()
     }
