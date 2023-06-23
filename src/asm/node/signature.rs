@@ -1,13 +1,15 @@
 use std::collections::VecDeque;
 
+use crate::asm::generate::signature::{
+    ClassSignatureWriter, FieldSignatureWriter, MethodSignatureWriter,
+};
+use crate::asm::visitor::signature::{
+    accept_class_signature_visitor, accept_field_signature_visitor,
+    accept_method_signature_visitor, ClassSignatureVisitor, FieldSignatureVisitor,
+    FormalTypeParameterVisitable, FormalTypeParameterVisitor, MethodSignatureVisitor, TypeVisitor,
+};
 use serde::{Deserialize, Serialize};
 
-use crate::asm::generate::signature::{
-    accept_class_signature_visitor, accept_field_signature_visitor,
-    accept_method_signature_visitor, ClassSignatureVisitor, ClassSignatureWriter,
-    FieldSignatureVisitor, FieldSignatureWriter, FormalTypeParameterVisitable,
-    FormalTypeParameterVisitor, MethodSignatureVisitor, MethodSignatureWriter, TypeVisitor,
-};
 use crate::error::{KapiError, KapiResult};
 
 /// Data representation of signatures, including [`Class`](Signature::Class), [`Field`](Signature::Field),
@@ -135,6 +137,7 @@ impl ClassSignatureVisitor for ClassSignatureCollector {
 }
 
 impl FormalTypeParameterVisitable for ClassSignatureCollector {
+    //noinspection DuplicatedCode
     fn visit_formal_type_parameter(
         &mut self,
         name: &str,
@@ -197,6 +200,7 @@ impl MethodSignatureVisitor for MethodSignatureCollector {
 }
 
 impl FormalTypeParameterVisitable for MethodSignatureCollector {
+    //noinspection DuplicatedCode
     fn visit_formal_type_parameter(
         &mut self,
         name: &str,
