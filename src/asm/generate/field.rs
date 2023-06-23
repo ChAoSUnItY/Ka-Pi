@@ -5,6 +5,7 @@ use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
 use crate::asm::generate::constant_value::ConstantValue;
 use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::generate::types::Type;
+use crate::asm::generate::ByteVecGen;
 use crate::asm::node::access_flag::{AccessFlags, FieldAccessFlag};
 use crate::asm::node::attribute::Attribute;
 use crate::error::{KapiError, KapiResult};
@@ -178,7 +179,7 @@ impl FieldVisitor for FieldWriter {
         byte_vec.put_be(field_attributes.len() as u16); // attribute length
 
         for attribute in field_attributes {
-            attribute.put_u8s(&mut *byte_vec, &mut *symbol_table);
+            attribute.put(&mut *byte_vec, &mut *symbol_table);
         }
     }
 }
