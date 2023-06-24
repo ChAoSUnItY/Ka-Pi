@@ -193,9 +193,11 @@ fn type_argument(input: &str) -> IResult<&str, TypeArgument> {
         map(
             tuple((opt(one_of("+-")), reference_type)),
             |(wildcard_indicator, bounded_type)| TypeArgument::Bounded {
-                wildcard_indicator: wildcard_indicator.and_then(|wildcard_indicator| {
-                    WildcardIndicator::try_from(wildcard_indicator).ok()
-                }),
+                wildcard_indicator: wildcard_indicator
+                    .and_then(|wildcard_indicator| {
+                        WildcardIndicator::try_from(wildcard_indicator).ok()
+                    })
+                    .unwrap_or_default(),
                 bounded_type,
             },
         ),
