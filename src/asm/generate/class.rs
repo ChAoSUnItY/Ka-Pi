@@ -60,7 +60,7 @@ impl ClassWriter {
         }
     }
 
-    fn write_method<F>(
+    pub fn write_method<F>(
         &mut self,
         access_flags: F,
         name: &str,
@@ -82,7 +82,11 @@ impl ClassWriter {
         Ok(())
     }
 
-    fn write_field<F>(
+    pub fn append_method(&mut self, method_writer: MethodWriter) {
+        self.method_writers.push(method_writer);
+    }
+
+    pub fn write_field<F>(
         &mut self,
         access_flags: F,
         name: &str,
@@ -97,6 +101,10 @@ impl ClassWriter {
         self.field_writers.push(field_writer);
 
         Ok(())
+    }
+
+    pub fn append_field(&mut self, field_writer: FieldWriter) {
+        self.field_writers.push(field_writer);
     }
 
     fn write_output(self) -> KapiResult<ByteVecImpl> {
@@ -235,5 +243,41 @@ impl ClassWriter {
                                                                // TODO: implement attributes
 
         Ok(byte_vec)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::asm::generate::class::ClassWriter;
+    use crate::asm::generate::field::FieldWriter;
+    use crate::asm::generate::method::MethodWriter;
+    use crate::asm::node::access_flag::{ClassAccessFlag, FieldAccessFlag, MethodAccessFlag};
+    use crate::asm::node::class::JavaVersion;
+    use crate::error::KapiResult;
+
+    #[test]
+    fn test_class_writer_write_1_method_1_field() -> KapiResult<()> {
+        let mut class_writer = ClassWriter::new(JavaVersion::V17, vec![ClassAccessFlag::Super, ClassAccessFlag::Public], "Main", "java/lang/Object", vec![]);
+        
+        class_writer.write_field(vec![FieldAccessFlag::Public, FieldAccessFlag::Static], "field", "Z", |field| { Ok(field) })?;
+        class_writer.write_method(vec![MethodAccessFlag::Public, MethodAccessFlag::Static], "method", "()Z", |method| { Ok(method) })?;
+        
+        let bytes = class_writer.write_output()?;
+        
+        Ok(())
+    }
+    
+    fn test_class_writer_append_1_method_1_field() -> KapiResult<()> {
+        let mut class_writer = ClassWriter::new(JavaVersion::V17, vec![ClassAccessFlag::Super, ClassAccessFlag::Public], "Main", "java/lang/Object", vec![]);
+        
+        let field_writer = FieldWriter::new(vec![FieldAccessFlag::Public, FieldAccessFlag::Static], "field", "Z")?;
+        class_writer.append_field(field_writer);
+        
+        let method_writer = MethodWriter::new(&JavaVersion::V17, vec![MethodAccessFlag::Public, MethodAccessFlag::Static], "method", "()Z")?;
+        class_writer.append_method(method_writer);
+        
+        let bytes = class_writer.write_output()?;
+        
+        Ok(())
     }
 }
