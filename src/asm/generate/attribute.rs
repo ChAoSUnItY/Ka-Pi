@@ -1,6 +1,6 @@
+use crate::asm::generate::bytes::ByteVecGen;
 use crate::asm::generate::bytes::{ByteVec, ByteVecImpl};
 use crate::asm::generate::symbol::SymbolTable;
-use crate::asm::generate::bytes::ByteVecGen;
 use crate::asm::node::attribute::{Attribute, ConstantValue};
 use crate::error::KapiResult;
 

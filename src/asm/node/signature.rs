@@ -1,7 +1,5 @@
-use serde::{Deserialize, Serialize};
-use crate::asm::node::types::{BaseType, Type};
-
 use crate::error::{KapiError, KapiResult};
+use serde::{Deserialize, Serialize};
 
 /// Data representation of signatures, including [`Class`](Signature::Class), [`Field`](Signature::Field),
 /// and [`Method`](Signature::Method).
@@ -10,60 +8,65 @@ pub enum Signature {
     /// Data representation of class signature.
     Class {
         formal_type_parameters: Vec<FormalTypeParameter>,
-        super_class: Type,
-        interfaces: Vec<Type>,
+        super_class: ClassType,
+        interfaces: Vec<ClassType>,
     },
     /// Data representation of field signature.
-    Field { field_type: Type },
+    Field { field_type: ReferenceType },
     /// Data representation of method signature.
     Method {
         formal_type_parameters: Vec<FormalTypeParameter>,
-        parameter_types: Vec<Type>,
-        return_type: Type,
-        exception_types: Vec<Type>,
+        parameter_types: Vec<SignatureType>,
+        return_type: SignatureType,
+        exception_types: Vec<ThrowsType>,
     },
 }
 
 /// Data representation of formal type parameter in signatures.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FormalTypeParameter {
-    parameter_name: String,
-    class_bound: Option<Type>,
-    interface_bounds: Vec<Type>,
+    pub parameter_name: String,
+    pub class_bound: Option<ClassType>,
+    pub interface_bounds: Vec<ClassType>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub enum TypeArgument {
+    Bounded {
+        wildcard_indicator: Option<WildcardIndicator>,
+        bounded_type: ReferenceType,
+    },
+    Wildcard,
 }
 
 const EXTENDS: char = '+';
 const SUPER: char = '-';
-const INSTANCEOF: char = '=';
 
-/// An enum representation for wildcard indicators, which is used in
-/// [`Type::WildcardTypeArgument`] as class
-/// type argument bound.
+/// An enum representation for Wildcard indicators.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[repr(u8)]
-pub enum Wildcard {
-    /// Indicates type argument must extends class bound, see java's upper bounds wildcard.
-    EXTENDS = EXTENDS as u8,
-    /// Indicates type argument must super class bound, see java's lower bounds wildcard.
-    SUPER = SUPER as u8,
-    /// Indicates type argument must be instance of specified type.
-    INSTANCEOF = INSTANCEOF as u8,
+pub enum WildcardIndicator {
+    /// Indicates type argument must extends class bound, see java's upper bounds Wildcard.
+    EXTENDS,
+    /// Indicates type argument must super class bound, see java's lower bounds Wildcard.
+    SUPER,
 }
 
-impl From<Wildcard> for char {
-    fn from(value: Wildcard) -> Self {
-        value as u8 as char
+impl From<WildcardIndicator> for char {
+    fn from(value: WildcardIndicator) -> Self {
+        match value {
+            WildcardIndicator::EXTENDS => EXTENDS,
+            WildcardIndicator::SUPER => SUPER,
+        }
     }
 }
 
-impl TryFrom<char> for Wildcard {
+impl TryFrom<char> for WildcardIndicator {
     type Error = KapiError;
 
     fn try_from(value: char) -> KapiResult<Self> {
         match value {
-            EXTENDS => Ok(Wildcard::EXTENDS),
-            SUPER => Ok(Wildcard::SUPER),
-            INSTANCEOF => Ok(Self::INSTANCEOF),
+            EXTENDS => Ok(WildcardIndicator::EXTENDS),
+            SUPER => Ok(WildcardIndicator::SUPER),
             _ => Err(KapiError::ArgError(format!(
                 "Character {value} cannot be converted into Wildcard"
             ))),
@@ -71,7 +74,7 @@ impl TryFrom<char> for Wildcard {
     }
 }
 
-impl TryFrom<&char> for Wildcard {
+impl TryFrom<&char> for WildcardIndicator {
     type Error = KapiError;
 
     fn try_from(value: &char) -> KapiResult<Self> {
@@ -85,45 +88,79 @@ impl From<BaseType> for char {
     }
 }
 
-#[cfg(test)]
-mod test {
-    // #[test]
-    // fn test_class_signature_with_generic() -> KapiResult<()> {
-    //     let class_signature = Signature::class_signature_from_str(
-    //         "<T:[Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;",
-    //     )?;
-    // 
-    //     assert_yaml_snapshot!(class_signature);
-    // 
-    //     Ok(())
-    // }
-    // 
-    // #[test]
-    // fn test_field_signature_object() -> KapiResult<()> {
-    //     let field_signature = Signature::field_signature_from_str("Ljava/lang/Object;")?;
-    // 
-    //     assert_yaml_snapshot!(field_signature);
-    // 
-    //     Ok(())
-    // }
-    // 
-    // #[test]
-    // fn test_field_signature_type_variable() -> KapiResult<()> {
-    //     let field_signature = Signature::field_signature_from_str("TT;")?;
-    // 
-    //     assert_yaml_snapshot!(field_signature);
-    // 
-    //     Ok(())
-    // }
-    // 
-    // #[test]
-    // fn test_method_signature_with_generic() -> KapiResult<()> {
-    //     let method_signature = Signature::method_signature_from_str(
-    //         "<T:Ljava/lang/Object;>(Z[[ZTT;)Ljava/lang/Object;^Ljava/lang/Exception;",
-    //     )?;
-    // 
-    //     assert_yaml_snapshot!(method_signature);
-    // 
-    //     Ok(())
-    // }
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub enum SignatureType {
+    BaseType(BaseType),
+    ReferenceType(ReferenceType),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub enum ThrowsType {
+    Class(ClassType),
+    TypeVariable(TypeVariable),
+}
+
+/// Data representation of Type in signatures.
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub enum ReferenceType {
+    BaseType(BaseType),
+    Array(ArrayType),
+    Class(ClassType),
+    TypeVariable(TypeVariable),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ArrayType(pub Box<SignatureType>);
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ClassType {
+    pub package_path: String,
+    pub class_name: String,
+    pub type_arguments: Vec<TypeArgument>,
+    pub inner_classes: Vec<(String, Vec<TypeArgument>)>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TypeVariable(pub String);
+
+/// Data representation of base type in descriptor.
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum BaseType {
+    Boolean = b'Z',
+    Byte = b'B',
+    Short = b'S',
+    Int = b'I',
+    Long = b'J',
+    Float = b'F',
+    Double = b'D',
+    Void = b'V',
+}
+
+impl TryFrom<char> for BaseType {
+    type Error = KapiError;
+
+    fn try_from(value: char) -> KapiResult<Self> {
+        match value {
+            'Z' => Ok(Self::Boolean),
+            'B' => Ok(Self::Byte),
+            'S' => Ok(Self::Short),
+            'I' => Ok(Self::Int),
+            'J' => Ok(Self::Long),
+            'F' => Ok(Self::Float),
+            'D' => Ok(Self::Double),
+            'V' => Ok(Self::Void),
+            _ => Err(KapiError::ArgError(format!(
+                "Unexpected char `{value}` for base type"
+            ))),
+        }
+    }
+}
+
+impl TryFrom<&char> for BaseType {
+    type Error = KapiError;
+
+    fn try_from(value: &char) -> KapiResult<Self> {
+        TryFrom::<char>::try_from(*value)
+    }
 }

@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
-use crate::asm::node::signature::Wildcard;
-use crate::asm::node::types::BaseType;
+use crate::asm::node::signature::BaseType;
+use crate::asm::node::signature::WildcardIndicator;
 
 /// A default implementation of class signature writer.
 ///
@@ -22,39 +22,39 @@ impl ClassSignatureWriter {
             has_formal: false,
         }
     }
-    
+
     fn init_formal_types(&mut self) {
         if !self.has_formal {
             self.has_formal = true;
             self.signature_builder.push('<');
         }
     }
-    
+
     fn finalize_formal_types(&mut self) {
         if self.has_formal {
             self.has_formal = false;
             self.signature_builder.push('>');
         }
     }
-    
+
     //noinspection DuplicatedCode
     pub fn formal_type_parameter(&mut self, name: &str) -> FormalTypeParameterWriter<'_> {
         self.init_formal_types();
-        
+
         self.signature_builder.push_str(name);
-        
+
         FormalTypeParameterWriter::new(&mut self.signature_builder)
     }
-    
+
     pub fn super_class(&mut self) -> TypeWriter<'_> {
         self.finalize_formal_types();
-        
+
         TypeWriter::new(&mut self.signature_builder)
     }
-    
+
     pub fn interface(&mut self) -> TypeWriter<'_> {
         self.finalize_formal_types();
-        
+
         TypeWriter::new(&mut self.signature_builder)
     }
 }
@@ -82,7 +82,7 @@ impl FieldSignatureWriter {
             signature_builder: String::with_capacity(size),
         }
     }
-    
+
     pub fn field_type(&mut self) -> TypeWriter<'_> {
         TypeWriter::new(&mut self.signature_builder)
     }
@@ -129,21 +129,21 @@ impl MethodSignatureWriter {
             self.signature_builder.push('>');
         }
     }
-    
+
     fn init_parameter_types(&mut self) {
         if !self.has_parameters {
             self.has_parameters = true;
             self.signature_builder.push('(');
         }
     }
-    
+
     fn finalize_parameter_types(&mut self) {
         if self.has_parameters {
             self.has_parameters = false;
             self.signature_builder.push(')');
         }
     }
-    
+
     //noinspection DuplicatedCode
     pub fn formal_type_parameter(&mut self, name: &str) -> FormalTypeParameterWriter<'_> {
         self.init_formal_types();
@@ -152,24 +152,24 @@ impl MethodSignatureWriter {
 
         FormalTypeParameterWriter::new(&mut self.signature_builder)
     }
-    
+
     pub fn parameter_type(&mut self) -> TypeWriter<'_> {
         self.finalize_formal_types();
         self.init_parameter_types();
-        
+
         TypeWriter::new(&mut self.signature_builder)
     }
-    
+
     pub fn return_type(&mut self) -> TypeWriter<'_> {
         self.finalize_formal_types();
         self.finalize_parameter_types();
-        
+
         TypeWriter::new(&mut self.signature_builder)
     }
-    
+
     pub fn exception_type(&mut self) -> TypeWriter<'_> {
         self.signature_builder.push('^');
-        
+
         TypeWriter::new(&mut self.signature_builder)
     }
 }
@@ -188,14 +188,14 @@ impl<'parent> FormalTypeParameterWriter<'parent> {
     fn new(parent_builder: &'parent mut String) -> Self {
         Self { parent_builder }
     }
-    
+
     pub fn class_bound(&mut self) -> TypeWriter<'_> {
         TypeWriter::new(&mut self.parent_builder)
     }
-    
+
     pub fn interface_bound(&mut self) -> TypeWriter<'_> {
         self.parent_builder.push(':');
-        
+
         TypeWriter::new(&mut self.parent_builder)
     }
 }
@@ -253,7 +253,7 @@ impl<'parent> TypeWriter<'parent> {
         self.parent_builder.push(';');
     }
 
-    pub fn type_argument(&mut self) {
+    pub fn wildcard(&mut self) {
         if self.type_arg_stack.front().map_or(false, |b| *b) {
             self.type_arg_stack[0] = true;
             self.parent_builder.push('<');
@@ -262,15 +262,13 @@ impl<'parent> TypeWriter<'parent> {
         self.parent_builder.push('*');
     }
 
-    pub fn type_argument_wildcard(&mut self, wildcard: Wildcard) {
+    pub fn type_argument(&mut self, wildcard: WildcardIndicator) {
         if self.type_arg_stack.front().map_or(false, |b| *b) {
             self.type_arg_stack[0] = true;
             self.parent_builder.push('<');
         }
 
-        if wildcard != Wildcard::INSTANCEOF {
-            self.parent_builder.push(wildcard.into());
-        }
+        self.parent_builder.push(wildcard.into());
     }
 
     pub fn finalize(&mut self) {
@@ -296,12 +294,8 @@ mod test {
             .class_bound()
             .class_type("java/lang/Object");
 
-        writer
-            .super_class()
-            .class_type("java/lang/Object");
-        writer
-            .interface()
-            .class_type("java/lang/Comparable");
+        writer.super_class().class_type("java/lang/Object");
+        writer.interface().class_type("java/lang/Comparable");
 
         assert_yaml_snapshot!(writer.to_string());
     }
@@ -310,9 +304,7 @@ mod test {
     fn test_field_signature_writer() {
         let mut writer = FieldSignatureWriter::default();
 
-        writer
-            .field_type()
-            .class_type("java/lang/String");
+        writer.field_type().class_type("java/lang/String");
 
         assert_yaml_snapshot!(writer.to_string());
     }
@@ -326,12 +318,8 @@ mod test {
             .class_bound()
             .class_type("java/lang/Object");
 
-        writer
-            .parameter_type()
-            .class_type("java/lang/Object");
-        writer
-            .return_type()
-            .class_type("java/lang/String");
+        writer.parameter_type().class_type("java/lang/Object");
+        writer.return_type().class_type("java/lang/String");
 
         assert_yaml_snapshot!(writer.to_string());
     }

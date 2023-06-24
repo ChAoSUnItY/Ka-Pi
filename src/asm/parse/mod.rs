@@ -11,6 +11,7 @@ use nom::{IResult, InputIter, InputLength, Slice};
 use crate::asm::node::access_flag::AccessFlag;
 use crate::asm::node::class::Class;
 use crate::asm::node::constant::ConstantPool;
+use crate::asm::node::signature::Signature;
 use crate::error::{KapiError, KapiResult};
 
 pub(crate) mod attribute;
@@ -56,6 +57,51 @@ pub fn to_class(class_bytes: &[u8]) -> KapiResult<Class> {
         }
         Err(err) => Err(KapiError::ClassParseError(format!(
             "Unable parse class bytes, reason: {err}"
+        ))),
+    }
+}
+
+pub fn parse_class_signature(class_signature: &str) -> KapiResult<Signature> {
+    match signature::class_signature(class_signature) {
+        Ok((remain, signature)) => {
+            if !remain.is_empty() {
+                Err(KapiError::ClassParseError(format!("Unable to parse class signature, reason: signature is fully parsed but there are {} characters left, {remain:?}", remain.len())))
+            } else {
+                Ok(signature)
+            }
+        }
+        Err(err) => Err(KapiError::ClassParseError(format!(
+            "Unable to parse class signature, reason: {err}"
+        ))),
+    }
+}
+
+pub fn parse_field_signature(class_signature: &str) -> KapiResult<Signature> {
+    match signature::field_signature(class_signature) {
+        Ok((remain, signature)) => {
+            if !remain.is_empty() {
+                Err(KapiError::ClassParseError(format!("Unable to parse field signature, reason: signature is fully parsed but there are {} characters left, {remain:?}", remain.len())))
+            } else {
+                Ok(signature)
+            }
+        }
+        Err(err) => Err(KapiError::ClassParseError(format!(
+            "Unable to parse field signature, reason: {err}"
+        ))),
+    }
+}
+
+pub fn parse_method_signature(class_signature: &str) -> KapiResult<Signature> {
+    match signature::method_signature(class_signature) {
+        Ok((remain, signature)) => {
+            if !remain.is_empty() {
+                Err(KapiError::ClassParseError(format!("Unable to parse method signature, reason: signature is fully parsed but there are {} characters left, {remain:?}", remain.len())))
+            } else {
+                Ok(signature)
+            }
+        }
+        Err(err) => Err(KapiError::ClassParseError(format!(
+            "Unable to parse method signature, reason: {err}"
         ))),
     }
 }

@@ -2,8 +2,8 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::asm::node::signature::Wildcard;
-use crate::asm::node::types::BaseType;
+use crate::asm::node::signature::BaseType;
+use crate::asm::node::signature::WildcardIndicator;
 
 /// A visitor to visit class generic signature. This trait requires struct also implements
 /// [FormalTypeParameterVisitable].
@@ -119,14 +119,14 @@ pub trait TypeVisitor {
     /// before calling [`visit_type_argument`](TypeVisitor::visit_type_argument).
     ///
     /// This function will be called when the following type is unbounded. For type argument with
-    /// wildcard, see [`visit_type_argument_wildcard`](TypeVisitor::visit_type_argument_wildcard) for
+    /// Wildcard, see [`visit_type_argument_wildcard`](TypeVisitor::visit_type_argument_wildcard) for
     /// more info.
     fn visit_type_argument(&mut self) {}
 
-    /// Visits type type argument with wildcard indicator in signature. Required calling
+    /// Visits type type argument with Wildcard indicator in signature. Required calling
     /// [`visit_class_type`](TypeVisitor::visit_class_type) before calling
     /// [`visit_type_argument`](TypeVisitor::visit_type_argument).
-    fn visit_type_argument_wildcard(&mut self, wildcard: Wildcard) {}
+    fn visit_type_argument_wildcard(&mut self, wildcard: WildcardIndicator) {}
 
     /// Finalizes the visitor for further process.
     fn visit_end(&mut self) {}
@@ -198,31 +198,31 @@ impl TypeVisitor for SignatureVisitorImpl {}
 #[cfg(test)]
 mod test {
     // use rstest::rstest;
-    // 
+    //
     // use crate::error::KapiResult;
-    // 
+    //
     // #[rstest]
     // #[case("<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;")]
     // fn test_class_signatures(#[case] signature: &'static str) -> KapiResult<()> {
     //     let mut visitor = SignatureVisitorImpl::default();
-    // 
+    //
     //     accept_class_signature_visitor(signature, &mut visitor)
     // }
-    // 
+    //
     // #[rstest]
     // #[case("Ljava/lang/Object;")]
     // #[case("TT;")]
     // fn test_field_signatures(#[case] signature: &'static str) -> KapiResult<()> {
     //     let mut visitor = SignatureVisitorImpl::default();
-    // 
+    //
     //     accept_field_signature_visitor(signature, &mut visitor)
     // }
-    // 
+    //
     // #[rstest]
     // #[case("<T:Ljava/lang/Object;>(Z[[Z)Ljava/lang/Object;^Ljava/lang/Exception;")]
     // fn test_method_signatures(#[case] signature: &'static str) -> KapiResult<()> {
     //     let mut visitor = SignatureVisitorImpl::default();
-    // 
+    //
     //     accept_method_signature_visitor(signature, &mut visitor)
     // }
 }
