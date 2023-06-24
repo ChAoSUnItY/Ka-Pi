@@ -43,12 +43,12 @@ All nodes described in [The Java® Virtual Machine Specification Java SE 20 Edit
 are implemented.
 
 #### `visitor`
-- [ ] class visitor
-- [ ] field visitor
-- [ ] method visitor
-- [ ] module visitor
-- [ ] annotation visitor
-- [ ] record visitor
+- [ ] Class visitor
+- [ ] Field visitor
+- [ ] Method visitor
+- [ ] Module visitor
+- [ ] Annotation visitor
+- [ ] Record visitor
 - [x] Signature visitor
 
 #### `parse`
