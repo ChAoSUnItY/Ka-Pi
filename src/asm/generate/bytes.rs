@@ -1,6 +1,7 @@
 use crate::error::{KapiError, KapiResult};
 use std::ops::IndexMut;
 use std::slice::SliceIndex;
+use crate::asm::generate::symbol::SymbolTable;
 
 pub trait ByteVec: FromIterator<u8> + From<Vec<u8>> {
     fn len(&self) -> usize;
@@ -135,7 +136,7 @@ impl_byteconv!(8, usize);
 #[cfg(test)]
 mod test {
     #[allow(arithmetic_overflow)]
-    use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
+    use crate::asm::generate::bytes::{ByteVec, ByteVecImpl};
     use crate::error::KapiResult;
 
     #[test]
@@ -204,4 +205,8 @@ mod test {
 
         assert!(result.is_err());
     }
+}
+
+pub(crate) trait ByteVecGen {
+    fn put(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) -> KapiResult<()>;
 }

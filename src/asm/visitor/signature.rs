@@ -25,9 +25,6 @@ pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     fn visit_interface(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-
-    /// Finalizes the visitor for further process.
-    fn visit_end(&mut self) {}
 }
 
 /// A visitor to visit field generic signature.
@@ -40,9 +37,6 @@ pub trait FieldSignatureVisitor {
     fn visit_field_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-
-    /// Finalizes the visitor for further process.
-    fn visit_end(&mut self) {}
 }
 
 /// A visitor to visit method generic signature. This trait requires struct also implements
@@ -68,9 +62,6 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     fn visit_exception_type(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-
-    /// Finalizes the visitor for further process.
-    fn visit_end(&mut self) {}
 }
 
 /// A trait indicates super-trait visitor has formal type parameter section to be visited, which are
@@ -108,9 +99,6 @@ pub trait FormalTypeParameterVisitor {
     fn visit_interface_bound(&mut self) -> Box<dyn TypeVisitor + '_> {
         Box::new(SignatureVisitorImpl::default())
     }
-
-    /// Finalizes the visitor for further process.
-    fn visit_end(&mut self) {}
 }
 
 /// A visitor to visit types in generic signature.
@@ -196,8 +184,6 @@ where
         accept_class_type(&mut signature_iter, &mut visitor.visit_interface())?;
     }
 
-    visitor.visit_end();
-
     // Strict check
     strict_check_iter_empty(&mut signature_iter)
 }
@@ -215,8 +201,6 @@ where
 
     // Field type
     accept_type(&mut signature_iter, &mut visitor.visit_field_type())?;
-
-    visitor.visit_end();
 
     // Strict check
     strict_check_iter_empty(&mut signature_iter)
@@ -258,8 +242,6 @@ where
     if signature_iter.next_if_eq(&'^').is_some() {
         accept_type(&mut signature_iter, &mut visitor.visit_exception_type())?;
     }
-
-    visitor.visit_end();
 
     // Strict check
     strict_check_iter_empty(&mut signature_iter)
@@ -309,8 +291,6 @@ where
                     break;
                 }
             }
-
-            formal_type_visitor.visit_end();
 
             if signature_iter.peek().is_none() {
                 return Err(KapiError::ClassParseError(String::from(
@@ -487,9 +467,7 @@ mod test {
     fn test_class_signatures(#[case] signature: &'static str) -> KapiResult<()> {
         let mut visitor = SignatureVisitorImpl::default();
 
-        accept_class_signature_visitor(signature, &mut visitor)?;
-
-        Ok(())
+        accept_class_signature_visitor(signature, &mut visitor)
     }
 
     #[rstest]
@@ -498,9 +476,7 @@ mod test {
     fn test_field_signatures(#[case] signature: &'static str) -> KapiResult<()> {
         let mut visitor = SignatureVisitorImpl::default();
 
-        accept_field_signature_visitor(signature, &mut visitor)?;
-
-        Ok(())
+        accept_field_signature_visitor(signature, &mut visitor)
     }
 
     #[rstest]
@@ -508,8 +484,6 @@ mod test {
     fn test_method_signatures(#[case] signature: &'static str) -> KapiResult<()> {
         let mut visitor = SignatureVisitorImpl::default();
 
-        accept_method_signature_visitor(signature, &mut visitor)?;
-
-        Ok(())
+        accept_method_signature_visitor(signature, &mut visitor)
     }
 }

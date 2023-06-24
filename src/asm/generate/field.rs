@@ -1,8 +1,8 @@
-use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::generate::bytes::{ByteVec, ByteVecImpl};
 use crate::asm::generate::constant_value::ConstantValue;
 use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::generate::types::Type;
-use crate::asm::generate::ByteVecGen;
+use crate::asm::generate::bytes::ByteVecGen;
 use crate::asm::node::access_flag::{AccessFlags, FieldAccessFlag};
 use crate::asm::node::attribute::Attribute;
 use crate::error::{KapiError, KapiResult};

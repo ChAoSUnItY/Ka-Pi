@@ -5,12 +5,12 @@ use std::rc::Rc;
 
 use itertools::Itertools;
 
-use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::generate::bytes::{ByteVec, ByteVecImpl};
 use crate::asm::generate::label::Label;
 use crate::asm::generate::opcode::{ConstantObject, Instruction};
 use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::generate::types::Type;
-use crate::asm::generate::ByteVecGen;
+use crate::asm::generate::bytes::ByteVecGen;
 use crate::asm::node::access_flag::{AccessFlags, MethodAccessFlag};
 use crate::asm::node::attribute;
 use crate::asm::node::class::JavaVersion;

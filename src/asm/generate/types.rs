@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::error::KapiResult;
-use crate::{asm::generate::byte_vec::ByteVec, error::KapiError};
+use crate::{asm::generate::bytes::ByteVec, error::KapiError};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Type {
