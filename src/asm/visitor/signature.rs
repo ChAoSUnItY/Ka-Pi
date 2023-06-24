@@ -194,35 +194,3 @@ impl FormalTypeParameterVisitor for SignatureVisitorImpl {
 }
 
 impl TypeVisitor for SignatureVisitorImpl {}
-
-#[cfg(test)]
-mod test {
-    // use rstest::rstest;
-    //
-    // use crate::error::KapiResult;
-    //
-    // #[rstest]
-    // #[case("<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;")]
-    // fn test_class_signatures(#[case] signature: &'static str) -> KapiResult<()> {
-    //     let mut visitor = SignatureVisitorImpl::default();
-    //
-    //     accept_class_signature_visitor(signature, &mut visitor)
-    // }
-    //
-    // #[rstest]
-    // #[case("Ljava/lang/Object;")]
-    // #[case("TT;")]
-    // fn test_field_signatures(#[case] signature: &'static str) -> KapiResult<()> {
-    //     let mut visitor = SignatureVisitorImpl::default();
-    //
-    //     accept_field_signature_visitor(signature, &mut visitor)
-    // }
-    //
-    // #[rstest]
-    // #[case("<T:Ljava/lang/Object;>(Z[[Z)Ljava/lang/Object;^Ljava/lang/Exception;")]
-    // fn test_method_signatures(#[case] signature: &'static str) -> KapiResult<()> {
-    //     let mut visitor = SignatureVisitorImpl::default();
-    //
-    //     accept_method_signature_visitor(signature, &mut visitor)
-    // }
-}

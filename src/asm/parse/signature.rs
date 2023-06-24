@@ -138,7 +138,7 @@ fn class_type_signature(input: &str) -> IResult<&str, ClassType> {
             tuple((
                 opt(package_specifier),
                 simple_class_type_signature,
-                opt(many0(class_type_signature_suffix)),
+                many0(class_type_signature_suffix),
             )),
             char(';'),
         ),
@@ -147,7 +147,6 @@ fn class_type_signature(input: &str) -> IResult<&str, ClassType> {
             class_name: class_name.to_string(),
             type_arguments,
             inner_classes: inner_classes
-                .unwrap_or_default()
                 .into_iter()
                 .map(|(class_name, type_arguments)| (class_name.to_string(), type_arguments))
                 .collect(),
