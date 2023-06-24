@@ -18,11 +18,11 @@ path = "src/lib.rs"
 [[test]]
 name = "class_parse"
 path = "test/class_parse.rs"
-required-features = ["generate"]
 
 [[test]]
 name = "class_writer"
 path = "test/class_writer.rs"
+required-features = ["generate"]
 
 [[test]]
 name = "signature_parse"
