@@ -13,11 +13,12 @@ use crate::asm::node::class::Class;
 use crate::asm::node::constant::ConstantPool;
 use crate::error::{KapiError, KapiResult};
 
-pub mod attribute;
-pub mod class;
-pub mod constant;
-pub mod field;
-pub mod method;
+pub(crate) mod attribute;
+pub(crate) mod class;
+pub(crate) mod constant;
+pub(crate) mod field;
+pub(crate) mod method;
+pub(crate) mod signature;
 
 pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
     let class_path = class_path.as_ref();

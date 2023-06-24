@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
-use crate::asm::node::signature::{BaseType, Wildcard};
+use crate::asm::node::signature::Wildcard;
+use crate::asm::node::types::BaseType;
 
 /// A default implementation of class signature writer.
 ///

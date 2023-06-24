@@ -88,6 +88,8 @@ impl ByteVec for Vec<u8> {
         if actual_byte_len > 65535 {
             return Err(KapiError::Utf8Error("UTF8 string too large"));
         }
+        
+        u8::BITS;
 
         self[len_pos..=len_pos + 1].swap_with_slice(&mut (actual_byte_len as u16).to_be_bytes()); // Replace placeholder with actual len's bits
 
@@ -132,6 +134,10 @@ impl_byteconv!(4, u32);
 impl_byteconv!(8, u64);
 impl_byteconv!(16, u128);
 impl_byteconv!(8, usize);
+
+pub(crate) trait ByteVecGen {
+    fn put(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) -> KapiResult<()>;
+}
 
 #[cfg(test)]
 mod test {
@@ -205,8 +211,4 @@ mod test {
 
         assert!(result.is_err());
     }
-}
-
-pub(crate) trait ByteVecGen {
-    fn put(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) -> KapiResult<()>;
 }

@@ -15,6 +15,7 @@ pub mod field;
 pub mod method;
 pub mod opcode;
 pub mod signature;
+pub mod types;
 
 /// This trait indicates the implemented supertype's field can be rearrange based on given map of
 /// rearrangement set.
