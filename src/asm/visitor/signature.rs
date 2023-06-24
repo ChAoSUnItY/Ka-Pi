@@ -1,7 +1,3 @@
-use itertools::Itertools;
-use serde::{Deserialize, Serialize};
-use unicode_segmentation::UnicodeSegmentation;
-
 use crate::asm::node::signature::BaseType;
 use crate::asm::node::signature::WildcardIndicator;
 
@@ -127,9 +123,6 @@ pub trait TypeVisitor {
     /// [`visit_class_type`](TypeVisitor::visit_class_type) before calling
     /// [`visit_type_argument`](TypeVisitor::visit_type_argument).
     fn visit_type_argument_wildcard(&mut self, wildcard: WildcardIndicator) {}
-
-    /// Finalizes the visitor for further process.
-    fn visit_end(&mut self) {}
 }
 
 /// Default signature visitor for internal usage only. This visitor does not have any effect on visiting
