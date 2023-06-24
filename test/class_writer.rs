@@ -1,6 +1,5 @@
-use std::fs::File;
-use std::io::Write;
 use insta::assert_yaml_snapshot;
+
 use ka_pi::asm::generate::class::ClassWriter;
 use ka_pi::asm::node::access_flag::{ClassAccessFlag, FieldAccessFlag, MethodAccessFlag};
 use ka_pi::asm::node::class::JavaVersion;
