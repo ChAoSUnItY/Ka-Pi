@@ -1349,8 +1349,9 @@ impl ByteVecGen for MethodWriter {
             .unwrap_or(&self.descriptor_index);
 
         let mut code_byte_vec = self.code_byte_vec.clone();
-
-        if code_byte_vec.len() != 0 {
+        let has_code_attr = !code_byte_vec.is_empty();
+        
+        if has_code_attr {
             // Retrieve label's offset and put back to correct position
             for (start_index, label) in &self.labels {
                 let index = *start_index as usize;
@@ -1369,14 +1370,14 @@ impl ByteVecGen for MethodWriter {
         // TODO: Remove attribute_len hardcode
         let mut attribute_len = 0u16;
 
-        if code_byte_vec.len() != 0 {
+        if has_code_attr {
             attribute_len += 1;
         }
 
         byte_vec.put_be(attribute_len);
 
         // If code_byte_vec is empty, do not emit Code attribute for the method
-        if code_byte_vec.len() != 0 {
+        if has_code_attr {
             let attribute_name_index = symbol_table.add_utf8(attribute::CODE);
             let code_len = code_byte_vec.len();
             let attribute_len = 12 + code_len; // TODO

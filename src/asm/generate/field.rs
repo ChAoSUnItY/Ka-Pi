@@ -141,8 +141,8 @@ impl ByteVecGen for FieldWriter {
         byte_vec.put_be(self.access_flags.fold_flags());
         byte_vec.put_be(*name_index);
         byte_vec.put_be(*descriptor_index);
+        
         byte_vec.put_be(field_attributes.len() as u16);
-
         for attribute in field_attributes {
             attribute.put(byte_vec, symbol_table)?;
         }
