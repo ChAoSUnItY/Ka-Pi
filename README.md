@@ -14,6 +14,7 @@ Ka-Pi offers several essential modules relates to JVM ecosystem:
 
 - `asm`
   - `node` - Bytecode structure definition module, used by most of other modules.
+  - `visitor` (WIP) - Builtin implementation of visitor pattern based on `node` module.
   - `parse` - Bytecode parsing module used to resolve bytecode (or classfile) into structs.
   - `generate` (WIP) - Bytecode generation module used to generate bytecode.
 
@@ -37,8 +38,18 @@ fn main() -> KapiResult<()> {
 
 ### Implementation Status
 
-#### `asm` 
-- TODO
+#### `node` 
+All nodes described in [The Java® Virtual Machine Specification Java SE 20 Edition](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf)
+are implemented.
+
+#### `visitor`
+- [ ] class visitor
+- [ ] field visitor
+- [ ] method visitor
+- [ ] module visitor
+- [ ] annotation visitor
+- [ ] record visitor
+- [x] Signature visitor
 
 #### `parse`
 <details>
@@ -112,6 +123,20 @@ fn main() -> KapiResult<()> {
     - [x] Custom Attribute (Not described in specification)
 </details>
 
+#### `generate`
+
+- [x] Basic symbol generation
+  - [x] Class
+  - [x] Field
+  - [x] Method
+- [ ] Class
+  - [ ] Class hierarchy analysis
+  - [ ] Accessibility check
+- [x] Field
+- [ ] Method
+  - [ ] Method descriptor type check
+  - [ ] Method stack frame analysis
+  - [ ] `crate::asm::generate::Instruction` based opcode generate functions
 
 ### See also
 
