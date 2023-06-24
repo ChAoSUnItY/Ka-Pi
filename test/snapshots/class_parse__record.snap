@@ -1,5 +1,5 @@
 ---
-source: test/compile_class_file.rs
+source: test/class_parse.rs
 expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/Record.class\"))?"
 ---
 java_version: V17

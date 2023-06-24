@@ -16,8 +16,8 @@ name = "ka_pi"
 path = "src/lib.rs"
 
 [[test]]
-name = "compile_class_file"
-path = "test/compile_class_file.rs"
+name = "class_parse"
+path = "test/class_parse.rs"
 
 [[test]]
 name = "class_writer"

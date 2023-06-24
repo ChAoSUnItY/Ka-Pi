@@ -1,6 +1,0 @@
----
-source: src/asm/signature.rs
-expression: writer.to_string()
----
-Ljava/lang/String;
-
