@@ -1,5 +1,5 @@
 ---
-source: src/asm/node/signature.rs
+source: test/signature_parse.rs
 expression: field_signature
 ---
 Field:

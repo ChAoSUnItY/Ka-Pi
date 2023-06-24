@@ -1,12 +1,12 @@
 pub mod annotation;
-pub mod byte_vec;
+pub(crate) mod attribute;
+pub mod bytes;
 pub mod class;
 pub mod constant_value;
 pub mod field;
 pub mod handle;
 pub mod label;
 pub mod method;
-pub mod module;
 pub mod opcode;
 pub mod record;
 pub mod signature;

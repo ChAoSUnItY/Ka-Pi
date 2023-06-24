@@ -1,9 +1,7 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
-use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
-use crate::asm::generate::field::{FieldVisitor, FieldWriter};
-use crate::asm::generate::method::{MethodVisitor, MethodWriter};
+use crate::asm::generate::bytes::ByteVecGen;
+use crate::asm::generate::bytes::{ByteVec, ByteVecImpl};
+use crate::asm::generate::field::FieldWriter;
+use crate::asm::generate::method::MethodWriter;
 use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::node::access_flag::{
     AccessFlags, ClassAccessFlag, FieldAccessFlag, MethodAccessFlag,
@@ -16,49 +14,21 @@ use crate::asm::node::constant::{
 };
 use crate::error::KapiResult;
 
-pub trait ClassVisitor {
-    type Output;
-    type MethodVisitor: MethodVisitor + Sized;
-    type FieldVisitor: FieldVisitor + Sized;
-
-    fn visit_method<F>(
-        &mut self,
-        access_flags: F,
-        name: &str,
-        descriptor: &str,
-    ) -> KapiResult<Self::MethodVisitor>
-    where
-        F: IntoIterator<Item = MethodAccessFlag>;
-
-    fn visit_field<F>(
-        &mut self,
-        access_flags: F,
-        name: &str,
-        descriptor: &str,
-    ) -> KapiResult<Self::FieldVisitor>
-    where
-        F: IntoIterator<Item = FieldAccessFlag>;
-
-    fn visit_end(self) -> Self::Output;
-}
-
 pub struct ClassWriter {
-    byte_vec: Rc<RefCell<ByteVecImpl>>,
-    symbol_table: Rc<RefCell<SymbolTable>>,
     version: JavaVersion,
     access_flags: Vec<ClassAccessFlag>,
-    this_class_index: u16,
-    super_class_index: u16,
-    interface_indices: Vec<u16>,
-    fields: Vec<Rc<RefCell<ByteVecImpl>>>,
-    methods: Vec<Rc<RefCell<ByteVecImpl>>>,
+    this_class: String,
+    super_class: String,
+    interfaces: Vec<String>,
+    field_writers: Vec<FieldWriter>,
+    method_writers: Vec<MethodWriter>,
 }
 
 impl ClassWriter {
-    pub fn new_class_writer<F, I>(
+    pub fn new<F, I>(
         version: JavaVersion,
         access_flags: F,
-        class_name: &str,
+        this_class: &str,
         super_class: &str,
         interfaces: I,
     ) -> Self
@@ -66,97 +36,88 @@ impl ClassWriter {
         F: IntoIterator<Item = ClassAccessFlag>,
         I: IntoIterator<Item = String>,
     {
-        let mut symbol_table = SymbolTable::default();
-
-        let this_class_index = symbol_table.add_class(class_name);
-        let super_class_index = symbol_table.add_class(super_class);
-        let interface_indices = interfaces
-            .into_iter()
-            .map(|interface| symbol_table.add_class(&interface))
-            .collect::<Vec<_>>();
-
         Self {
-            byte_vec: Rc::new(RefCell::new(ByteVecImpl::new())),
-            symbol_table: Rc::new(RefCell::new(symbol_table)),
             version,
             access_flags: access_flags.into_iter().collect(),
-            this_class_index,
-            super_class_index,
-            interface_indices,
-            fields: Vec::new(),
-            methods: Vec::new(),
+            this_class: this_class.to_string(),
+            super_class: super_class.to_string(),
+            interfaces: interfaces.into_iter().collect(),
+            field_writers: vec![],
+            method_writers: vec![],
         }
     }
-}
 
-impl ClassVisitor for ClassWriter {
-    type Output = Vec<u8>;
-    type MethodVisitor = MethodWriter;
-    type FieldVisitor = FieldWriter;
-
-    fn visit_method<F>(
+    pub fn write_method<F>(
         &mut self,
         access_flags: F,
         name: &str,
         descriptor: &str,
-    ) -> KapiResult<Self::MethodVisitor>
+        generation: impl FnOnce(MethodWriter) -> KapiResult<MethodWriter>,
+    ) -> KapiResult<()>
     where
         F: IntoIterator<Item = MethodAccessFlag>,
     {
-        let method_byte_vec = Rc::new(RefCell::new(ByteVecImpl::with_capacity(8)));
-
-        self.methods.push(method_byte_vec.clone());
-
-        MethodWriter::new(
+        let method_writer = generation(MethodWriter::new(
             &self.version,
-            &method_byte_vec,
-            &self.symbol_table,
             access_flags,
             name,
             descriptor,
-        )
+        )?)?;
+
+        self.method_writers.push(method_writer);
+
+        Ok(())
     }
 
-    fn visit_field<F>(
+    pub fn append_method(&mut self, method_writer: MethodWriter) {
+        self.method_writers.push(method_writer);
+    }
+
+    pub fn write_field<F>(
         &mut self,
         access_flags: F,
         name: &str,
         descriptor: &str,
-    ) -> KapiResult<Self::FieldVisitor>
+        generation: impl FnOnce(FieldWriter) -> KapiResult<FieldWriter>,
+    ) -> KapiResult<()>
     where
         F: IntoIterator<Item = FieldAccessFlag>,
     {
-        let field_byte_vec = Rc::new(RefCell::new(ByteVecImpl::with_capacity(8)));
+        let field_writer = generation(FieldWriter::new(access_flags, name, descriptor)?)?;
 
-        self.fields.push(field_byte_vec.clone());
+        self.field_writers.push(field_writer);
 
-        FieldWriter::new(
-            &field_byte_vec,
-            &self.symbol_table,
-            access_flags,
-            name,
-            descriptor,
-        )
+        Ok(())
     }
 
-    fn visit_end(self) -> Self::Output {
-        let Self {
-            byte_vec,
-            symbol_table,
-            version,
-            access_flags,
-            this_class_index,
-            super_class_index,
-            interface_indices,
-            fields,
-            methods,
-        } = self;
+    pub fn append_field(&mut self, field_writer: FieldWriter) {
+        self.field_writers.push(field_writer);
+    }
 
-        let mut byte_vec = byte_vec.borrow_mut();
-        let mut symbol_table = symbol_table.borrow_mut();
+    pub fn write_output(self) -> KapiResult<ByteVecImpl> {
+        let mut byte_vec = ByteVecImpl::new();
+        let mut symbol_table = SymbolTable::default();
+        let mut field_byte_vec = ByteVecImpl::new();
+        let mut method_byte_vec = ByteVecImpl::new();
+
+        for field_writer in &self.field_writers {
+            field_writer.put(&mut field_byte_vec, &mut symbol_table)?;
+        }
+
+        for method_writer in &self.method_writers {
+            method_writer.put(&mut method_byte_vec, &mut symbol_table)?;
+        }
+
+        let this_class_index = symbol_table.add_class(&self.this_class);
+        let super_class_index = symbol_table.add_class(&self.super_class);
+        let interface_indices = self
+            .interfaces
+            .iter()
+            .map(|interface| symbol_table.add_class(interface))
+            .collect::<Vec<_>>();
 
         byte_vec.put_u8s(&[0xCA, 0xFE, 0xBA, 0xBE]); // magic number
-        byte_vec.put_u8s(&(version as u32).to_be_bytes()); // major version, minor version
+        byte_vec.put_u8s(&(self.version as u32).to_be_bytes()); // major version, minor version
 
         byte_vec.put_be(symbol_table.constants.len() as u16 + 1); // constant pool length
         for constant in &symbol_table.constants {
@@ -217,7 +178,8 @@ impl ClassVisitor for ClassWriter {
                     byte_vec.put_be(*name_index);
                     byte_vec.put_be(*type_index);
                 }
-                Constant::Utf8(Utf8 { length: _, bytes }) => {
+                Constant::Utf8(Utf8 { length, bytes }) => {
+                    byte_vec.put_be(*length);
                     byte_vec.put_u8s(bytes);
                 }
                 Constant::MethodHandle(MethodHandle {
@@ -255,7 +217,7 @@ impl ClassVisitor for ClassWriter {
             }
         }
 
-        byte_vec.put_be(access_flags.fold_flags()); // access flags
+        byte_vec.put_be(self.access_flags.fold_flags()); // access flags
         byte_vec.put_be(this_class_index); // this class
         byte_vec.put_be(super_class_index); // super class
         byte_vec.put_be(interface_indices.len() as u16); // interfaces length
@@ -264,19 +226,86 @@ impl ClassVisitor for ClassWriter {
             byte_vec.put_be(interface_index);
         }
 
-        byte_vec.put_be(fields.len() as u16); // fields length
-        for field_segment in fields {
-            byte_vec.put_u8s(&field_segment.borrow()[..]);
-        }
+        byte_vec.put_be(self.field_writers.len() as u16); // fields length
+        byte_vec.put_u8s(&field_byte_vec);
 
-        byte_vec.put_be(methods.len() as u16); // methods length
-        for method_segment in methods {
-            byte_vec.put_u8s(&method_segment.borrow()[..]);
-        }
+        byte_vec.put_be(self.method_writers.len() as u16); // methods length
+        byte_vec.put_u8s(&method_byte_vec);
 
         byte_vec.put_be(symbol_table.attributes.len() as u16); // attributes length
                                                                // TODO: implement attributes
 
-        byte_vec.clone()
+        Ok(byte_vec)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::asm::generate::class::ClassWriter;
+    use crate::asm::generate::field::FieldWriter;
+    use crate::asm::generate::method::MethodWriter;
+    use crate::asm::node::access_flag::{ClassAccessFlag, FieldAccessFlag, MethodAccessFlag};
+    use crate::asm::node::class::JavaVersion;
+    use crate::error::KapiResult;
+
+    #[test]
+    fn test_class_writer_write_1_method_1_field() -> KapiResult<()> {
+        let mut class_writer = ClassWriter::new(
+            JavaVersion::V17,
+            vec![ClassAccessFlag::Super, ClassAccessFlag::Public],
+            "Main",
+            "java/lang/Object",
+            vec![],
+        );
+
+        class_writer.write_field(
+            vec![FieldAccessFlag::Public, FieldAccessFlag::Static],
+            "field",
+            "Z",
+            |field| Ok(field),
+        )?;
+        class_writer.write_method(
+            vec![MethodAccessFlag::Public, MethodAccessFlag::Static],
+            "method",
+            "()Z",
+            |method| Ok(method),
+        )?;
+
+        let bytes = class_writer.write_output()?;
+
+        assert!(!bytes.is_empty());
+
+        Ok(())
+    }
+
+    fn test_class_writer_append_1_method_1_field() -> KapiResult<()> {
+        let mut class_writer = ClassWriter::new(
+            JavaVersion::V17,
+            vec![ClassAccessFlag::Super, ClassAccessFlag::Public],
+            "Main",
+            "java/lang/Object",
+            vec![],
+        );
+
+        let field_writer = FieldWriter::new(
+            vec![FieldAccessFlag::Public, FieldAccessFlag::Static],
+            "field",
+            "Z",
+        )?;
+        class_writer.append_field(field_writer);
+
+        let method_writer = MethodWriter::new(
+            &JavaVersion::V17,
+            vec![MethodAccessFlag::Public, MethodAccessFlag::Static],
+            "method",
+            "()Z",
+        )?;
+        class_writer.append_method(method_writer);
+
+        let bytes = class_writer.write_output()?;
+
+        assert!(!bytes.is_empty());
+
+        Ok(())
     }
 }

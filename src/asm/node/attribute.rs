@@ -145,23 +145,6 @@ impl Attribute {
             Attribute::PermittedSubclasses(..) => PERMITTED_SUBCLASSES,
         }
     }
-
-    // TODO: Make it a trait function
-    #[cfg(feature = "generate")]
-    pub(crate) fn put_u8s(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) {
-        let name_index = symbol_table.add_utf8(self.name());
-        byte_vec.put_be(name_index);
-
-        match self {
-            Attribute::ConstantValue(ConstantValue {
-                constant_value_index,
-            }) => {
-                byte_vec.put_be(2u32);
-                byte_vec.put_be(*constant_value_index);
-            }
-            _ => {}
-        }
-    }
 }
 
 impl ConstantRearrangeable for Attribute {

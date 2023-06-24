@@ -1,7 +1,5 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
-use crate::asm::generate::byte_vec::{ByteVec, ByteVecImpl};
+use crate::asm::generate::bytes::ByteVecGen;
+use crate::asm::generate::bytes::{ByteVec, ByteVecImpl};
 use crate::asm::generate::constant_value::ConstantValue;
 use crate::asm::generate::symbol::SymbolTable;
 use crate::asm::generate::types::Type;
@@ -9,20 +7,9 @@ use crate::asm::node::access_flag::{AccessFlags, FieldAccessFlag};
 use crate::asm::node::attribute::Attribute;
 use crate::error::{KapiError, KapiResult};
 
-#[allow(unused_variables)]
-pub trait FieldVisitor {
-    fn visit_constant<CV>(&mut self, constant_value: CV) -> KapiResult<()>
-    where
-        CV: Into<ConstantValue>;
-
-    fn visit_end(&mut self) {}
-}
-
 pub struct FieldWriter {
     // Internal writing buffers
-    byte_vec: Rc<RefCell<ByteVecImpl>>,
-    symbol_table: Rc<RefCell<SymbolTable>>,
-    field_symbol_table: SymbolTable,
+    symbol_table: SymbolTable,
     // Class file format defined fields
     access_flags: Vec<FieldAccessFlag>,
     name_index: u16,
@@ -32,40 +19,31 @@ pub struct FieldWriter {
 }
 
 impl FieldWriter {
-    pub(crate) fn new<F>(
-        byte_vec: &Rc<RefCell<ByteVecImpl>>,
-        symbol_table: &Rc<RefCell<SymbolTable>>,
-        access_flags: F,
-        name: &str,
-        descriptor: &str,
-    ) -> KapiResult<Self>
+    pub(crate) fn new<F>(access_flags: F, name: &str, descriptor: &str) -> KapiResult<Self>
     where
         F: IntoIterator<Item = FieldAccessFlag>,
     {
-        let name_index = symbol_table.borrow_mut().add_utf8(name);
-        let descriptor_index = symbol_table.borrow_mut().add_utf8(descriptor);
+        let mut symbol_table = SymbolTable::default();
+        let name_index = symbol_table.add_utf8(name);
+        let descriptor_index = symbol_table.add_utf8(descriptor);
 
         Ok(Self {
-            byte_vec: byte_vec.clone(),
-            symbol_table: symbol_table.clone(),
-            field_symbol_table: SymbolTable::default(),
+            symbol_table,
             access_flags: access_flags.into_iter().collect(),
             name_index,
             descriptor_index,
             expected_field_type: Type::from_descriptor_no_void(descriptor)?,
         })
     }
-}
 
-impl FieldVisitor for FieldWriter {
-    fn visit_constant<CV>(&mut self, constant_value: CV) -> KapiResult<()>
+    pub fn write_constant<CV>(&mut self, constant_value: CV) -> KapiResult<()>
     where
         CV: Into<ConstantValue>,
     {
         let constant_value = constant_value.into();
 
         // Check constant value is consist with give descriptor
-        let symbol_table = self.symbol_table.borrow();
+        let symbol_table = &mut self.symbol_table;
         let descriptor = symbol_table.get_utf8(self.descriptor_index).unwrap();
 
         match &self.expected_field_type {
@@ -129,42 +107,30 @@ impl FieldVisitor for FieldWriter {
             }
         }
 
-        self.field_symbol_table
-            .add_constant_attribute(constant_value);
+        symbol_table.add_constant_attribute(constant_value);
 
         Ok(())
     }
+}
 
-    fn visit_end(&mut self) {
-        let Self {
-            byte_vec,
-            symbol_table,
-            field_symbol_table,
-            access_flags,
-            name_index,
-            descriptor_index,
-            expected_field_type: _,
-        } = self;
+impl ByteVecGen for FieldWriter {
+    fn put(&self, byte_vec: &mut ByteVecImpl, symbol_table: &mut SymbolTable) -> KapiResult<()> {
+        let rearrangements = symbol_table.merge(&self.symbol_table)?;
+        let name_index = rearrangements
+            .get(&self.name_index)
+            .unwrap_or(&self.name_index);
+        let descriptor_index = rearrangements
+            .get(&self.descriptor_index)
+            .unwrap_or(&self.descriptor_index);
 
-        let mut byte_vec = byte_vec.borrow_mut();
-        let mut symbol_table = symbol_table.borrow_mut();
-        let rearrangements = symbol_table.merge(field_symbol_table);
-
-        if let Some(new_name_index) = rearrangements.get(name_index) {
-            *name_index = *new_name_index;
-        }
-
-        if let Some(new_descriptor_index) = rearrangements.get(descriptor_index) {
-            *descriptor_index = *new_descriptor_index;
-        }
-
-        let field_attributes = field_symbol_table
+        let field_attributes = self
+            .symbol_table
             .attributes
             .iter()
             .filter(|attr| {
                 matches!(
                     attr,
-                    Attribute::ConstantValue { .. }
+                    Attribute::ConstantValue(..)
                         | Attribute::Synthetic
                         | Attribute::Deprecate
                         | Attribute::Signature { .. }
@@ -172,13 +138,15 @@ impl FieldVisitor for FieldWriter {
             })
             .collect::<Vec<_>>();
 
-        byte_vec.put_be(access_flags.fold_flags()); // access flags
-        byte_vec.put_be(*name_index); // name index
-        byte_vec.put_be(*descriptor_index); // descriptor index
-        byte_vec.put_be(field_attributes.len() as u16); // attribute length
+        byte_vec.put_be(self.access_flags.fold_flags());
+        byte_vec.put_be(*name_index);
+        byte_vec.put_be(*descriptor_index);
 
+        byte_vec.put_be(field_attributes.len() as u16);
         for attribute in field_attributes {
-            attribute.put_u8s(&mut *byte_vec, &mut *symbol_table);
+            attribute.put(byte_vec, symbol_table)?;
         }
+
+        Ok(())
     }
 }
