@@ -1,2 +1,1 @@
-pub trait MethodVisitor {
-}
+pub trait MethodVisitor {}

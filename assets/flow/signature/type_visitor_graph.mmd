@@ -1,5 +1,5 @@
 flowchart
-    A0[(Start Visit)]
+    A0[(Entry Point)]
     A1[visit_base_type]
     A2[visit_class_type]
     A3[visit_array_type]
@@ -18,7 +18,6 @@ flowchart
 
     A3 --> A2
     A3 --> A1
-    A3 --> A3
 
     A2 --> B0
     B0 --> B1

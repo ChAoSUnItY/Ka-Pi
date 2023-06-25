@@ -1,3 +1,1 @@
-pub trait ConstantVisitor {
-    
-}
+pub trait ConstantVisitor {}
