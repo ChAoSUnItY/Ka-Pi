@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::asm::visitor::signature::{FormalTypeParameterVisitor, SignatureVisitor, TypeVisitor};
+use crate::asm::visitor::signature::{
+    ClassSignatureVisitor, FieldSignatureVisitor, FormalTypeParameterVisitor,
+    MethodSignatureVisitor, SignatureVisitor, TypeVisitor,
+};
 use crate::asm::visitor::Visitable;
 use crate::error::{KapiError, KapiResult};
 
@@ -25,11 +28,24 @@ pub enum Signature {
     },
 }
 
-impl<TV, FTPV, SV> Visitable<SV> for Signature
+impl<SCTV, ITV, FTV, PTV, RTV, ETV, FTPV, SV> Visitable<SV> for Signature
 where
-    TV: TypeVisitor,
+    SCTV: TypeVisitor,
+    ITV: TypeVisitor,
+    FTV: TypeVisitor,
+    PTV: TypeVisitor,
+    RTV: TypeVisitor,
+    ETV: TypeVisitor,
     FTPV: FormalTypeParameterVisitor,
-    SV: SignatureVisitor<TV = TV, FTPV = FTPV>,
+    SV: SignatureVisitor<
+        SCTV = SCTV,
+        ITV = ITV,
+        FTV = FTV,
+        PTV = PTV,
+        RTV = RTV,
+        ETV = ETV,
+        FTPV = FTPV,
+    >,
 {
     fn visit(&mut self, visitor: &mut SV) {
         match self {
@@ -38,21 +54,31 @@ where
                 super_class,
                 interfaces,
             } => {
+                visitor.visit_formal_type_parameters(formal_type_parameters);
+
                 for formal_type_parameter in formal_type_parameters {
-                    let mut formal_type_parameter_visitor = visitor
-                        .visit_formal_type_parameter(&mut formal_type_parameter.parameter_name);
+                    let mut formal_type_parameter_visitor =
+                        visitor.visit_formal_type_parameter(formal_type_parameter);
 
                     formal_type_parameter.visit(&mut formal_type_parameter_visitor);
                 }
 
-                super_class.visit(&mut visitor.visit_super_class());
+                let mut super_class_visitor = visitor.visit_super_class(super_class);
+
+                super_class.visit(&mut super_class_visitor);
+
+                visitor.visit_interfaces(interfaces);
 
                 for interface in interfaces {
-                    interface.visit(&mut visitor.visit_interface());
+                    let mut interface_type_visitor = visitor.visit_interface(interface);
+
+                    interface.visit(&mut interface_type_visitor);
                 }
             }
             Signature::Field { field_type } => {
-                field_type.visit(&mut visitor.visit_field_type());
+                let mut field_type_visitor = visitor.visit_field_type(field_type);
+
+                field_type.visit(&mut field_type_visitor);
             }
             Signature::Method {
                 formal_type_parameters,
@@ -60,27 +86,38 @@ where
                 return_type,
                 exception_types,
             } => {
+                visitor.visit_formal_type_parameters(formal_type_parameters);
+
                 for formal_type_parameter in formal_type_parameters {
-                    let mut formal_type_parameter_visitor = visitor
-                        .visit_formal_type_parameter(&mut formal_type_parameter.parameter_name);
+                    let mut formal_type_parameter_visitor =
+                        visitor.visit_formal_type_parameter(formal_type_parameter);
 
                     formal_type_parameter.visit(&mut formal_type_parameter_visitor);
                 }
 
+                visitor.visit_parameter_types(parameter_types);
+
                 for parameter_type in parameter_types {
-                    parameter_type.visit(&mut visitor.visit_parameter_type());
+                    let mut parameter_type_visitor = visitor.visit_parameter_type(parameter_type);
+
+                    parameter_type.visit(&mut parameter_type_visitor);
                 }
 
-                return_type.visit(&mut visitor.visit_return_type());
+                let mut return_type_visitor = visitor.visit_return_type(return_type);
+
+                return_type.visit(&mut return_type_visitor);
+
+                visitor.visit_exception_types(exception_types);
 
                 for exception_type in exception_types {
-                    exception_type.visit(&mut visitor.visit_exception_type());
+                    let mut exception_type_visitor = visitor.visit_exception_type(exception_type);
+
+                    exception_type.visit(&mut exception_type_visitor);
                 }
             }
         }
     }
 }
-
 /// Data representation of formal type parameter in signatures.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FormalTypeParameter {
@@ -89,18 +126,25 @@ pub struct FormalTypeParameter {
     pub interface_bounds: Vec<ClassType>,
 }
 
-impl<TV, FTPV> Visitable<FTPV> for FormalTypeParameter
+impl<CBTV, IBTV, FTPV> Visitable<FTPV> for FormalTypeParameter
 where
-    TV: TypeVisitor,
-    FTPV: FormalTypeParameterVisitor<TV = TV>,
+    CBTV: TypeVisitor,
+    IBTV: TypeVisitor,
+    FTPV: FormalTypeParameterVisitor<CBTV = CBTV, IBTV = IBTV>,
 {
     fn visit(&mut self, visitor: &mut FTPV) {
         if let Some(class_bound) = &mut self.class_bound {
-            class_bound.visit(&mut visitor.visit_class_bound());
+            let mut class_bound_type_visitor = visitor.visit_class_bound(class_bound);
+
+            class_bound.visit(&mut class_bound_type_visitor);
         }
 
+        visitor.visit_interface_bounds(&mut self.interface_bounds);
+
         for interface_bound in &mut self.interface_bounds {
-            interface_bound.visit(&mut visitor.visit_interface_bound());
+            let mut interface_bound_type_visitor = visitor.visit_interface_bound(interface_bound);
+
+            interface_bound.visit(&mut interface_bound_type_visitor);
         }
     }
 }
@@ -119,12 +163,14 @@ where
     TV: TypeVisitor,
 {
     fn visit(&mut self, visitor: &mut TV) {
+        visitor.visit_type_argument(self);
+
         match self {
             TypeArgument::Bounded {
                 wildcard_indicator,
                 bounded_type,
             } => {
-                visitor.visit_type_argument_bounded(wildcard_indicator);
+                visitor.visit_type_argument_bounded(wildcard_indicator, bounded_type);
 
                 bounded_type.visit(visitor);
             }
@@ -252,7 +298,13 @@ where
     fn visit(&mut self, visitor: &mut TV) {
         match self {
             ReferenceType::Array(inner_type) => {
-                visitor.visit_array_type();
+                visitor.visit_array_type(inner_type);
+
+                let mut inner_type = inner_type.0.as_mut();
+
+                while let SignatureType::ReferenceType(ReferenceType::Array(typ)) = inner_type {
+                    inner_type = typ.0.as_mut();
+                }
 
                 inner_type.visit(visitor);
             }
@@ -291,11 +343,13 @@ where
     TV: TypeVisitor,
 {
     fn visit(&mut self, visitor: &mut TV) {
-        visitor.visit_class_type(&mut self.package_path, &mut self.class_name);
+        visitor.visit_class_type(self);
 
         for type_argument in &mut self.type_arguments {
             type_argument.visit(visitor);
         }
+
+        visitor.visit_inner_class_types(&mut self.inner_classes);
 
         for (inner_class_name, type_arguments) in &mut self.inner_classes {
             visitor.visit_inner_class_type(inner_class_name);

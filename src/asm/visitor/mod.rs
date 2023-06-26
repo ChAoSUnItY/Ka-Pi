@@ -1,4 +1,5 @@
 pub mod class;
+pub mod constant;
 pub mod field;
 pub mod method;
 pub mod module;
