@@ -3,48 +3,53 @@ flowchart
         SV_A0[(Entry Point)]
     end
     
-    subgraph ClassSignatureVisitor
-        CSV_A1{{FormalTypeParameterVisitable}}
-        CSV_A3[visit_super_class]
-        CSV_A4[visit_interfaces]
-        CSV_A5[visit_interface]
+    subgraph SignatureVisitors[" "]
+        subgraph FormalTypeParameterVisitable
+            FTPV0_A1[visit_formal_types]
+            FTPV0_A2[visit_formal_type]
+            
+            CSV_A1 & MV_A1 --> FTPV0_A1
+            FTPV0_A1 --> FTPV0_A2
 
-        SV_A0 -->|Signature::Class| CSV_A1 --> CSV_A3 --> CSV_A4 --> CSV_A5
-    end
-    
-    subgraph FieldSignatureVisitor
-        FSV_A1[visit_field_type]
+            subgraph FormalTypeParameterVisitor
+                FTPV_A1[visit_class_bound]
+                FTPV_A2[visit_interface_bounds]
+                FTPV_A3[visit_interface_bound]
+                
+                FTPV0_A2 --> FTPV_A1
+                FTPV_A1 --> FTPV_A2
+                FTPV_A2 --> FTPV_A3
+            end
+            
+            subgraph ClassSignatureVisitor
+                CSV_A1{{FormalTypeParameterVisitable}}
+                CSV_A3[visit_super_class]
+                CSV_A4[visit_interfaces]
+                CSV_A5[visit_interface]
+                
+                SV_A0 -->|Signature::Class| CSV_A1 --> CSV_A3 --> CSV_A4 --> CSV_A5
+            end
 
-        SV_A0 -->|Signature::Field| FSV_A1
-    end
-    
-    subgraph MethodVisitor
-        MV_A1{{FormalTypeParameterVisitable}}
-        MV_A3[visit_parameter_types]
-        MV_A4[visit_parameter_type]
-        MV_A5[visit_return_type]
-        MV_A6[visit_exception_types]
-        MV_A7[visit_exception_type]
+            subgraph MethodVisitor
+                MV_A1{{FormalTypeParameterVisitable}}
+                MV_A3[visit_parameter_types]
+                MV_A4[visit_parameter_type]
+                MV_A5[visit_return_type]
+                MV_A6[visit_exception_types]
+                MV_A7[visit_exception_type]
+                
+                SV_A0 -->|Signature::Method| MV_A1 --> MV_A3 --> MV_A4 --> MV_A5 --> MV_A6 --> MV_A7
+            end
+        end
+        
 
-        SV_A0 -->|Signature::Method| MV_A1 --> MV_A3 --> MV_A4 --> MV_A5 --> MV_A6 --> MV_A7
-    end
-    
-    subgraph FormalTypeParameterVisitable
-        FTPV0_A1[visit_formal_types]
-        FTPV0_A2[visit_formal_type]
+        subgraph FieldSignatureVisitor
+            FSV_A1[visit_field_type]
 
-        CSV_A1 & MV_A1 --> FTPV0_A1
-        FTPV0_A1 --> FTPV0_A2
-    end
-    
-    subgraph FormalTypeParameterVisitor
-        FTPV_A1[visit_class_bound]
-        FTPV_A2[visit_interface_bounds]
-        FTPV_A3[visit_interface_bound]
+            SV_A0 -->|Signature::Field| FSV_A1
+        end
 
-        FTPV0_A2 --> FTPV_A1
-        FTPV_A1 --> FTPV_A2
-        FTPV_A2 --> FTPV_A3
+
     end
     
     subgraph TypeVisitor
@@ -85,12 +90,12 @@ flowchart
 
         TV_A2 --> TV_B0
         TV_B0 --> TV_B1
-        TV_B1 --> TV_B2
         TV_B1 --> TV_B3
+        TV_B1 --> TV_B2
         TV_B2 --> TV_A3 & TV_TYP_TYP_VAR
 
         TV_A2 --> TV_C0
         TV_C0 --> TV_C1
         TV_C1 --> TV_B0
-        TV_C1 --> TV_C0
+        TV_C1 --> TV_C1
     end
