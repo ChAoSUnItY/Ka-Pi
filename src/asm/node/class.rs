@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 use crate::asm::node::access_flag::ClassAccessFlag;
 use crate::asm::node::attribute::AttributeInfo;
@@ -8,6 +9,11 @@ use crate::asm::node::constant::{Constant, ConstantPool};
 use crate::asm::node::field::Field;
 use crate::asm::node::method::Method;
 use crate::asm::node::ConstantRearrangeable;
+use crate::asm::visitor::class::ClassVisitor;
+use crate::asm::visitor::constant::ConstantVisitor;
+use crate::asm::visitor::field::FieldVisitor;
+use crate::asm::visitor::method::MethodVisitor;
+use crate::asm::visitor::Visitable;
 use crate::error::KapiResult;
 
 /// Represents a class file.
@@ -41,6 +47,14 @@ impl Class {
         }
     }
 
+    pub fn this_class_mut(&mut self) -> Option<&mut crate::asm::node::constant::Class> {
+        if let Some(Constant::Class(class)) = self.constant_pool.get_mut(self.this_class) {
+            Some(class)
+        } else {
+            None
+        }
+    }
+
     /// Get super class from constant pool.
     pub fn super_class(&self) -> Option<&crate::asm::node::constant::Class> {
         if let Some(Constant::Class(class)) = self.constant_pool.get(self.super_class) {
@@ -50,13 +64,34 @@ impl Class {
         }
     }
 
+    /// Get super class from constant pool.
+    pub fn super_class_mut(&mut self) -> Option<&mut crate::asm::node::constant::Class> {
+        if let Some(Constant::Class(class)) = self.constant_pool.get_mut(self.super_class) {
+            Some(class)
+        } else {
+            None
+        }
+    }
+
     /// Get interface from constant pool at given index.
-    pub fn interface(&self, index: usize) -> Option<&crate::asm::node::constant::Class> {
+    pub fn interface(&self, index: u16) -> Option<&crate::asm::node::constant::Class> {
         if let Some(Constant::Class(class)) = self
             .interfaces
-            .get(index)
-            .map(|interface_index| self.constant_pool.get(*interface_index))
-            .flatten()
+            .get(index as usize)
+            .and_then(|interface_index| self.constant_pool.get(*interface_index))
+        {
+            Some(class)
+        } else {
+            None
+        }
+    }
+
+    /// Get interface from constant pool at given index.
+    pub fn interface_mut(&mut self, index: u16) -> Option<&mut crate::asm::node::constant::Class> {
+        if let Some(Constant::Class(class)) = self
+            .interfaces
+            .get(index as usize)
+            .and_then(|interface_index| self.constant_pool.get_mut(*interface_index))
         {
             Some(class)
         } else {
@@ -89,6 +124,99 @@ impl ConstantRearrangeable for Class {
         }
 
         Ok(())
+    }
+}
+
+impl<CPV, TCCV, SCCV, ICV, MV, FV, CV> Visitable<CV> for Class
+where
+    CPV: ConstantVisitor,
+    TCCV: ConstantVisitor,
+    SCCV: ConstantVisitor,
+    ICV: ConstantVisitor,
+    MV: MethodVisitor,
+    FV: FieldVisitor,
+    CV: ClassVisitor<CPV = CPV, TCCV = TCCV, SCCV = SCCV, ICV = ICV, MV = MV, FV = FV>,
+{
+    fn visit(&mut self, visitor: &mut CV) {
+        visitor.visit_version(&mut self.java_version);
+
+        visitor.visit_constant_pool(&self.constant_pool);
+
+        for (index, constant) in self.constant_pool.iter() {
+            visitor.visit_constant(index, constant);
+        }
+
+        visitor.visit_access_flags(&mut self.access_flags);
+
+        let mut this_class_visitor = visitor.visit_this_class();
+
+        if let Some(this_class) = self.this_class_mut() {
+            this_class.visit(&mut this_class_visitor)
+        }
+
+        let mut super_class_visitor = visitor.visit_super_class();
+
+        if let Some(super_class) = self.super_class_mut() {
+            super_class.visit(&mut super_class_visitor);
+        }
+
+        visitor.visit_interfaces(&self.interfaces);
+
+        if self.interfaces.len() != self.interfaces_count as usize {
+            self.interfaces_count = self.interfaces.len() as u16;
+        }
+
+        for index in 0..self.interfaces.len() {
+            let mut interface_visitor = visitor.visit_interface();
+
+            if let Some(interface_constant) = self.interface_mut(index as u16) {
+                interface_constant.visit(&mut interface_visitor);
+            }
+        }
+
+        visitor.visit_fields(&mut self.fields);
+
+        if self.fields.len() != self.fields_count as usize {
+            self.fields_count = self.fields.len() as u16;
+        }
+
+        for field in &mut self.fields {
+            let name = field
+                .name(&self.constant_pool)
+                .and_then(|utf8| utf8.string().ok());
+            let descriptor = field
+                .descriptor(&self.constant_pool)
+                .and_then(|utf8| utf8.string().ok());
+
+            if let (Some(name), Some(descriptor)) = (name, descriptor) {
+                let mut field_visitor =
+                    visitor.visit_field(&mut field.access_flags, &name, &descriptor);
+
+                field.visit(&mut field_visitor);
+            }
+        }
+
+        visitor.visit_methods(&mut self.methods);
+
+        if self.methods.len() != self.methods_count as usize {
+            self.methods_count = self.methods.len() as u16;
+        }
+
+        for method in &mut self.methods {
+            let name = method
+                .name(&self.constant_pool)
+                .and_then(|utf8| utf8.string().ok());
+            let descriptor = method
+                .descriptor(&self.constant_pool)
+                .and_then(|utf8| utf8.string().ok());
+
+            if let (Some(name), Some(descriptor)) = (name, descriptor) {
+                let mut method_visitor =
+                    visitor.visit_method(&mut method.access_flags, &name, &descriptor);
+
+                method.visit(&mut method_visitor);
+            }
+        }
     }
 }
 

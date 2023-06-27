@@ -125,6 +125,7 @@ pub trait SignatureVisitor:
 ///     
 ///     A0 --> A1 --> A2 --> A3 --> A4 --> A5
 /// ```
+#[allow(unused_variables)]
 pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     /// Type visitor for super class visiting.
     type SCTV: TypeVisitor;
@@ -143,7 +144,6 @@ pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     /// super type.
     fn visit_super_class(&mut self, super_class: &mut ClassType) -> Self::SCTV;
 
-    //noinspection RsLiveness
     /// Visits class signature's interface types.
     ///
     /// # Visit rule
@@ -204,6 +204,7 @@ pub trait FieldSignatureVisitor {
 ///     
 ///     A0 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
 /// ```
+#[allow(unused_variables)]
 pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     /// Type visitor for parameter types visiting.
     type PTV: TypeVisitor;
@@ -212,7 +213,6 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     /// Type visitor for exception type visiting.
     type ETV: TypeVisitor;
 
-    //noinspection RsLiveness
     /// Visits method signature's parameter types.
     ///
     /// # Visit rule
@@ -238,7 +238,6 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     /// [BaseType] `I`, then return type will be visited by [TypeVisitor] provided by [Self::RTV].
     fn visit_return_type(&mut self, return_type: &mut SignatureType) -> Self::RTV;
 
-    //noinspection RsLiveness
     /// Visits method signature's exception types.
     ///
     /// # Visit rule
@@ -270,11 +269,11 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
 ///     A0 --> A1
 ///     A1 --> A2
 /// ```
+#[allow(unused_variables)]
 pub trait FormalTypeParameterVisitable {
     /// Type visitor for formal type parameter visiting.
     type FTPV: FormalTypeParameterVisitor;
 
-    //noinspection RsLiveness
     /// Visits signature's formal type parameters.
     ///
     /// # Visit rule
@@ -316,6 +315,7 @@ pub trait FormalTypeParameterVisitable {
 ///     A0 --> A2
 ///     A2 --> A3
 /// ```
+#[allow(unused_variables)]
 pub trait FormalTypeParameterVisitor {
     /// Type visitor for class bound type visiting.
     type CBTV: TypeVisitor;
@@ -337,7 +337,6 @@ pub trait FormalTypeParameterVisitor {
     /// Consider formal type parameter `T:`, then [Self::visit_class_bound] will not be called.
     fn visit_class_bound(&mut self, class_bound_type: &mut ClassType) -> Self::CBTV;
 
-    //noinspection RsLiveness
     /// Visits formal type parameter's interface bounds.
     ///
     /// # Visit rule
