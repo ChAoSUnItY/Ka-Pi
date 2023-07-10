@@ -50,7 +50,7 @@ fn test_method_signature_with_generic() -> KapiResult<()> {
     Ok(())
 }
 
-// Visitor test
+// Visitor tests
 // Example usage of visitor: Remap specific type argument name.
 
 #[derive(Default)]

@@ -1,3 +1,4 @@
+#![cfg(feature = "generate")]
 use insta::assert_yaml_snapshot;
 
 use ka_pi::asm::generate::class::ClassWriter;
