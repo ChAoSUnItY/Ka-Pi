@@ -1,9 +1,10 @@
 use crate::asm::node::constant::{
-    Class, Constant, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef, InvokeDynamic,
-    Long, MethodHandle, MethodRef, MethodType, Module, NameAndType, Package, String, Utf8,
+    Class, Constant, ConstantPool, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef,
+    InvokeDynamic, Long, MethodHandle, MethodRef, MethodType, Module, NameAndType, Package, String,
+    Utf8,
 };
 
-/// A constant visitor used to visit constants in constant pool.
+/// A constant visitor used to visiting [constants](Constant) in [constant pool](ConstantPool).
 #[allow(unused_variables)]
 pub trait ConstantVisitor {
     /// Visits [Utf8] from [Constant::Utf8].
