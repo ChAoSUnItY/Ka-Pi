@@ -9,6 +9,7 @@ use crate::asm::visitor::field::FieldVisitor;
 use crate::asm::visitor::method::MethodVisitor;
 
 // TODO(ChAoSUnItY): Allow mutation on constant pool.
+// TODO(ChAoSUnItY): Implement inner class visitor.
 /// A visitor used to visiting [class](Class).
 #[allow(unused_variables)]
 pub trait ClassVisitor {
