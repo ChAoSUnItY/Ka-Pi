@@ -12,18 +12,17 @@ place in not only modern society, but also [computer science](https://en.wikiped
 
 Ka-Pi offers several essential modules relates to JVM ecosystem:
 
-- `asm`
-  - `node` - Bytecode structure definition module, used by most of other modules.
-  - `visitor` (WIP) - Builtin implementation of visitor pattern based on `node` module.
-  - `parse` - Bytecode parsing module used to resolve bytecode (or classfile) into structs.
-  - `generate` (WIP) - Bytecode generation module used to generate bytecode.
+- `node` - Bytecode structure definition module, used by most of other modules.
+- `visitor` (WIP) - Builtin implementation of visitor pattern based on `node` module.
+- `parse` - Bytecode parsing module used to resolve bytecode (or classfile) into structs.
+- `generate` (WIP) - Bytecode generation module used to generate bytecode.
 
 ### Basic usages
 
 #### Parse class file
 
 ```rust
-use ka_pi::asm::parse::read_class;
+use ka_pi::parse::read_class;
 use ka_pi::error::KapiResult;
 
 fn main() -> KapiResult<()> {
@@ -136,7 +135,7 @@ are implemented.
 - [ ] Method
   - [ ] Method descriptor type check
   - [ ] Method stack frame analysis
-  - [ ] `crate::asm::generate::Instruction` based opcode generate functions
+  - [ ] `crate::generate::Instruction` based opcode generate functions
 
 ### See also
 

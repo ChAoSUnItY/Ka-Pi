@@ -1,5 +1,5 @@
 ---
-source: test/class_parse.rs
+source: tests/class_parse.rs
 expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/Record.class\"))?"
 ---
 java_version: V17
@@ -2993,7 +2993,42 @@ attributes:
       - 40
       - 0
       - 0
-    attribute: ~
+    attribute:
+      Record:
+        components_count: 8
+        components:
+          - name_index: 11
+            descriptor_index: 12
+            attributes_count: 0
+            attributes: []
+          - name_index: 15
+            descriptor_index: 16
+            attributes_count: 0
+            attributes: []
+          - name_index: 19
+            descriptor_index: 20
+            attributes_count: 0
+            attributes: []
+          - name_index: 23
+            descriptor_index: 24
+            attributes_count: 0
+            attributes: []
+          - name_index: 27
+            descriptor_index: 28
+            attributes_count: 0
+            attributes: []
+          - name_index: 31
+            descriptor_index: 32
+            attributes_count: 0
+            attributes: []
+          - name_index: 35
+            descriptor_index: 36
+            attributes_count: 0
+            attributes: []
+          - name_index: 39
+            descriptor_index: 40
+            attributes_count: 0
+            attributes: []
   - attribute_name_index: 73
     attribute_len: 26
     info:

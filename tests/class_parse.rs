@@ -1,5 +1,5 @@
 use insta::assert_yaml_snapshot;
-use ka_pi::asm::parse::to_class;
+use ka_pi::parse::to_class;
 
 use ka_pi::error::KapiResult;
 

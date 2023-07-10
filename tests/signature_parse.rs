@@ -1,15 +1,15 @@
 use insta::assert_yaml_snapshot;
 
-use ka_pi::asm::node::signature::{
+use ka_pi::error::KapiResult;
+use ka_pi::node::signature::{
     ClassType, FormalTypeParameter, ReferenceType, SignatureType, ThrowsType,
 };
-use ka_pi::asm::parse::{parse_class_signature, parse_field_signature, parse_method_signature};
-use ka_pi::asm::visitor::signature::{
+use ka_pi::parse::{parse_class_signature, parse_field_signature, parse_method_signature};
+use ka_pi::visitor::signature::{
     ClassSignatureVisitor, FieldSignatureVisitor, FormalTypeParameterVisitable,
     FormalTypeParameterVisitor, MethodSignatureVisitor, SignatureVisitor, TypeVisitor,
 };
-use ka_pi::asm::visitor::Visitable;
-use ka_pi::error::KapiResult;
+use ka_pi::visitor::Visitable;
 
 #[test]
 fn test_class_signature_with_generic() -> KapiResult<()> {

@@ -1,5 +1,5 @@
 ---
-source: test/class_parse.rs
+source: tests/class_parse.rs
 expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/Enum.class\"))?"
 ---
 java_version: V17
@@ -945,7 +945,9 @@ methods:
         info:
           - 0
           - 49
-        attribute: ~
+        attribute:
+          Signature:
+            signature_index: 49
   - access_flags:
       - Private
       - Static
@@ -1295,7 +1297,9 @@ attributes:
     info:
       - 0
       - 51
-    attribute: ~
+    attribute:
+      Signature:
+        signature_index: 51
   - attribute_name_index: 52
     attribute_len: 2
     info:

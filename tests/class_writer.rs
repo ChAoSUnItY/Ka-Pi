@@ -1,11 +1,11 @@
 #![cfg(feature = "generate")]
 use insta::assert_yaml_snapshot;
 
-use ka_pi::asm::generate::class::ClassWriter;
-use ka_pi::asm::node::access_flag::{ClassAccessFlag, FieldAccessFlag, MethodAccessFlag};
-use ka_pi::asm::node::class::JavaVersion;
-use ka_pi::asm::parse::to_class;
 use ka_pi::error::KapiResult;
+use ka_pi::generate::class::ClassWriter;
+use ka_pi::node::access_flag::{ClassAccessFlag, FieldAccessFlag, MethodAccessFlag};
+use ka_pi::node::class::JavaVersion;
+use ka_pi::parse::to_class;
 
 #[test]
 fn validate_class_writer_output() -> KapiResult<()> {
