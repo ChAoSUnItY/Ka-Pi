@@ -6,6 +6,8 @@ use crate::asm::node::access_flag::MethodAccessFlag;
 use crate::asm::node::attribute::AttributeInfo;
 use crate::asm::node::constant::{Constant, ConstantPool, Utf8};
 use crate::asm::node::ConstantRearrangeable;
+use crate::asm::visitor::method::MethodVisitor;
+use crate::asm::visitor::Visitable;
 use crate::error::KapiResult;
 
 /// Represents a class method.
@@ -58,5 +60,14 @@ impl ConstantRearrangeable for Method {
         }
 
         Ok(())
+    }
+}
+
+impl<MV> Visitable<MV> for Method
+where
+    MV: MethodVisitor,
+{
+    fn visit(&mut self, visitor: &mut MV) {
+        // TODO: Implement with MethodVisitor here
     }
 }

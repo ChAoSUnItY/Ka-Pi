@@ -3,9 +3,11 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::asm::node::access_flag::FieldAccessFlag;
-use crate::asm::node::attribute::AttributeInfo;
+use crate::asm::node::attribute::{Attribute, AttributeInfo};
 use crate::asm::node::constant::{Constant, ConstantPool, Utf8};
 use crate::asm::node::ConstantRearrangeable;
+use crate::asm::visitor::field::FieldVisitor;
+use crate::asm::visitor::Visitable;
 use crate::error::KapiResult;
 
 /// Represents a class field.
@@ -58,5 +60,22 @@ impl ConstantRearrangeable for Field {
         }
 
         Ok(())
+    }
+}
+
+impl<FV> Visitable<FV> for Field
+where
+    FV: FieldVisitor,
+{
+    fn visit(&mut self, visitor: &mut FV) {
+        for attribute_info in &mut self.attribute_infos {
+            if let AttributeInfo {
+                attribute: Some(Attribute::ConstantValue(constant_value)),
+                ..
+            } = attribute_info
+            {
+                visitor.visit_constant(constant_value);
+            }
+        }
     }
 }

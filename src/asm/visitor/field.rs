@@ -1,6 +1,8 @@
-use crate::asm::node::attribute::ConstantValue;
-use crate::error::KapiResult;
+use crate::asm::node::attribute::{Attribute, ConstantValue};
+use crate::asm::node::field::Field;
 
+/// Visitor used to visiting [Field].
 pub trait FieldVisitor {
-    fn visit_constant(&mut self, constant_value: ConstantValue) -> KapiResult<()>;
+    /// Visits the [ConstantValue] from [Attribute::ConstantValue].
+    fn visit_constant(&mut self, constant_value: &mut ConstantValue);
 }

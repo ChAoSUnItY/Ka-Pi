@@ -13,48 +13,53 @@ use crate::asm::node::signature::{
 ///         SV_A0[(Entry Point)]
 ///     end
 ///     
-///     subgraph ClassSignatureVisitor
-///         CSV_A1{{FormalTypeParameterVisitable}}
-///         CSV_A3[visit_super_class]
-///         CSV_A4[visit_interfaces]
-///         CSV_A5[visit_interface]
+///     subgraph SignatureVisitors[" "]
+///         subgraph FormalTypeParameterVisitable
+///             FTPV0_A1[visit_formal_types]
+///             FTPV0_A2[visit_formal_type]
+///             
+///             CSV_A1 & MV_A1 --> FTPV0_A1
+///             FTPV0_A1 --> FTPV0_A2
 ///
-///         SV_A0 -->|Signature::Class| CSV_A1 --> CSV_A3 --> CSV_A4 --> CSV_A5
-///     end
-///     
-///     subgraph FieldSignatureVisitor
-///         FSV_A1[visit_field_type]
+///             subgraph FormalTypeParameterVisitor
+///                 FTPV_A1[visit_class_bound]
+///                 FTPV_A2[visit_interface_bounds]
+///                 FTPV_A3[visit_interface_bound]
+///                 
+///                 FTPV0_A2 --> FTPV_A1
+///                 FTPV_A1 --> FTPV_A2
+///                 FTPV_A2 --> FTPV_A3
+///             end
+///             
+///             subgraph ClassSignatureVisitor
+///                 CSV_A1{{FormalTypeParameterVisitable}}
+///                 CSV_A3[visit_super_class]
+///                 CSV_A4[visit_interfaces]
+///                 CSV_A5[visit_interface]
+///                 
+///                 SV_A0 -->|Signature::Class| CSV_A1 --> CSV_A3 --> CSV_A4 --> CSV_A5
+///             end
 ///
-///         SV_A0 -->|Signature::Field| FSV_A1
-///     end
-///     
-///     subgraph MethodVisitor
-///         MV_A1{{FormalTypeParameterVisitable}}
-///         MV_A3[visit_parameter_types]
-///         MV_A4[visit_parameter_type]
-///         MV_A5[visit_return_type]
-///         MV_A6[visit_exception_types]
-///         MV_A7[visit_exception_type]
+///             subgraph MethodVisitor
+///                 MV_A1{{FormalTypeParameterVisitable}}
+///                 MV_A3[visit_parameter_types]
+///                 MV_A4[visit_parameter_type]
+///                 MV_A5[visit_return_type]
+///                 MV_A6[visit_exception_types]
+///                 MV_A7[visit_exception_type]
+///                 
+///                 SV_A0 -->|Signature::Method| MV_A1 --> MV_A3 --> MV_A4 --> MV_A5 --> MV_A6 --> MV_A7
+///             end
+///         end
+///         
 ///
-///         SV_A0 -->|Signature::Method| MV_A1 --> MV_A3 --> MV_A4 --> MV_A5 --> MV_A6 --> MV_A7
-///     end
-///     
-///     subgraph FormalTypeParameterVisitable
-///         FTPV0_A1[visit_formal_types]
-///         FTPV0_A2[visit_formal_type]
+///         subgraph FieldSignatureVisitor
+///             FSV_A1[visit_field_type]
 ///
-///         CSV_A1 & MV_A1 --> FTPV0_A1
-///         FTPV0_A1 --> FTPV0_A2
-///     end
-///     
-///     subgraph FormalTypeParameterVisitor
-///         FTPV_A1[visit_class_bound]
-///         FTPV_A2[visit_interface_bounds]
-///         FTPV_A3[visit_interface_bound]
+///             SV_A0 -->|Signature::Field| FSV_A1
+///         end
 ///
-///         FTPV0_A2 --> FTPV_A1
-///         FTPV_A1 --> FTPV_A2
-///         FTPV_A2 --> FTPV_A3
+///
 ///     end
 ///     
 ///     subgraph TypeVisitor
@@ -95,14 +100,14 @@ use crate::asm::node::signature::{
 ///
 ///         TV_A2 --> TV_B0
 ///         TV_B0 --> TV_B1
-///         TV_B1 --> TV_B2
 ///         TV_B1 --> TV_B3
+///         TV_B1 --> TV_B2
 ///         TV_B2 --> TV_A3 & TV_TYP_TYP_VAR
 ///
 ///         TV_A2 --> TV_C0
 ///         TV_C0 --> TV_C1
 ///         TV_C1 --> TV_B0
-///         TV_C1 --> TV_C0
+///         TV_C1 --> TV_C1
 ///     end
 /// ```
 pub trait SignatureVisitor:
@@ -125,6 +130,7 @@ pub trait SignatureVisitor:
 ///     
 ///     A0 --> A1 --> A2 --> A3 --> A4 --> A5
 /// ```
+#[allow(unused_variables)]
 pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     /// Type visitor for super class visiting.
     type SCTV: TypeVisitor;
@@ -143,7 +149,6 @@ pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     /// super type.
     fn visit_super_class(&mut self, super_class: &mut ClassType) -> Self::SCTV;
 
-    //noinspection RsLiveness
     /// Visits class signature's interface types.
     ///
     /// # Visit rule
@@ -204,6 +209,7 @@ pub trait FieldSignatureVisitor {
 ///     
 ///     A0 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
 /// ```
+#[allow(unused_variables)]
 pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     /// Type visitor for parameter types visiting.
     type PTV: TypeVisitor;
@@ -212,7 +218,6 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     /// Type visitor for exception type visiting.
     type ETV: TypeVisitor;
 
-    //noinspection RsLiveness
     /// Visits method signature's parameter types.
     ///
     /// # Visit rule
@@ -238,7 +243,6 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     /// [BaseType] `I`, then return type will be visited by [TypeVisitor] provided by [Self::RTV].
     fn visit_return_type(&mut self, return_type: &mut SignatureType) -> Self::RTV;
 
-    //noinspection RsLiveness
     /// Visits method signature's exception types.
     ///
     /// # Visit rule
@@ -270,11 +274,11 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
 ///     A0 --> A1
 ///     A1 --> A2
 /// ```
+#[allow(unused_variables)]
 pub trait FormalTypeParameterVisitable {
     /// Type visitor for formal type parameter visiting.
     type FTPV: FormalTypeParameterVisitor;
 
-    //noinspection RsLiveness
     /// Visits signature's formal type parameters.
     ///
     /// # Visit rule
@@ -316,6 +320,7 @@ pub trait FormalTypeParameterVisitable {
 ///     A0 --> A2
 ///     A2 --> A3
 /// ```
+#[allow(unused_variables)]
 pub trait FormalTypeParameterVisitor {
     /// Type visitor for class bound type visiting.
     type CBTV: TypeVisitor;
@@ -337,7 +342,6 @@ pub trait FormalTypeParameterVisitor {
     /// Consider formal type parameter `T:`, then [Self::visit_class_bound] will not be called.
     fn visit_class_bound(&mut self, class_bound_type: &mut ClassType) -> Self::CBTV;
 
-    //noinspection RsLiveness
     /// Visits formal type parameter's interface bounds.
     ///
     /// # Visit rule
@@ -363,39 +367,50 @@ pub trait FormalTypeParameterVisitor {
 /// # Visit strategy
 /// ```mermaid
 /// flowchart
-///     A0[(Start Visit)]
-///     A1[visit_base_type]
-///     A2[visit_class_type]
-///     A3[visit_array_type]
-///     A4[visit_type_variable]
-///     B0[visit_type_arguments]
-///     B1[visit_type_argument]
-///     B2[visit_type_argument_bound]
-///     B3[visit_type_argument_wildcard]
-///     C0[visit_inner_classes]
-///     C1[visit_inner_class]
+///     flowchart
+///     TV_TYP_REF{ReferenceType}
+///     TV_TYP_SIG{SignatureType}
+///     TV_TYP_THR{ThrowsType}
+///     TV_TYP_BAS{BaseType}
+///     TV_TYP_ARR{ArrayType}
+///     TV_TYP_CLS{ClassType}
+///     TV_TYP_TYP_VAR{TypeVariable}
+///
+///     TV_A1[visit_base_type]
+///     TV_A2[visit_class_type]
+///     TV_A3[visit_array_type]
+///     TV_A4[visit_type_variable]
+///     TV_B0[visit_type_arguments]
+///     TV_B1[visit_type_argument]
+///     TV_B2[visit_type_argument_bound]
+///     TV_B3[visit_type_argument_wildcard]
+///     TV_C0[visit_inner_classes]
+///     TV_C1[visit_inner_class]
+///
+///     TV_TYP_REF & TV_B2 & TV_A3 --> TV_TYP_CLS
+///     TV_TYP_SIG & TV_TYP_THR --> TV_TYP_REF
+///
+///     TV_TYP_SIG & TV_A3 --> TV_TYP_BAS
+///     TV_TYP_REF --> TV_TYP_ARR
 ///     
-///     A0 --> A1
-///     A0 --> A2
-///     A0 --> A3
-///     A0 --> A4
+///     TV_TYP_BAS --> TV_A1
+///     TV_TYP_ARR --> TV_A3
+///     TV_TYP_CLS --> TV_A2
+///     TV_TYP_TYP_VAR --> TV_A4
 ///
-///     A3 --> A2
-///     A3 --> A1
-///     A3 --> A3
+///     TV_A2 --> TV_B0
+///     TV_B0 --> TV_B1
+///     TV_B1 --> TV_B3
+///     TV_B1 --> TV_B2
+///     TV_B2 --> TV_A3 & TV_TYP_TYP_VAR
 ///
-///     A2 --> B0
-///     B0 --> B1
-///     B1 --> B2
-///     B1 --> B3
-///     B2 --> A2
-///     B2 --> A3
-///     B2 --> A4
+///     TV_A2 --> TV_C0
+///     TV_C0 --> TV_C1
+///     TV_C1 --> TV_B0
+///     TV_C1 --> TV_C1
 ///
-///     A2 --> C0
-///     C0 --> C1
-///     C1 --> B0
-///     C1 --> C0
+///     TV_TYP_REF --> TV_TYP_TYP_VAR
+///     TV_TYP_THR --> TV_TYP_TYP_VAR
 /// ```
 #[allow(unused_variables)]
 pub trait TypeVisitor {
