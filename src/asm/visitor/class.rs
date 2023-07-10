@@ -23,7 +23,7 @@ pub trait ClassVisitor {
     type ICV: ConstantVisitor;
     /// Method visitor for [method](Method) visiting.
     type MV: MethodVisitor;
-    /// Field visitor for [field](Field) visiting. 
+    /// Field visitor for [field](Field) visiting.
     type FV: FieldVisitor;
 
     /// Visits [major and minor versions](JavaVersion).
@@ -38,11 +38,11 @@ pub trait ClassVisitor {
     /// Visits [ClassAccessFlag]s.
     fn visit_access_flags(&mut self, access_flags: &mut Vec<ClassAccessFlag>) {}
 
-    /// Visits this class [constant](Constant), it is guaranteed only function 
+    /// Visits this class [constant](Constant), it is guaranteed only function
     /// [visit_utf8](ConstantVisitor::visit_utf8) will be invoked on [Self::TCCV].
     fn visit_this_class(&mut self) -> Self::TCCV;
 
-    /// Visits super class [constant](Constant), it is guaranteed only function 
+    /// Visits super class [constant](Constant), it is guaranteed only function
     /// [visit_utf8](ConstantVisitor::visit_utf8) will be invoked on [Self::SCCV].
     fn visit_super_class(&mut self) -> Self::SCCV;
 

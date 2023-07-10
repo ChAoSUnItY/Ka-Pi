@@ -20,7 +20,7 @@ use crate::asm::node::signature::{
 ///             
 ///             CSV_A1 & MV_A1 --> FTPV0_A1
 ///             FTPV0_A1 --> FTPV0_A2
-/// 
+///
 ///             subgraph FormalTypeParameterVisitor
 ///                 FTPV_A1[visit_class_bound]
 ///                 FTPV_A2[visit_interface_bounds]
@@ -39,7 +39,7 @@ use crate::asm::node::signature::{
 ///                 
 ///                 SV_A0 -->|Signature::Class| CSV_A1 --> CSV_A3 --> CSV_A4 --> CSV_A5
 ///             end
-/// 
+///
 ///             subgraph MethodVisitor
 ///                 MV_A1{{FormalTypeParameterVisitable}}
 ///                 MV_A3[visit_parameter_types]
@@ -52,14 +52,14 @@ use crate::asm::node::signature::{
 ///             end
 ///         end
 ///         
-/// 
+///
 ///         subgraph FieldSignatureVisitor
 ///             FSV_A1[visit_field_type]
-/// 
+///
 ///             SV_A0 -->|Signature::Field| FSV_A1
 ///         end
-/// 
-/// 
+///
+///
 ///     end
 ///     
 ///     subgraph TypeVisitor
@@ -81,14 +81,14 @@ use crate::asm::node::signature::{
 ///         TV_B3[visit_type_argument_wildcard]
 ///         TV_C0[visit_inner_classes]
 ///         TV_C1[visit_inner_class]
-/// 
+///
 ///         CSV_A3 & CSV_A5 & FTPV_A3 & FTPV_A1 & TV_TYP_REF & TV_B2 & TV_A3 --> TV_TYP_CLS
-/// 
+///
 ///         FSV_A1 & TV_TYP_SIG & TV_TYP_THR --> TV_TYP_REF
-/// 
+///
 ///         MV_A4 & MV_A5 --> TV_TYP_SIG
 ///         MV_A7 --> TV_TYP_THR
-/// 
+///
 ///         TV_TYP_SIG & TV_A3 --> TV_TYP_BAS
 ///         TV_TYP_THR --> TV_TYP_TYP_VAR
 ///         TV_TYP_REF --> TV_TYP_ARR
@@ -97,13 +97,13 @@ use crate::asm::node::signature::{
 ///         TV_TYP_ARR --> TV_A3
 ///         TV_TYP_CLS --> TV_A2
 ///         TV_TYP_TYP_VAR --> TV_A4
-/// 
+///
 ///         TV_A2 --> TV_B0
 ///         TV_B0 --> TV_B1
 ///         TV_B1 --> TV_B3
 ///         TV_B1 --> TV_B2
 ///         TV_B2 --> TV_A3 & TV_TYP_TYP_VAR
-/// 
+///
 ///         TV_A2 --> TV_C0
 ///         TV_C0 --> TV_C1
 ///         TV_C1 --> TV_B0
@@ -375,7 +375,7 @@ pub trait FormalTypeParameterVisitor {
 ///     TV_TYP_ARR{ArrayType}
 ///     TV_TYP_CLS{ClassType}
 ///     TV_TYP_TYP_VAR{TypeVariable}
-/// 
+///
 ///     TV_A1[visit_base_type]
 ///     TV_A2[visit_class_type]
 ///     TV_A3[visit_array_type]
@@ -386,10 +386,10 @@ pub trait FormalTypeParameterVisitor {
 ///     TV_B3[visit_type_argument_wildcard]
 ///     TV_C0[visit_inner_classes]
 ///     TV_C1[visit_inner_class]
-/// 
+///
 ///     TV_TYP_REF & TV_B2 & TV_A3 --> TV_TYP_CLS
 ///     TV_TYP_SIG & TV_TYP_THR --> TV_TYP_REF
-/// 
+///
 ///     TV_TYP_SIG & TV_A3 --> TV_TYP_BAS
 ///     TV_TYP_REF --> TV_TYP_ARR
 ///     
@@ -397,18 +397,18 @@ pub trait FormalTypeParameterVisitor {
 ///     TV_TYP_ARR --> TV_A3
 ///     TV_TYP_CLS --> TV_A2
 ///     TV_TYP_TYP_VAR --> TV_A4
-/// 
+///
 ///     TV_A2 --> TV_B0
 ///     TV_B0 --> TV_B1
 ///     TV_B1 --> TV_B3
 ///     TV_B1 --> TV_B2
 ///     TV_B2 --> TV_A3 & TV_TYP_TYP_VAR
-/// 
+///
 ///     TV_A2 --> TV_C0
 ///     TV_C0 --> TV_C1
 ///     TV_C1 --> TV_B0
 ///     TV_C1 --> TV_C1
-/// 
+///
 ///     TV_TYP_REF --> TV_TYP_TYP_VAR
 ///     TV_TYP_THR --> TV_TYP_TYP_VAR
 /// ```
