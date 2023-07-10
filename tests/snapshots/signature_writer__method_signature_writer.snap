@@ -1,5 +1,5 @@
 ---
-source: src/asm/generate/signature.rs
+source: tests/signature_writer.rs
 expression: writer.to_string()
 ---
 "<TLjava/lang/Object;>(Ljava/lang/Object;)Ljava/lang/String;"

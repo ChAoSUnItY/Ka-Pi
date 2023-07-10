@@ -1,0 +1,102 @@
+---
+source: tests/class_writer.rs
+expression: class
+---
+java_version: V17
+constant_pool_count: 9
+constant_pool:
+  len: 9
+  entries:
+    1:
+      Utf8:
+        length: 5
+        bytes:
+          - 102
+          - 105
+          - 101
+          - 108
+          - 100
+    2:
+      Utf8:
+        length: 1
+        bytes:
+          - 90
+    3:
+      Utf8:
+        length: 6
+        bytes:
+          - 109
+          - 101
+          - 116
+          - 104
+          - 111
+          - 100
+    4:
+      Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 90
+    5:
+      Utf8:
+        length: 4
+        bytes:
+          - 77
+          - 97
+          - 105
+          - 110
+    6:
+      Class:
+        name_index: 5
+    7:
+      Utf8:
+        length: 16
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 79
+          - 98
+          - 106
+          - 101
+          - 99
+          - 116
+    8:
+      Class:
+        name_index: 7
+access_flags:
+  - Public
+  - Super
+this_class: 6
+super_class: 8
+interfaces_count: 0
+interfaces: []
+fields_count: 1
+fields:
+  - access_flags:
+      - Public
+      - Static
+    name_index: 1
+    descriptor_index: 2
+    attribute_infos_len: 0
+    attribute_infos: []
+methods_count: 1
+methods:
+  - access_flags:
+      - Public
+      - Static
+    name_index: 3
+    descriptor_index: 4
+    attribute_infos_len: 0
+    attribute_infos: []
+attributes_count: 0
+attributes: []
+

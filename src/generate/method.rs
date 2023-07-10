@@ -36,7 +36,7 @@ pub struct MethodWriter {
 }
 
 impl MethodWriter {
-    pub(crate) fn new<F>(
+    pub fn new<F>(
         java_version: &JavaVersion,
         access_flags: F,
         name: &str,

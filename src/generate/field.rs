@@ -19,7 +19,7 @@ pub struct FieldWriter {
 }
 
 impl FieldWriter {
-    pub(crate) fn new<F>(access_flags: F, name: &str, descriptor: &str) -> KapiResult<Self>
+    pub fn new<F>(access_flags: F, name: &str, descriptor: &str) -> KapiResult<Self>
     where
         F: IntoIterator<Item = FieldAccessFlag>,
     {
