@@ -13,11 +13,7 @@ impl Eq for ConstantValue {}
 
 impl From<bool> for ConstantValue {
     fn from(value: bool) -> Self {
-        Self::Int(if value {
-            1
-        } else {
-            0
-        })
+        Self::Int(if value { 1 } else { 0 })
     }
 }
 

@@ -73,7 +73,8 @@ impl ClassWriter {
     where
         F: IntoIterator<Item = FieldAccessFlag>,
     {
-        self.field_writers.push(FieldWriter::new(access_flags, name, descriptor)?);
+        self.field_writers
+            .push(FieldWriter::new(access_flags, name, descriptor)?);
 
         Ok(self.field_writers.last_mut().unwrap())
     }
