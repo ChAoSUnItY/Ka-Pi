@@ -11,6 +11,12 @@ pub enum ConstantValue {
 
 impl Eq for ConstantValue {}
 
+impl From<bool> for ConstantValue {
+    fn from(value: bool) -> Self {
+        Self::Int(if value { 1 } else { 0 })
+    }
+}
+
 impl From<i32> for ConstantValue {
     fn from(value: i32) -> Self {
         Self::Int(value)
