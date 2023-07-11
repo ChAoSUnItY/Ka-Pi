@@ -50,25 +50,18 @@ impl ClassWriter {
         access_flags: F,
         name: &str,
         descriptor: &str,
-        generation: impl FnOnce(MethodWriter) -> KapiResult<MethodWriter>,
-    ) -> KapiResult<()>
+    ) -> KapiResult<&mut MethodWriter>
     where
         F: IntoIterator<Item = MethodAccessFlag>,
     {
-        let method_writer = generation(MethodWriter::new(
+        self.method_writers.push(MethodWriter::new(
             &self.version,
             access_flags,
             name,
             descriptor,
-        )?)?;
+        )?);
 
-        self.method_writers.push(method_writer);
-
-        Ok(())
-    }
-
-    pub fn append_method(&mut self, method_writer: MethodWriter) {
-        self.method_writers.push(method_writer);
+        Ok(self.method_writers.last_mut().unwrap())
     }
 
     pub fn write_field<F>(
@@ -76,20 +69,13 @@ impl ClassWriter {
         access_flags: F,
         name: &str,
         descriptor: &str,
-        generation: impl FnOnce(FieldWriter) -> KapiResult<FieldWriter>,
-    ) -> KapiResult<()>
+    ) -> KapiResult<&mut FieldWriter>
     where
         F: IntoIterator<Item = FieldAccessFlag>,
     {
-        let field_writer = generation(FieldWriter::new(access_flags, name, descriptor)?)?;
+        self.field_writers.push(FieldWriter::new(access_flags, name, descriptor)?);
 
-        self.field_writers.push(field_writer);
-
-        Ok(())
-    }
-
-    pub fn append_field(&mut self, field_writer: FieldWriter) {
-        self.field_writers.push(field_writer);
+        Ok(self.field_writers.last_mut().unwrap())
     }
 
     pub fn write_output(self) -> KapiResult<ByteVecImpl> {
