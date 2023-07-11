@@ -2,8 +2,6 @@
 
 // no_std placeholder here
 
-#[allow(unused)]
-pub mod asm;
 pub mod error;
 #[cfg(feature = "generate")]
 pub mod generate;
