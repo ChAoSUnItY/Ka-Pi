@@ -1,23 +1,46 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::ops::Deref;
 
 use num_enum::TryFromPrimitive;
+use paste::paste;
 use serde::{Deserialize, Serialize};
 use strum::IntoStaticStr;
 
 use crate::error::{KapiError, KapiResult};
 use crate::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods};
-use crate::node::ConstantRearrangeable;
+use crate::node::Node;
 use crate::visitor::constant::ConstantVisitor;
 use crate::visitor::Visitable;
+
+macro_rules! const_getter {
+    ($(#[$attr:meta])* => $variant_name: ident, $variant: ty) => {
+        paste! {
+            $(#[$attr])*
+            pub fn [< get_ $variant_name >] (&self, index: u16) -> Option<&$variant> {
+                if let Some(Node(
+                    _,
+                    ConstantInfo {
+                        tag: _,
+                        constant: Node(_, Constant:: $variant(constant)),
+                    },
+                )) = self.get(index)
+                {
+                    Some(constant)
+                } else {
+                    None
+                }
+            }
+        }
+    };
+}
 
 /// Represents a class constant pool.
 ///
 /// See [4.4 The Constant Pool](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=93).
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ConstantPool {
     len: u16,
-    entries: BTreeMap<u16, Constant>,
+    entries: BTreeMap<u16, Node<ConstantInfo>>,
 }
 
 impl ConstantPool {
@@ -25,19 +48,17 @@ impl ConstantPool {
         self.len
     }
 
-    pub(crate) fn add(&mut self, constant: Constant) {
-        let is_2 = matches!(constant, Constant::Long { .. } | Constant::Double { .. });
-
-        self.entries.insert(self.len, constant);
-
-        if is_2 {
+    pub(crate) fn add(&mut self, cp_info: Node<ConstantInfo>) {
+        if cp_info.occupies_2_slots() {
             self.len += 2;
         } else {
             self.len += 1;
         }
+
+        self.entries.insert(self.len, cp_info);
     }
 
-    /// Get [Constant] reference from constant pool based on given index.
+    /// Get [ConstantInfo] node reference from constant pool based on given index.
     ///
     /// ### Index
     ///
@@ -45,39 +66,100 @@ impl ConstantPool {
     /// 1. The given index is out of bound, which is 0 < index <= self.len().
     /// 2. The given index is located at an placeholder constant, which is followed after [Constant::Long]
     ///    and [Constant::Double].
-    pub fn get(&self, index: u16) -> Option<&Constant> {
+    pub fn get(&self, index: u16) -> Option<&Node<ConstantInfo>> {
         self.entries.get(&index)
     }
-
-    /// Get mutable [Constant] reference from constant pool based on given index.
-    ///
-    /// ### Index
-    ///
-    /// There are two scenarios which will return a [None]:
-    /// 1. The given index is out of bound, which is 0 < index <= self.len().
-    /// 2. The given index is located at an placeholder constant, which is followed after [Constant::Long]
-    ///    and [Constant::Double].
-    pub fn get_mut(&mut self, index: u16) -> Option<&mut Constant> {
-        self.entries.get_mut(&index)
+    
+    pub fn get_constant(&self, index: u16) -> Option<&Constant> {
+        self.get(index).map(|node| &node.constant.1)
     }
-}
 
-impl ConstantRearrangeable for ConstantPool {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        let mut remapped_entries = BTreeMap::new();
-
-        for (&from, &to) in rearrangements {
-            if let Some(entry) = self.get(from) {
-                remapped_entries.insert(to, entry.clone());
-            } else {
-                return Err(KapiError::StateError(format!("Unable to remap constant entry from #{from} to #{to}: Constant #{from} does not exists")));
-            }
-        }
-
-        self.entries = remapped_entries;
-
-        Ok(())
-    }
+    const_getter!(
+        /// Gets [Utf8] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => utf8, Utf8
+    );
+    const_getter!(
+        /// Gets [Integer] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => integer, Integer
+    );
+    const_getter!(
+        /// Gets [Float] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => float, Float
+    );
+    const_getter!(
+        /// Gets [Long] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => long, Long
+    );
+    const_getter!(
+        /// Gets [Double] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => double, Double
+    );
+    const_getter!(
+        /// Gets [Class] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => class, Class
+    );
+    const_getter!(
+        /// Gets [String] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => string, String
+    );
+    const_getter!(
+        /// Gets [FieldRef] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => field_ref, FieldRef
+    );
+    const_getter!(
+        /// Gets [MethodRef] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => method_ref, MethodRef
+    );
+    const_getter!(
+        /// Gets [InterfaceMethodRef] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => interface_method_ref, InterfaceMethodRef
+    );
+    const_getter!(
+        /// Gets [NameAndType] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => name_and_type, NameAndType
+    );
+    const_getter!(
+        /// Gets [MethodHandle] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => method_handle, MethodHandle
+    );
+    const_getter!(
+        /// Gets [MethodType] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => method_type, MethodType
+    );
+    const_getter!(
+        /// Gets [Dynamic] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => dynamic, Dynamic
+    );
+    const_getter!(
+        /// Gets [InvokeDynamic] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => invoke_dynamic, InvokeDynamic
+    );
+    const_getter!(
+        /// Gets [InvokeDynamic] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => module, Module
+    );
+    const_getter!(
+        /// Gets [Package] constant reference from constant pool based on given index, returns
+        /// [None] if the constant does not exist or match.
+        => package, Package
+    );
+    
 }
 
 impl Default for ConstantPool {
@@ -90,10 +172,22 @@ impl Default for ConstantPool {
 }
 
 impl Deref for ConstantPool {
-    type Target = BTreeMap<u16, Constant>;
+    type Target = BTreeMap<u16, Node<ConstantInfo>>;
 
     fn deref(&self) -> &Self::Target {
         &self.entries
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ConstantInfo {
+    pub tag: Node<ConstantTag>,
+    pub constant: Node<Constant>,
+}
+
+impl ConstantInfo {
+    pub fn occupies_2_slots(&self) -> bool {
+        matches!(self.tag.1, ConstantTag::Long | ConstantTag::Double)
     }
 }
 
@@ -368,19 +462,7 @@ impl Class {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.name_index) {
-            Some(constant)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for Class {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.name_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_utf8(self.name_index)
     }
 }
 
@@ -407,19 +489,7 @@ impl String {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.string_index) {
-            Some(constant)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for String {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.string_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_utf8(self.string_index)
     }
 }
 
@@ -448,11 +518,7 @@ impl FieldRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        if let Some(Constant::Class(class)) = constant_pool.get(self.class_index) {
-            Some(class)
-        } else {
-            None
-        }
+        constant_pool.get_class(self.class_index)
     }
 
     /// Gets [NameAndType] of field.
@@ -460,23 +526,7 @@ impl FieldRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        if let Some(Constant::NameAndType(name_and_type)) =
-            constant_pool.get(self.name_and_type_index)
-        {
-            Some(name_and_type)
-        } else {
-            None
-        }
-    }
-}
-
-//noinspection DuplicatedCode
-impl ConstantRearrangeable for FieldRef {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.class_index, rearrangements);
-        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_name_and_type(self.name_and_type_index)
     }
 }
 
@@ -505,11 +555,7 @@ impl MethodRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        if let Some(Constant::Class(class)) = constant_pool.get(self.class_index) {
-            Some(class)
-        } else {
-            None
-        }
+        constant_pool.get_class(self.class_index)
     }
 
     /// Gets [NameAndType] of method.
@@ -517,23 +563,7 @@ impl MethodRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        if let Some(Constant::NameAndType(name_and_type)) =
-            constant_pool.get(self.name_and_type_index)
-        {
-            Some(name_and_type)
-        } else {
-            None
-        }
-    }
-}
-
-//noinspection DuplicatedCode
-impl ConstantRearrangeable for MethodRef {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.class_index, rearrangements);
-        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_name_and_type(self.class_index)
     }
 }
 
@@ -562,11 +592,7 @@ impl InterfaceMethodRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        if let Some(Constant::Class(class)) = constant_pool.get(self.class_index) {
-            Some(class)
-        } else {
-            None
-        }
+        constant_pool.get_class(self.class_index)
     }
 
     /// Gets [NameAndType] of interface method.
@@ -574,23 +600,7 @@ impl InterfaceMethodRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        if let Some(Constant::NameAndType(name_and_type)) =
-            constant_pool.get(self.name_and_type_index)
-        {
-            Some(name_and_type)
-        } else {
-            None
-        }
-    }
-}
-
-//noinspection DuplicatedCode
-impl ConstantRearrangeable for InterfaceMethodRef {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.class_index, rearrangements);
-        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_name_and_type(self.name_and_type_index)
     }
 }
 
@@ -619,11 +629,7 @@ impl NameAndType {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.name_index) {
-            Some(constant)
-        } else {
-            None
-        }
+        constant_pool.get_utf8(self.name_index)
     }
 
     /// Gets the type of [NameAndType].
@@ -631,20 +637,7 @@ impl NameAndType {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.type_index) {
-            Some(constant)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for NameAndType {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.name_index, rearrangements);
-        Self::rearrange_index(&mut self.type_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_utf8(self.type_index)
     }
 }
 
@@ -686,49 +679,43 @@ impl MethodHandle {
         if let Some(constant) = constant_pool.get(self.reference_index) {
             match self.reference_kind()? {
                 RefKind::GetField | RefKind::GetStatic | RefKind::PutField | RefKind::PutStatic => {
-                    if let Constant::FieldRef(_) = constant {
-                        Ok(Some(constant))
-                    } else {
-                        Err(KapiError::ClassParseError(format!(
+                    match &constant.constant.1 {
+                        constant @ Constant::FieldRef(_) => Ok(Some(constant)),
+                        _ => Err(KapiError::ClassParseError(format!(
                             "Expected referenced constant FieldRef at #{} but got {}",
                             self.reference_index,
-                            Into::<&'static str>::into(constant)
+                            Into::<&'static str>::into(&constant.constant.1)
                         )))
                     }
                 }
                 RefKind::InvokeVirtual | RefKind::NewInvokeSpecial => {
-                    if let Constant::MethodRef(_) = constant {
-                        Ok(Some(constant))
-                    } else {
-                        Err(KapiError::ClassParseError(format!(
+                    match &constant.constant.1 {
+                        constant @ Constant::MethodRef(_) => Ok(Some(constant)),
+                        _ => Err(KapiError::ClassParseError(format!(
                             "Expected referenced constant MethodRef at #{} but got {}",
                             self.reference_index,
-                            Into::<&'static str>::into(constant)
+                            Into::<&'static str>::into(&constant.constant.1)
                         )))
                     }
                 }
                 RefKind::InvokeStatic | RefKind::InvokeSpecial => {
-                    if matches!(
-                        constant,
-                        Constant::MethodRef(_) | Constant::InterfaceMethodRef(_)
-                    ) {
-                        Ok(Some(constant))
-                    } else {
-                        Err(KapiError::ClassParseError(format!(
+                    match &constant.constant.1 {
+                        constant @ Constant::MethodRef(_) => Ok(Some(constant)),
+                        constant @ Constant::InterfaceMethodRef(_) => Ok(Some(constant)),
+                        _ => Err(KapiError::ClassParseError(format!(
                             "Expected referenced either constant MethodRef or constant InterfaceMethodRef at #{} but got {}",
                             self.reference_index,
-                            Into::<&'static str>::into(constant)
+                            Into::<&'static str>::into(&constant.constant.1)
                         )))
                     }
                 }
                 RefKind::InvokeInterface => {
-                    if let Constant::InterfaceMethodRef(_) = constant {
-                        Ok(Some(constant))
-                    } else {
-                        Err(KapiError::ClassParseError(format!(
+                    match &constant.constant.1 {
+                        constant @ Constant::InterfaceMethodRef(_) => Ok(Some(constant)),
+                        _ => Err(KapiError::ClassParseError(format!(
                             "Expected referenced constant InterfaceMethodRef at #{} but got {}",
                             self.reference_index,
-                            Into::<&'static str>::into(constant)
+                            Into::<&'static str>::into(&constant.constant.1)
                         )))
                     }
                 }
@@ -736,14 +723,6 @@ impl MethodHandle {
         } else {
             Ok(None)
         }
-    }
-}
-
-impl ConstantRearrangeable for MethodHandle {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.reference_index, rearrangements);
-
-        Ok(())
     }
 }
 
@@ -770,19 +749,7 @@ impl MethodType {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.descriptor_index) {
-            Some(constant)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for MethodType {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.descriptor_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_utf8(self.descriptor_index)
     }
 }
 
@@ -836,21 +803,7 @@ impl Dynamic {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        if let Some(Constant::NameAndType(name_and_type)) =
-            constant_pool.get(self.name_and_type_index)
-        {
-            Some(name_and_type)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for Dynamic {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_name_and_type(self.name_and_type_index)
     }
 }
 
@@ -904,21 +857,7 @@ impl InvokeDynamic {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        if let Some(Constant::NameAndType(name_and_type)) =
-            constant_pool.get(self.name_and_type_index)
-        {
-            Some(name_and_type)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for InvokeDynamic {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.name_and_type_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_name_and_type(self.name_and_type_index)
     }
 }
 
@@ -946,19 +885,7 @@ impl Module {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.name_index) {
-            Some(constant)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for Module {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.name_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_utf8(self.name_index)
     }
 }
 
@@ -986,19 +913,7 @@ impl Package {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(constant)) = constant_pool.get(self.name_index) {
-            Some(constant)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for Package {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.name_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_utf8(self.name_index)
     }
 }
 

@@ -1,15 +1,11 @@
-use std::collections::HashMap;
-
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
-use crate::error::KapiResult;
 use crate::node::opcode::instruction::{
     ANewArray, CheckCast, GetField, GetStatic, InstanceOf, InvokeDynamic, InvokeInterface,
     InvokeSpecial, InvokeStatic, InvokeVirtual, Ldc, Ldc2_W, Ldc_W, MultiANewArray, New, PutField,
     PutStatic, Wide,
 };
-use crate::node::ConstantRearrangeable;
 
 pub mod instruction;
 
@@ -691,39 +687,5 @@ impl Instruction {
             Instruction::GOTO_W(..) => Opcode::GOTO_W,
             Instruction::JSR_W(..) => Opcode::JSR_W,
         }
-    }
-}
-
-impl ConstantRearrangeable for Instruction {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        match self {
-            Instruction::LDC(ldc) => ldc.rearrange(rearrangements)?,
-            Instruction::LDC_W(ldc_w) => ldc_w.rearrange(rearrangements)?,
-            Instruction::LDC2_W(ldc2_w) => ldc2_w.rearrange(rearrangements)?,
-            Instruction::GETSTATIC(get_static) => get_static.rearrange(rearrangements)?,
-            Instruction::PUTSTATIC(put_static) => put_static.rearrange(rearrangements)?,
-            Instruction::GETFIELD(get_field) => get_field.rearrange(rearrangements)?,
-            Instruction::PUTFIELD(put_field) => put_field.rearrange(rearrangements)?,
-            Instruction::INVOKEVIRTUAL(invoke_virtual) => {
-                invoke_virtual.rearrange(rearrangements)?
-            }
-            Instruction::INVOKESPECIAL(invoke_special) => {
-                invoke_special.rearrange(rearrangements)?
-            }
-            Instruction::INVOKESTATIC(invoke_static) => invoke_static.rearrange(rearrangements)?,
-            Instruction::INVOKEINTERFACE(invoke_interface) => {
-                invoke_interface.rearrange(rearrangements)?
-            }
-            Instruction::NEW(new) => new.rearrange(rearrangements)?,
-            Instruction::ANEWARRAY(a_new_array) => a_new_array.rearrange(rearrangements)?,
-            Instruction::CHECKCAST(check_cast) => check_cast.rearrange(rearrangements)?,
-            Instruction::INSTANCEOF(instance_of) => instance_of.rearrange(rearrangements)?,
-            Instruction::MULTIANEWARRAY(multi_a_new_array) => {
-                multi_a_new_array.rearrange(rearrangements)?
-            }
-            _ => {}
-        }
-
-        Ok(())
     }
 }

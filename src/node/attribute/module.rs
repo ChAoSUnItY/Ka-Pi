@@ -1,11 +1,7 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
-use crate::error::KapiResult;
 use crate::node::access_flag::{ExportsAccessFlag, OpensAccessFlag, RequiresAccessFlag};
-use crate::node::constant::{Constant, ConstantPool, Module, Package, Utf8};
-use crate::node::ConstantRearrangeable;
+use crate::node::constant::{ConstantPool, Module, Package, Utf8};
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Requires {
@@ -19,31 +15,14 @@ impl Requires {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Module> {
-        if let Some(Constant::Module(module)) = constant_pool.get(self.requires_index) {
-            Some(module)
-        } else {
-            None
-        }
+        constant_pool.get_module(self.requires_index)
     }
 
     pub fn requires_version<'attribute, 'constant_pool: 'attribute>(
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.requires_version_index) {
-            Some(utf8)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for Requires {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.requires_index, rearrangements);
-        Self::rearrange_index(&mut self.requires_version_index, rearrangements);
-
-        Ok(())
+        constant_pool.get_utf8(self.requires_version_index)
     }
 }
 
@@ -60,11 +39,7 @@ impl Exports {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Package> {
-        if let Some(Constant::Package(package)) = constant_pool.get(self.exports_index) {
-            Some(package)
-        } else {
-            None
-        }
+        constant_pool.get_package(self.exports_index)
     }
 
     pub fn exports_to<'attribute, 'constant_pool: 'attribute>(
@@ -72,28 +47,9 @@ impl Exports {
         index: usize,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Module> {
-        if let Some(Constant::Module(module)) = self
-            .exports_to_index
+        self.exports_to_index
             .get(index)
-            .map(|exports_to_index| constant_pool.get(*exports_to_index))
-            .flatten()
-        {
-            Some(module)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for Exports {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.exports_index, rearrangements);
-
-        for exports_to in &mut self.exports_to_index {
-            Self::rearrange_index(exports_to, rearrangements);
-        }
-
-        Ok(())
+            .and_then(|exports_to_index| constant_pool.get_module(*exports_to_index))
     }
 }
 
@@ -110,11 +66,7 @@ impl Opens {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Package> {
-        if let Some(Constant::Package(package)) = constant_pool.get(self.opens_index) {
-            Some(package)
-        } else {
-            None
-        }
+        constant_pool.get_package(self.opens_index)
     }
 
     pub fn opens_to<'attribute, 'constant_pool: 'attribute>(
@@ -122,28 +74,9 @@ impl Opens {
         index: usize,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Module> {
-        if let Some(Constant::Module(module)) = self
-            .opens_to_index
+        self.opens_to_index
             .get(index)
-            .map(|opens_to_index| constant_pool.get(*opens_to_index))
-            .flatten()
-        {
-            Some(module)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for Opens {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.opens_index, rearrangements);
-
-        for opens_to in &mut self.opens_to_index {
-            Self::rearrange_index(opens_to, rearrangements);
-        }
-
-        Ok(())
+            .and_then(|opens_to_index| constant_pool.get_module(*opens_to_index))
     }
 }
 
@@ -159,11 +92,7 @@ impl Provides {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Package> {
-        if let Some(Constant::Package(package)) = constant_pool.get(self.provides_index) {
-            Some(package)
-        } else {
-            None
-        }
+        constant_pool.get_package(self.provides_index)
     }
 
     pub fn provides_to<'attribute, 'constant_pool: 'attribute>(
@@ -171,27 +100,8 @@ impl Provides {
         index: usize,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Module> {
-        if let Some(Constant::Module(module)) = self
-            .provides_with_index
+        self.provides_with_index
             .get(index)
-            .map(|provides_with_index| constant_pool.get(*provides_with_index))
-            .flatten()
-        {
-            Some(module)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for Provides {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.provides_index, rearrangements);
-
-        for provides_to in &mut self.provides_with_index {
-            Self::rearrange_index(provides_to, rearrangements);
-        }
-
-        Ok(())
+            .and_then(|provides_with_index| constant_pool.get_module(*provides_with_index))
     }
 }

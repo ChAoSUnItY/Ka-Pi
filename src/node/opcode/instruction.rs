@@ -1,12 +1,8 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
-use crate::error::KapiResult;
 use crate::node::constant::{
     Class, Constant, ConstantPool, FieldRef, InterfaceMethodRef, MethodRef,
 };
-use crate::node::ConstantRearrangeable;
 
 /// Represents a `ldc` instruction.
 ///
@@ -22,13 +18,7 @@ impl Ldc {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Constant> {
-        constant_pool.get(self.index as u16)
-    }
-}
-
-impl ConstantRearrangeable for Ldc {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_narrow_index(&mut self.index, rearrangements)
+        constant_pool.get_constant(self.index as u16)
     }
 }
 
@@ -47,15 +37,7 @@ impl Ldc_W {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Constant> {
-        constant_pool.get(self.index)
-    }
-}
-
-impl ConstantRearrangeable for Ldc_W {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_constant(self.index)
     }
 }
 
@@ -74,15 +56,7 @@ impl Ldc2_W {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Constant> {
-        constant_pool.get(self.index)
-    }
-}
-
-impl ConstantRearrangeable for Ldc2_W {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_constant(self.index)
     }
 }
 
@@ -101,19 +75,7 @@ impl GetStatic {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool FieldRef> {
-        if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
-            Some(field_ref)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for GetStatic {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_field_ref(self.index)
     }
 }
 
@@ -132,19 +94,7 @@ impl PutStatic {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool FieldRef> {
-        if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
-            Some(field_ref)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for PutStatic {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_field_ref(self.index)
     }
 }
 
@@ -163,19 +113,7 @@ impl GetField {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool FieldRef> {
-        if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
-            Some(field_ref)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for GetField {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_field_ref(self.index)
     }
 }
 
@@ -194,19 +132,7 @@ impl PutField {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool FieldRef> {
-        if let Some(Constant::FieldRef(field_ref)) = constant_pool.get(self.index) {
-            Some(field_ref)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for PutField {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_field_ref(self.index)
     }
 }
 
@@ -225,19 +151,7 @@ impl InvokeVirtual {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool MethodRef> {
-        if let Some(Constant::MethodRef(method_ref)) = constant_pool.get(self.index) {
-            Some(method_ref)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for InvokeVirtual {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_method_ref(self.index)
     }
 }
 
@@ -256,19 +170,7 @@ impl InvokeSpecial {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool MethodRef> {
-        if let Some(Constant::MethodRef(method_ref)) = constant_pool.get(self.index) {
-            Some(method_ref)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for InvokeSpecial {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_method_ref(self.index)
     }
 }
 
@@ -287,19 +189,7 @@ impl InvokeStatic {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool MethodRef> {
-        if let Some(Constant::MethodRef(method_ref)) = constant_pool.get(self.index) {
-            Some(method_ref)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for InvokeStatic {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_method_ref(self.index)
     }
 }
 
@@ -319,21 +209,7 @@ impl InvokeInterface {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool InterfaceMethodRef> {
-        if let Some(Constant::InterfaceMethodRef(interface_method_ref)) =
-            constant_pool.get(self.index)
-        {
-            Some(interface_method_ref)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for InvokeInterface {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_interface_method_ref(self.index)
     }
 }
 
@@ -352,19 +228,7 @@ impl InvokeDynamic {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool crate::node::constant::InvokeDynamic> {
-        if let Some(Constant::InvokeDynamic(invoke_dynamic)) = constant_pool.get(self.index) {
-            Some(invoke_dynamic)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for InvokeDynamic {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_invoke_dynamic(self.index)
     }
 }
 
@@ -383,19 +247,7 @@ impl New {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
-            Some(class)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for New {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_class(self.index)
     }
 }
 
@@ -414,19 +266,7 @@ impl ANewArray {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
-            Some(class)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for ANewArray {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_class(self.index)
     }
 }
 
@@ -445,19 +285,7 @@ impl CheckCast {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
-            Some(class)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for CheckCast {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_class(self.index)
     }
 }
 
@@ -476,19 +304,7 @@ impl InstanceOf {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
-            Some(class)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for InstanceOf {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_class(self.index)
     }
 }
 
@@ -528,18 +344,6 @@ impl MultiANewArray {
         &'instruction self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        if let Some(Constant::Class(class)) = constant_pool.get(self.index) {
-            Some(class)
-        } else {
-            None
-        }
-    }
-}
-
-impl ConstantRearrangeable for MultiANewArray {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.index, rearrangements);
-
-        Ok(())
+        constant_pool.get_class(self.index)
     }
 }

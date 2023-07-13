@@ -1,12 +1,8 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
-use crate::error::KapiResult;
 use crate::node::access_flag::MethodAccessFlag;
 use crate::node::attribute::AttributeInfo;
-use crate::node::constant::{Constant, ConstantPool, Utf8};
-use crate::node::ConstantRearrangeable;
+use crate::node::constant::{ConstantPool, Utf8};
 use crate::visitor::method::MethodVisitor;
 use crate::visitor::Visitable;
 
@@ -29,11 +25,7 @@ impl Method {
         &'method self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.name_index) {
-            Some(utf8)
-        } else {
-            None
-        }
+        constant_pool.get_utf8(self.name_index)
     }
 
     /// Get descriptor of method from constant pool.
@@ -41,25 +33,7 @@ impl Method {
         &'method self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        if let Some(Constant::Utf8(utf8)) = constant_pool.get(self.descriptor_index) {
-            Some(utf8)
-        } else {
-            None
-        }
-    }
-}
-
-//noinspection DuplicatedCode
-impl ConstantRearrangeable for Method {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        Self::rearrange_index(&mut self.name_index, rearrangements);
-        Self::rearrange_index(&mut self.descriptor_index, rearrangements);
-
-        for attribute in &mut self.attribute_infos {
-            attribute.rearrange(rearrangements)?;
-        }
-
-        Ok(())
+        constant_pool.get_utf8(self.descriptor_index)
     }
 }
 
