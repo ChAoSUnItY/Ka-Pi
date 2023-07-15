@@ -14,7 +14,28 @@ use crate::node::{constant, Node};
 use crate::parse::{collect, node, take_sized_node, ParseResult};
 
 pub(crate) fn constant_pool(input: BytesSpan) -> ParseResult<(Node<u16>, Node<ConstantPool>)> {
-    collect(node(be_u16), constant_info)(input)
+    let (input, len) = node(be_u16)(input)?;
+    let (mut input, constant_pool_offset) = offset(input)?;
+    let mut constant_pool = ConstantPool::default();
+    let mut constant_counter = 0;
+
+    while constant_counter < *len - 1 {
+        let (remain, constant) = constant_info(input)?;
+
+        if constant.occupies_2_slots() {
+            constant_counter += 2;
+        } else {
+            constant_counter += 1;
+        }
+
+        constant_pool.add(constant);
+        input = remain;
+    }
+
+    Ok((
+        input,
+        (len, Node(constant_pool_offset..input.offset, constant_pool)),
+    ))
 }
 
 fn constant_info(input: BytesSpan) -> ParseResult<Node<ConstantInfo>> {

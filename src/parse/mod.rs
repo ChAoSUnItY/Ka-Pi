@@ -5,7 +5,7 @@ use std::path::Path;
 use nom::bytes::complete::{tag, take};
 use nom::combinator::map;
 use nom::number::complete::be_u16;
-use nom::{IResult, Parser, Slice, ToUsize};
+use nom::{IResult, Parser, ToUsize};
 
 use byte_span::{offset, BytesSpan};
 
@@ -15,7 +15,6 @@ use crate::node::class::Class;
 use crate::node::constant::ConstantPool;
 use crate::node::signature::Signature;
 use crate::node::Node;
-use crate::parse::traits::{Append, LengthConstraint};
 
 pub(crate) mod attribute;
 pub(crate) mod class;
@@ -182,23 +181,23 @@ fn tag_sized_node<const SIZE: usize>(
     }
 }
 
-fn collect<'fragment, L, T, LP, TP, V, E>(
+fn collect<'fragment, L, T, LP, TP, E>(
     mut len_parser: LP,
     mut item_parser: TP,
-) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, (L, Node<V>), E>
+) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, (L, Node<Vec<T>>), E>
 where
     L: ToUsize,
     LP: Parser<BytesSpan<'fragment>, L, E>,
     TP: Parser<BytesSpan<'fragment>, T, E>,
-    V: Append<Item = T> + LengthConstraint + Default,
     nom::Err<E>: From<nom::Err<nom::error::Error<BytesSpan<'fragment>>>>,
 {
     move |input| {
         let (input, len) = len_parser.parse(input)?;
         let (mut input, container_offset) = offset(input)?;
-        let mut items = V::default();
+        let length = len.to_usize();
+        let mut items = Vec::with_capacity(length);
 
-        for _ in 0..V::constraint(len.to_usize()) {
+        for _ in 0..length {
             let (remain, item) = item_parser.parse(input)?;
 
             items.push(item);
@@ -209,24 +208,24 @@ where
     }
 }
 
-fn collect_with_constant_pool<'input: 'constant_pool, 'constant_pool, L, T, LP, TP, V>(
+fn collect_with_constant_pool<'input: 'constant_pool, 'constant_pool, L, T, LP, TP>(
     mut len_parser: LP,
     mut item_parser: TP,
     constant_pool: &'constant_pool ConstantPool,
-) -> impl FnMut(BytesSpan<'input>) -> IResult<BytesSpan<'input>, (L, Node<V>)> + '_
+) -> impl FnMut(BytesSpan<'input>) -> IResult<BytesSpan<'input>, (L, Node<Vec<T>>)> + '_
 where
     L: ToUsize,
     LP: FnMut(BytesSpan<'input>) -> IResult<BytesSpan<'input>, L> + 'constant_pool,
     TP: FnMut(BytesSpan<'input>, &'constant_pool ConstantPool) -> IResult<BytesSpan<'input>, T>
         + 'constant_pool,
-    V: Append<Item = T> + LengthConstraint + Default,
 {
     move |input: BytesSpan| {
         let (input, len) = len_parser(input)?;
         let (mut input, container_offset) = offset(input)?;
-        let mut items = V::default();
+        let length = len.to_usize();
+        let mut items = Vec::with_capacity(length);
 
-        for _ in 0..V::constraint(len.to_usize()) {
+        for _ in 0..length {
             let (remain, item) = item_parser(input, constant_pool)?;
 
             items.push(item);

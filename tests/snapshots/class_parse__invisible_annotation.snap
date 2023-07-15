@@ -1,796 +1,1787 @@
 ---
-source: test/class_parse.rs
+source: tests/class_parse.rs
 expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/InvisibleAnnotation.class\"))?"
 ---
-java_version: V17
-constant_pool_count: 43
+magic_number:
+  - start: 0
+    end: 4
+  - - 202
+    - 254
+    - 186
+    - 190
+java_version:
+  - start: 4
+    end: 8
+  - V17
+constant_pool_count:
+  - start: 8
+    end: 10
+  - 43
 constant_pool:
-  len: 43
-  entries:
-    1:
-      Class:
-        name_index: 2
-    2:
-      Utf8:
-        length: 19
-        bytes:
-          - 73
-          - 110
-          - 118
-          - 105
-          - 115
-          - 105
-          - 98
-          - 108
-          - 101
-          - 65
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-    3:
-      Class:
-        name_index: 4
-    4:
-      Utf8:
-        length: 16
-        bytes:
-          - 106
-          - 97
-          - 118
-          - 97
-          - 47
-          - 108
-          - 97
-          - 110
-          - 103
-          - 47
-          - 79
-          - 98
-          - 106
-          - 101
-          - 99
-          - 116
-    5:
-      Class:
-        name_index: 6
-    6:
-      Utf8:
-        length: 31
-        bytes:
-          - 106
-          - 97
-          - 118
-          - 97
-          - 47
-          - 108
-          - 97
-          - 110
-          - 103
-          - 47
-          - 97
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-          - 47
-          - 65
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-    7:
-      Utf8:
-        length: 1
-        bytes:
-          - 98
-    8:
-      Utf8:
-        length: 3
-        bytes:
-          - 40
-          - 41
-          - 66
-    9:
-      Utf8:
-        length: 17
-        bytes:
-          - 65
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-          - 68
-          - 101
-          - 102
-          - 97
-          - 117
-          - 108
-          - 116
-    10:
-      Integer:
-        bytes:
-          - 0
-          - 0
-          - 0
-          - 1
-    11:
-      Utf8:
-        length: 1
-        bytes:
-          - 115
-    12:
-      Utf8:
-        length: 3
-        bytes:
-          - 40
-          - 41
-          - 83
-    13:
-      Utf8:
-        length: 1
-        bytes:
-          - 105
-    14:
-      Utf8:
-        length: 3
-        bytes:
-          - 40
-          - 41
-          - 73
-    15:
-      Utf8:
-        length: 1
-        bytes:
-          - 102
-    16:
-      Utf8:
-        length: 3
-        bytes:
-          - 40
-          - 41
-          - 70
-    17:
-      Float:
-        bytes:
-          - 63
-          - 128
-          - 0
-          - 0
-    18:
-      Utf8:
-        length: 1
-        bytes:
-          - 106
-    19:
-      Utf8:
-        length: 3
-        bytes:
-          - 40
-          - 41
-          - 74
-    20:
-      Long:
-        high_bytes:
-          - 0
-          - 0
-          - 0
-          - 0
-        low_bytes:
-          - 0
-          - 0
-          - 0
-          - 1
-    22:
-      Utf8:
-        length: 1
-        bytes:
-          - 100
-    23:
-      Utf8:
-        length: 3
-        bytes:
-          - 40
-          - 41
-          - 68
-    24:
-      Double:
-        high_bytes:
-          - 63
-          - 240
-          - 0
-          - 0
-        low_bytes:
-          - 0
-          - 0
-          - 0
-          - 0
-    26:
-      Utf8:
-        length: 6
-        bytes:
-          - 115
-          - 116
-          - 114
-          - 105
-          - 110
-          - 103
-    27:
-      Utf8:
-        length: 20
-        bytes:
-          - 40
-          - 41
-          - 76
-          - 106
-          - 97
-          - 118
-          - 97
-          - 47
-          - 108
-          - 97
-          - 110
-          - 103
-          - 47
-          - 83
-          - 116
-          - 114
-          - 105
-          - 110
-          - 103
-          - 59
-    28:
-      Utf8:
-        length: 3
-        bytes:
-          - 75
-          - 69
-          - 75
-    29:
-      Utf8:
-        length: 1
-        bytes:
-          - 101
-    30:
-      Utf8:
-        length: 8
-        bytes:
-          - 40
-          - 41
-          - 76
-          - 69
-          - 110
-          - 117
-          - 109
-          - 59
-    31:
-      Utf8:
-        length: 6
-        bytes:
-          - 76
-          - 69
-          - 110
-          - 117
-          - 109
-          - 59
-    32:
-      Utf8:
-        length: 4
-        bytes:
-          - 75
-          - 65
-          - 80
-          - 73
-    33:
-      Utf8:
-        length: 10
-        bytes:
-          - 83
-          - 111
-          - 117
-          - 114
-          - 99
-          - 101
-          - 70
-          - 105
-          - 108
-          - 101
-    34:
-      Utf8:
-        length: 24
-        bytes:
-          - 73
-          - 110
-          - 118
-          - 105
-          - 115
-          - 105
-          - 98
-          - 108
-          - 101
-          - 65
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-          - 46
-          - 106
-          - 97
-          - 118
-          - 97
-    35:
-      Utf8:
-        length: 25
-        bytes:
-          - 82
-          - 117
-          - 110
-          - 116
-          - 105
-          - 109
-          - 101
-          - 86
-          - 105
-          - 115
-          - 105
-          - 98
-          - 108
-          - 101
-          - 65
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-          - 115
-    36:
-      Utf8:
-        length: 29
-        bytes:
-          - 76
-          - 106
-          - 97
-          - 118
-          - 97
-          - 47
-          - 108
-          - 97
-          - 110
-          - 103
-          - 47
-          - 97
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-          - 47
-          - 84
-          - 97
-          - 114
-          - 103
-          - 101
-          - 116
-          - 59
-    37:
-      Utf8:
-        length: 5
-        bytes:
-          - 118
-          - 97
-          - 108
-          - 117
-          - 101
-    38:
-      Utf8:
-        length: 34
-        bytes:
-          - 76
-          - 106
-          - 97
-          - 118
-          - 97
-          - 47
-          - 108
-          - 97
-          - 110
-          - 103
-          - 47
-          - 97
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-          - 47
-          - 69
-          - 108
-          - 101
-          - 109
-          - 101
-          - 110
-          - 116
-          - 84
-          - 121
-          - 112
-          - 101
-          - 59
-    39:
-      Utf8:
-        length: 4
-        bytes:
-          - 84
-          - 89
-          - 80
-          - 69
-    40:
-      Utf8:
-        length: 32
-        bytes:
-          - 76
-          - 106
-          - 97
-          - 118
-          - 97
-          - 47
-          - 108
-          - 97
-          - 110
-          - 103
-          - 47
-          - 97
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-          - 47
-          - 82
-          - 101
-          - 116
-          - 101
-          - 110
-          - 116
-          - 105
-          - 111
-          - 110
-          - 59
-    41:
-      Utf8:
-        length: 38
-        bytes:
-          - 76
-          - 106
-          - 97
-          - 118
-          - 97
-          - 47
-          - 108
-          - 97
-          - 110
-          - 103
-          - 47
-          - 97
-          - 110
-          - 110
-          - 111
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-          - 47
-          - 82
-          - 101
-          - 116
-          - 101
-          - 110
-          - 116
-          - 105
-          - 111
-          - 110
-          - 80
-          - 111
-          - 108
-          - 105
-          - 99
-          - 121
-          - 59
-    42:
-      Utf8:
-        length: 5
-        bytes:
-          - 67
-          - 76
-          - 65
-          - 83
-          - 83
+  - start: 10
+    end: 507
+  - len: 43
+    entries:
+      1:
+        - start: 10
+          end: 13
+        - tag:
+            - start: 10
+              end: 11
+            - Class
+          constant:
+            - start: 11
+              end: 13
+            - Class:
+                name_index:
+                  - start: 11
+                    end: 13
+                  - 2
+      2:
+        - start: 13
+          end: 35
+        - tag:
+            - start: 13
+              end: 14
+            - Utf8
+          constant:
+            - start: 14
+              end: 35
+            - Utf8:
+                length:
+                  - start: 14
+                    end: 16
+                  - 19
+                bytes:
+                  - start: 16
+                    end: 35
+                  - - 73
+                    - 110
+                    - 118
+                    - 105
+                    - 115
+                    - 105
+                    - 98
+                    - 108
+                    - 101
+                    - 65
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+      3:
+        - start: 35
+          end: 38
+        - tag:
+            - start: 35
+              end: 36
+            - Class
+          constant:
+            - start: 36
+              end: 38
+            - Class:
+                name_index:
+                  - start: 36
+                    end: 38
+                  - 4
+      4:
+        - start: 38
+          end: 57
+        - tag:
+            - start: 38
+              end: 39
+            - Utf8
+          constant:
+            - start: 39
+              end: 57
+            - Utf8:
+                length:
+                  - start: 39
+                    end: 41
+                  - 16
+                bytes:
+                  - start: 41
+                    end: 57
+                  - - 106
+                    - 97
+                    - 118
+                    - 97
+                    - 47
+                    - 108
+                    - 97
+                    - 110
+                    - 103
+                    - 47
+                    - 79
+                    - 98
+                    - 106
+                    - 101
+                    - 99
+                    - 116
+      5:
+        - start: 57
+          end: 60
+        - tag:
+            - start: 57
+              end: 58
+            - Class
+          constant:
+            - start: 58
+              end: 60
+            - Class:
+                name_index:
+                  - start: 58
+                    end: 60
+                  - 6
+      6:
+        - start: 60
+          end: 94
+        - tag:
+            - start: 60
+              end: 61
+            - Utf8
+          constant:
+            - start: 61
+              end: 94
+            - Utf8:
+                length:
+                  - start: 61
+                    end: 63
+                  - 31
+                bytes:
+                  - start: 63
+                    end: 94
+                  - - 106
+                    - 97
+                    - 118
+                    - 97
+                    - 47
+                    - 108
+                    - 97
+                    - 110
+                    - 103
+                    - 47
+                    - 97
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 47
+                    - 65
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+      7:
+        - start: 94
+          end: 98
+        - tag:
+            - start: 94
+              end: 95
+            - Utf8
+          constant:
+            - start: 95
+              end: 98
+            - Utf8:
+                length:
+                  - start: 95
+                    end: 97
+                  - 1
+                bytes:
+                  - start: 97
+                    end: 98
+                  - - 98
+      8:
+        - start: 98
+          end: 104
+        - tag:
+            - start: 98
+              end: 99
+            - Utf8
+          constant:
+            - start: 99
+              end: 104
+            - Utf8:
+                length:
+                  - start: 99
+                    end: 101
+                  - 3
+                bytes:
+                  - start: 101
+                    end: 104
+                  - - 40
+                    - 41
+                    - 66
+      9:
+        - start: 104
+          end: 124
+        - tag:
+            - start: 104
+              end: 105
+            - Utf8
+          constant:
+            - start: 105
+              end: 124
+            - Utf8:
+                length:
+                  - start: 105
+                    end: 107
+                  - 17
+                bytes:
+                  - start: 107
+                    end: 124
+                  - - 65
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 68
+                    - 101
+                    - 102
+                    - 97
+                    - 117
+                    - 108
+                    - 116
+      10:
+        - start: 124
+          end: 129
+        - tag:
+            - start: 124
+              end: 125
+            - Integer
+          constant:
+            - start: 125
+              end: 129
+            - Integer:
+                bytes:
+                  - start: 125
+                    end: 129
+                  - - 0
+                    - 0
+                    - 0
+                    - 1
+      11:
+        - start: 129
+          end: 133
+        - tag:
+            - start: 129
+              end: 130
+            - Utf8
+          constant:
+            - start: 130
+              end: 133
+            - Utf8:
+                length:
+                  - start: 130
+                    end: 132
+                  - 1
+                bytes:
+                  - start: 132
+                    end: 133
+                  - - 115
+      12:
+        - start: 133
+          end: 139
+        - tag:
+            - start: 133
+              end: 134
+            - Utf8
+          constant:
+            - start: 134
+              end: 139
+            - Utf8:
+                length:
+                  - start: 134
+                    end: 136
+                  - 3
+                bytes:
+                  - start: 136
+                    end: 139
+                  - - 40
+                    - 41
+                    - 83
+      13:
+        - start: 139
+          end: 143
+        - tag:
+            - start: 139
+              end: 140
+            - Utf8
+          constant:
+            - start: 140
+              end: 143
+            - Utf8:
+                length:
+                  - start: 140
+                    end: 142
+                  - 1
+                bytes:
+                  - start: 142
+                    end: 143
+                  - - 105
+      14:
+        - start: 143
+          end: 149
+        - tag:
+            - start: 143
+              end: 144
+            - Utf8
+          constant:
+            - start: 144
+              end: 149
+            - Utf8:
+                length:
+                  - start: 144
+                    end: 146
+                  - 3
+                bytes:
+                  - start: 146
+                    end: 149
+                  - - 40
+                    - 41
+                    - 73
+      15:
+        - start: 149
+          end: 153
+        - tag:
+            - start: 149
+              end: 150
+            - Utf8
+          constant:
+            - start: 150
+              end: 153
+            - Utf8:
+                length:
+                  - start: 150
+                    end: 152
+                  - 1
+                bytes:
+                  - start: 152
+                    end: 153
+                  - - 102
+      16:
+        - start: 153
+          end: 159
+        - tag:
+            - start: 153
+              end: 154
+            - Utf8
+          constant:
+            - start: 154
+              end: 159
+            - Utf8:
+                length:
+                  - start: 154
+                    end: 156
+                  - 3
+                bytes:
+                  - start: 156
+                    end: 159
+                  - - 40
+                    - 41
+                    - 70
+      17:
+        - start: 159
+          end: 164
+        - tag:
+            - start: 159
+              end: 160
+            - Float
+          constant:
+            - start: 160
+              end: 164
+            - Float:
+                bytes:
+                  - start: 160
+                    end: 164
+                  - - 63
+                    - 128
+                    - 0
+                    - 0
+      18:
+        - start: 164
+          end: 168
+        - tag:
+            - start: 164
+              end: 165
+            - Utf8
+          constant:
+            - start: 165
+              end: 168
+            - Utf8:
+                length:
+                  - start: 165
+                    end: 167
+                  - 1
+                bytes:
+                  - start: 167
+                    end: 168
+                  - - 106
+      19:
+        - start: 168
+          end: 174
+        - tag:
+            - start: 168
+              end: 169
+            - Utf8
+          constant:
+            - start: 169
+              end: 174
+            - Utf8:
+                length:
+                  - start: 169
+                    end: 171
+                  - 3
+                bytes:
+                  - start: 171
+                    end: 174
+                  - - 40
+                    - 41
+                    - 74
+      20:
+        - start: 174
+          end: 183
+        - tag:
+            - start: 174
+              end: 175
+            - Long
+          constant:
+            - start: 175
+              end: 183
+            - Long:
+                high_bytes:
+                  - start: 175
+                    end: 179
+                  - - 0
+                    - 0
+                    - 0
+                    - 0
+                low_bytes:
+                  - start: 179
+                    end: 183
+                  - - 0
+                    - 0
+                    - 0
+                    - 1
+      22:
+        - start: 183
+          end: 187
+        - tag:
+            - start: 183
+              end: 184
+            - Utf8
+          constant:
+            - start: 184
+              end: 187
+            - Utf8:
+                length:
+                  - start: 184
+                    end: 186
+                  - 1
+                bytes:
+                  - start: 186
+                    end: 187
+                  - - 100
+      23:
+        - start: 187
+          end: 193
+        - tag:
+            - start: 187
+              end: 188
+            - Utf8
+          constant:
+            - start: 188
+              end: 193
+            - Utf8:
+                length:
+                  - start: 188
+                    end: 190
+                  - 3
+                bytes:
+                  - start: 190
+                    end: 193
+                  - - 40
+                    - 41
+                    - 68
+      24:
+        - start: 193
+          end: 202
+        - tag:
+            - start: 193
+              end: 194
+            - Double
+          constant:
+            - start: 194
+              end: 202
+            - Double:
+                high_bytes:
+                  - start: 194
+                    end: 198
+                  - - 63
+                    - 240
+                    - 0
+                    - 0
+                low_bytes:
+                  - start: 198
+                    end: 202
+                  - - 0
+                    - 0
+                    - 0
+                    - 0
+      26:
+        - start: 202
+          end: 211
+        - tag:
+            - start: 202
+              end: 203
+            - Utf8
+          constant:
+            - start: 203
+              end: 211
+            - Utf8:
+                length:
+                  - start: 203
+                    end: 205
+                  - 6
+                bytes:
+                  - start: 205
+                    end: 211
+                  - - 115
+                    - 116
+                    - 114
+                    - 105
+                    - 110
+                    - 103
+      27:
+        - start: 211
+          end: 234
+        - tag:
+            - start: 211
+              end: 212
+            - Utf8
+          constant:
+            - start: 212
+              end: 234
+            - Utf8:
+                length:
+                  - start: 212
+                    end: 214
+                  - 20
+                bytes:
+                  - start: 214
+                    end: 234
+                  - - 40
+                    - 41
+                    - 76
+                    - 106
+                    - 97
+                    - 118
+                    - 97
+                    - 47
+                    - 108
+                    - 97
+                    - 110
+                    - 103
+                    - 47
+                    - 83
+                    - 116
+                    - 114
+                    - 105
+                    - 110
+                    - 103
+                    - 59
+      28:
+        - start: 234
+          end: 240
+        - tag:
+            - start: 234
+              end: 235
+            - Utf8
+          constant:
+            - start: 235
+              end: 240
+            - Utf8:
+                length:
+                  - start: 235
+                    end: 237
+                  - 3
+                bytes:
+                  - start: 237
+                    end: 240
+                  - - 75
+                    - 69
+                    - 75
+      29:
+        - start: 240
+          end: 244
+        - tag:
+            - start: 240
+              end: 241
+            - Utf8
+          constant:
+            - start: 241
+              end: 244
+            - Utf8:
+                length:
+                  - start: 241
+                    end: 243
+                  - 1
+                bytes:
+                  - start: 243
+                    end: 244
+                  - - 101
+      30:
+        - start: 244
+          end: 255
+        - tag:
+            - start: 244
+              end: 245
+            - Utf8
+          constant:
+            - start: 245
+              end: 255
+            - Utf8:
+                length:
+                  - start: 245
+                    end: 247
+                  - 8
+                bytes:
+                  - start: 247
+                    end: 255
+                  - - 40
+                    - 41
+                    - 76
+                    - 69
+                    - 110
+                    - 117
+                    - 109
+                    - 59
+      31:
+        - start: 255
+          end: 264
+        - tag:
+            - start: 255
+              end: 256
+            - Utf8
+          constant:
+            - start: 256
+              end: 264
+            - Utf8:
+                length:
+                  - start: 256
+                    end: 258
+                  - 6
+                bytes:
+                  - start: 258
+                    end: 264
+                  - - 76
+                    - 69
+                    - 110
+                    - 117
+                    - 109
+                    - 59
+      32:
+        - start: 264
+          end: 271
+        - tag:
+            - start: 264
+              end: 265
+            - Utf8
+          constant:
+            - start: 265
+              end: 271
+            - Utf8:
+                length:
+                  - start: 265
+                    end: 267
+                  - 4
+                bytes:
+                  - start: 267
+                    end: 271
+                  - - 75
+                    - 65
+                    - 80
+                    - 73
+      33:
+        - start: 271
+          end: 284
+        - tag:
+            - start: 271
+              end: 272
+            - Utf8
+          constant:
+            - start: 272
+              end: 284
+            - Utf8:
+                length:
+                  - start: 272
+                    end: 274
+                  - 10
+                bytes:
+                  - start: 274
+                    end: 284
+                  - - 83
+                    - 111
+                    - 117
+                    - 114
+                    - 99
+                    - 101
+                    - 70
+                    - 105
+                    - 108
+                    - 101
+      34:
+        - start: 284
+          end: 311
+        - tag:
+            - start: 284
+              end: 285
+            - Utf8
+          constant:
+            - start: 285
+              end: 311
+            - Utf8:
+                length:
+                  - start: 285
+                    end: 287
+                  - 24
+                bytes:
+                  - start: 287
+                    end: 311
+                  - - 73
+                    - 110
+                    - 118
+                    - 105
+                    - 115
+                    - 105
+                    - 98
+                    - 108
+                    - 101
+                    - 65
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 46
+                    - 106
+                    - 97
+                    - 118
+                    - 97
+      35:
+        - start: 311
+          end: 339
+        - tag:
+            - start: 311
+              end: 312
+            - Utf8
+          constant:
+            - start: 312
+              end: 339
+            - Utf8:
+                length:
+                  - start: 312
+                    end: 314
+                  - 25
+                bytes:
+                  - start: 314
+                    end: 339
+                  - - 82
+                    - 117
+                    - 110
+                    - 116
+                    - 105
+                    - 109
+                    - 101
+                    - 86
+                    - 105
+                    - 115
+                    - 105
+                    - 98
+                    - 108
+                    - 101
+                    - 65
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 115
+      36:
+        - start: 339
+          end: 371
+        - tag:
+            - start: 339
+              end: 340
+            - Utf8
+          constant:
+            - start: 340
+              end: 371
+            - Utf8:
+                length:
+                  - start: 340
+                    end: 342
+                  - 29
+                bytes:
+                  - start: 342
+                    end: 371
+                  - - 76
+                    - 106
+                    - 97
+                    - 118
+                    - 97
+                    - 47
+                    - 108
+                    - 97
+                    - 110
+                    - 103
+                    - 47
+                    - 97
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 47
+                    - 84
+                    - 97
+                    - 114
+                    - 103
+                    - 101
+                    - 116
+                    - 59
+      37:
+        - start: 371
+          end: 379
+        - tag:
+            - start: 371
+              end: 372
+            - Utf8
+          constant:
+            - start: 372
+              end: 379
+            - Utf8:
+                length:
+                  - start: 372
+                    end: 374
+                  - 5
+                bytes:
+                  - start: 374
+                    end: 379
+                  - - 118
+                    - 97
+                    - 108
+                    - 117
+                    - 101
+      38:
+        - start: 379
+          end: 416
+        - tag:
+            - start: 379
+              end: 380
+            - Utf8
+          constant:
+            - start: 380
+              end: 416
+            - Utf8:
+                length:
+                  - start: 380
+                    end: 382
+                  - 34
+                bytes:
+                  - start: 382
+                    end: 416
+                  - - 76
+                    - 106
+                    - 97
+                    - 118
+                    - 97
+                    - 47
+                    - 108
+                    - 97
+                    - 110
+                    - 103
+                    - 47
+                    - 97
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 47
+                    - 69
+                    - 108
+                    - 101
+                    - 109
+                    - 101
+                    - 110
+                    - 116
+                    - 84
+                    - 121
+                    - 112
+                    - 101
+                    - 59
+      39:
+        - start: 416
+          end: 423
+        - tag:
+            - start: 416
+              end: 417
+            - Utf8
+          constant:
+            - start: 417
+              end: 423
+            - Utf8:
+                length:
+                  - start: 417
+                    end: 419
+                  - 4
+                bytes:
+                  - start: 419
+                    end: 423
+                  - - 84
+                    - 89
+                    - 80
+                    - 69
+      40:
+        - start: 423
+          end: 458
+        - tag:
+            - start: 423
+              end: 424
+            - Utf8
+          constant:
+            - start: 424
+              end: 458
+            - Utf8:
+                length:
+                  - start: 424
+                    end: 426
+                  - 32
+                bytes:
+                  - start: 426
+                    end: 458
+                  - - 76
+                    - 106
+                    - 97
+                    - 118
+                    - 97
+                    - 47
+                    - 108
+                    - 97
+                    - 110
+                    - 103
+                    - 47
+                    - 97
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 47
+                    - 82
+                    - 101
+                    - 116
+                    - 101
+                    - 110
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 59
+      41:
+        - start: 458
+          end: 499
+        - tag:
+            - start: 458
+              end: 459
+            - Utf8
+          constant:
+            - start: 459
+              end: 499
+            - Utf8:
+                length:
+                  - start: 459
+                    end: 461
+                  - 38
+                bytes:
+                  - start: 461
+                    end: 499
+                  - - 76
+                    - 106
+                    - 97
+                    - 118
+                    - 97
+                    - 47
+                    - 108
+                    - 97
+                    - 110
+                    - 103
+                    - 47
+                    - 97
+                    - 110
+                    - 110
+                    - 111
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 47
+                    - 82
+                    - 101
+                    - 116
+                    - 101
+                    - 110
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 80
+                    - 111
+                    - 108
+                    - 105
+                    - 99
+                    - 121
+                    - 59
+      42:
+        - start: 499
+          end: 507
+        - tag:
+            - start: 499
+              end: 500
+            - Utf8
+          constant:
+            - start: 500
+              end: 507
+            - Utf8:
+                length:
+                  - start: 500
+                    end: 502
+                  - 5
+                bytes:
+                  - start: 502
+                    end: 507
+                  - - 67
+                    - 76
+                    - 65
+                    - 83
+                    - 83
 access_flags:
-  - Public
-  - Interface
-  - Abstract
-  - Annotation
-this_class: 1
-super_class: 3
-interfaces_count: 1
+  - start: 507
+    end: 509
+  - - Public
+    - Interface
+    - Abstract
+    - Annotation
+this_class:
+  - start: 509
+    end: 511
+  - 1
+super_class:
+  - start: 511
+    end: 513
+  - 3
+interfaces_count:
+  - start: 513
+    end: 515
+  - 1
 interfaces:
-  - 5
-fields_count: 0
-fields: []
-methods_count: 8
+  - start: 515
+    end: 517
+  - - - start: 515
+        end: 517
+      - 5
+fields_count:
+  - start: 517
+    end: 519
+  - 0
+fields:
+  - start: 519
+    end: 519
+  - []
+methods_count:
+  - start: 519
+    end: 521
+  - 8
 methods:
-  - access_flags:
-      - Public
-      - Abstract
-    name_index: 7
-    descriptor_index: 8
-    attribute_infos_len: 1
-    attribute_infos:
-      - attribute_name_index: 9
-        attribute_len: 3
-        info:
-          - 66
-          - 0
-          - 10
-        attribute:
-          AnnotationDefault:
-            default_value:
-              tag: 66
-              value:
-                ConstValue:
-                  const_value_index: 10
-  - access_flags:
-      - Public
-      - Abstract
-    name_index: 11
-    descriptor_index: 12
-    attribute_infos_len: 1
-    attribute_infos:
-      - attribute_name_index: 9
-        attribute_len: 3
-        info:
-          - 83
-          - 0
-          - 10
-        attribute:
-          AnnotationDefault:
-            default_value:
-              tag: 83
-              value:
-                ConstValue:
-                  const_value_index: 10
-  - access_flags:
-      - Public
-      - Abstract
-    name_index: 13
-    descriptor_index: 14
-    attribute_infos_len: 1
-    attribute_infos:
-      - attribute_name_index: 9
-        attribute_len: 3
-        info:
-          - 73
-          - 0
-          - 10
-        attribute:
-          AnnotationDefault:
-            default_value:
-              tag: 73
-              value:
-                ConstValue:
-                  const_value_index: 10
-  - access_flags:
-      - Public
-      - Abstract
-    name_index: 15
-    descriptor_index: 16
-    attribute_infos_len: 1
-    attribute_infos:
-      - attribute_name_index: 9
-        attribute_len: 3
-        info:
-          - 70
-          - 0
-          - 17
-        attribute:
-          AnnotationDefault:
-            default_value:
-              tag: 70
-              value:
-                ConstValue:
-                  const_value_index: 17
-  - access_flags:
-      - Public
-      - Abstract
-    name_index: 18
-    descriptor_index: 19
-    attribute_infos_len: 1
-    attribute_infos:
-      - attribute_name_index: 9
-        attribute_len: 3
-        info:
-          - 74
-          - 0
-          - 20
-        attribute:
-          AnnotationDefault:
-            default_value:
-              tag: 74
-              value:
-                ConstValue:
-                  const_value_index: 20
-  - access_flags:
-      - Public
-      - Abstract
-    name_index: 22
-    descriptor_index: 23
-    attribute_infos_len: 1
-    attribute_infos:
-      - attribute_name_index: 9
-        attribute_len: 3
-        info:
-          - 68
-          - 0
-          - 24
-        attribute:
-          AnnotationDefault:
-            default_value:
-              tag: 68
-              value:
-                ConstValue:
-                  const_value_index: 24
-  - access_flags:
-      - Public
-      - Abstract
-    name_index: 26
-    descriptor_index: 27
-    attribute_infos_len: 1
-    attribute_infos:
-      - attribute_name_index: 9
-        attribute_len: 3
-        info:
-          - 115
-          - 0
-          - 28
-        attribute:
-          AnnotationDefault:
-            default_value:
-              tag: 115
-              value:
-                ConstValue:
-                  const_value_index: 28
-  - access_flags:
-      - Public
-      - Abstract
-    name_index: 29
-    descriptor_index: 30
-    attribute_infos_len: 1
-    attribute_infos:
-      - attribute_name_index: 9
-        attribute_len: 5
-        info:
-          - 101
-          - 0
-          - 31
-          - 0
-          - 32
-        attribute:
-          AnnotationDefault:
-            default_value:
-              tag: 101
-              value:
-                EnumConstValue:
-                  type_name_index: 31
-                  const_name_index: 32
-attributes_count: 2
-attributes:
-  - attribute_name_index: 33
-    attribute_len: 2
-    info:
-      - 0
-      - 34
-    attribute:
-      SourceFile:
-        source_file_index: 34
-  - attribute_name_index: 35
-    attribute_len: 27
-    info:
-      - 0
-      - 2
-      - 0
-      - 36
-      - 0
-      - 1
-      - 0
-      - 37
-      - 91
-      - 0
-      - 1
-      - 101
-      - 0
-      - 38
-      - 0
-      - 39
-      - 0
-      - 40
-      - 0
-      - 1
-      - 0
-      - 37
-      - 101
-      - 0
-      - 41
-      - 0
-      - 42
-    attribute:
-      RuntimeVisibleAnnotations:
-        num_annotations: 2
-        annotations:
-          - type_index: 36
-            num_element_value_pairs: 1
-            element_value_pairs:
-              - element_name_index: 37
-                value:
-                  tag: 91
-                  value:
-                    ArrayValue:
-                      num_values: 1
-                      values:
-                        - tag: 101
+  - start: 521
+    end: 659
+  - - - start: 521
+        end: 538
+      - access_flags:
+          - start: 521
+            end: 523
+          - - Public
+            - Abstract
+        name_index:
+          - start: 523
+            end: 525
+          - 7
+        descriptor_index:
+          - start: 525
+            end: 527
+          - 8
+        attribute_infos_len:
+          - start: 527
+            end: 529
+          - 1
+        attribute_infos:
+          - start: 529
+            end: 538
+          - - - start: 529
+                end: 538
+              - attribute_name_index:
+                  - start: 529
+                    end: 531
+                  - 9
+                attribute_len:
+                  - start: 531
+                    end: 535
+                  - 3
+                info:
+                  - start: 535
+                    end: 538
+                  - - 66
+                    - 0
+                    - 10
+                attribute:
+                  - start: 535
+                    end: 538
+                  - AnnotationDefault:
+                      default_value:
+                        - start: 535
+                          end: 538
+                        - tag:
+                            - start: 535
+                              end: 536
+                            - 66
                           value:
-                            EnumConstValue:
-                              type_name_index: 38
-                              const_name_index: 39
-          - type_index: 40
-            num_element_value_pairs: 1
-            element_value_pairs:
-              - element_name_index: 37
-                value:
-                  tag: 101
-                  value:
-                    EnumConstValue:
-                      type_name_index: 41
-                      const_name_index: 42
+                            - start: 536
+                              end: 538
+                            - ConstValue:
+                                const_value_index:
+                                  - start: 536
+                                    end: 538
+                                  - 10
+    - - start: 538
+        end: 555
+      - access_flags:
+          - start: 538
+            end: 540
+          - - Public
+            - Abstract
+        name_index:
+          - start: 540
+            end: 542
+          - 11
+        descriptor_index:
+          - start: 542
+            end: 544
+          - 12
+        attribute_infos_len:
+          - start: 544
+            end: 546
+          - 1
+        attribute_infos:
+          - start: 546
+            end: 555
+          - - - start: 546
+                end: 555
+              - attribute_name_index:
+                  - start: 546
+                    end: 548
+                  - 9
+                attribute_len:
+                  - start: 548
+                    end: 552
+                  - 3
+                info:
+                  - start: 552
+                    end: 555
+                  - - 83
+                    - 0
+                    - 10
+                attribute:
+                  - start: 552
+                    end: 555
+                  - AnnotationDefault:
+                      default_value:
+                        - start: 552
+                          end: 555
+                        - tag:
+                            - start: 552
+                              end: 553
+                            - 83
+                          value:
+                            - start: 553
+                              end: 555
+                            - ConstValue:
+                                const_value_index:
+                                  - start: 553
+                                    end: 555
+                                  - 10
+    - - start: 555
+        end: 572
+      - access_flags:
+          - start: 555
+            end: 557
+          - - Public
+            - Abstract
+        name_index:
+          - start: 557
+            end: 559
+          - 13
+        descriptor_index:
+          - start: 559
+            end: 561
+          - 14
+        attribute_infos_len:
+          - start: 561
+            end: 563
+          - 1
+        attribute_infos:
+          - start: 563
+            end: 572
+          - - - start: 563
+                end: 572
+              - attribute_name_index:
+                  - start: 563
+                    end: 565
+                  - 9
+                attribute_len:
+                  - start: 565
+                    end: 569
+                  - 3
+                info:
+                  - start: 569
+                    end: 572
+                  - - 73
+                    - 0
+                    - 10
+                attribute:
+                  - start: 569
+                    end: 572
+                  - AnnotationDefault:
+                      default_value:
+                        - start: 569
+                          end: 572
+                        - tag:
+                            - start: 569
+                              end: 570
+                            - 73
+                          value:
+                            - start: 570
+                              end: 572
+                            - ConstValue:
+                                const_value_index:
+                                  - start: 570
+                                    end: 572
+                                  - 10
+    - - start: 572
+        end: 589
+      - access_flags:
+          - start: 572
+            end: 574
+          - - Public
+            - Abstract
+        name_index:
+          - start: 574
+            end: 576
+          - 15
+        descriptor_index:
+          - start: 576
+            end: 578
+          - 16
+        attribute_infos_len:
+          - start: 578
+            end: 580
+          - 1
+        attribute_infos:
+          - start: 580
+            end: 589
+          - - - start: 580
+                end: 589
+              - attribute_name_index:
+                  - start: 580
+                    end: 582
+                  - 9
+                attribute_len:
+                  - start: 582
+                    end: 586
+                  - 3
+                info:
+                  - start: 586
+                    end: 589
+                  - - 70
+                    - 0
+                    - 17
+                attribute:
+                  - start: 586
+                    end: 589
+                  - AnnotationDefault:
+                      default_value:
+                        - start: 586
+                          end: 589
+                        - tag:
+                            - start: 586
+                              end: 587
+                            - 70
+                          value:
+                            - start: 587
+                              end: 589
+                            - ConstValue:
+                                const_value_index:
+                                  - start: 587
+                                    end: 589
+                                  - 17
+    - - start: 589
+        end: 606
+      - access_flags:
+          - start: 589
+            end: 591
+          - - Public
+            - Abstract
+        name_index:
+          - start: 591
+            end: 593
+          - 18
+        descriptor_index:
+          - start: 593
+            end: 595
+          - 19
+        attribute_infos_len:
+          - start: 595
+            end: 597
+          - 1
+        attribute_infos:
+          - start: 597
+            end: 606
+          - - - start: 597
+                end: 606
+              - attribute_name_index:
+                  - start: 597
+                    end: 599
+                  - 9
+                attribute_len:
+                  - start: 599
+                    end: 603
+                  - 3
+                info:
+                  - start: 603
+                    end: 606
+                  - - 74
+                    - 0
+                    - 20
+                attribute:
+                  - start: 603
+                    end: 606
+                  - AnnotationDefault:
+                      default_value:
+                        - start: 603
+                          end: 606
+                        - tag:
+                            - start: 603
+                              end: 604
+                            - 74
+                          value:
+                            - start: 604
+                              end: 606
+                            - ConstValue:
+                                const_value_index:
+                                  - start: 604
+                                    end: 606
+                                  - 20
+    - - start: 606
+        end: 623
+      - access_flags:
+          - start: 606
+            end: 608
+          - - Public
+            - Abstract
+        name_index:
+          - start: 608
+            end: 610
+          - 22
+        descriptor_index:
+          - start: 610
+            end: 612
+          - 23
+        attribute_infos_len:
+          - start: 612
+            end: 614
+          - 1
+        attribute_infos:
+          - start: 614
+            end: 623
+          - - - start: 614
+                end: 623
+              - attribute_name_index:
+                  - start: 614
+                    end: 616
+                  - 9
+                attribute_len:
+                  - start: 616
+                    end: 620
+                  - 3
+                info:
+                  - start: 620
+                    end: 623
+                  - - 68
+                    - 0
+                    - 24
+                attribute:
+                  - start: 620
+                    end: 623
+                  - AnnotationDefault:
+                      default_value:
+                        - start: 620
+                          end: 623
+                        - tag:
+                            - start: 620
+                              end: 621
+                            - 68
+                          value:
+                            - start: 621
+                              end: 623
+                            - ConstValue:
+                                const_value_index:
+                                  - start: 621
+                                    end: 623
+                                  - 24
+    - - start: 623
+        end: 640
+      - access_flags:
+          - start: 623
+            end: 625
+          - - Public
+            - Abstract
+        name_index:
+          - start: 625
+            end: 627
+          - 26
+        descriptor_index:
+          - start: 627
+            end: 629
+          - 27
+        attribute_infos_len:
+          - start: 629
+            end: 631
+          - 1
+        attribute_infos:
+          - start: 631
+            end: 640
+          - - - start: 631
+                end: 640
+              - attribute_name_index:
+                  - start: 631
+                    end: 633
+                  - 9
+                attribute_len:
+                  - start: 633
+                    end: 637
+                  - 3
+                info:
+                  - start: 637
+                    end: 640
+                  - - 115
+                    - 0
+                    - 28
+                attribute:
+                  - start: 637
+                    end: 640
+                  - AnnotationDefault:
+                      default_value:
+                        - start: 637
+                          end: 640
+                        - tag:
+                            - start: 637
+                              end: 638
+                            - 115
+                          value:
+                            - start: 638
+                              end: 640
+                            - ConstValue:
+                                const_value_index:
+                                  - start: 638
+                                    end: 640
+                                  - 28
+    - - start: 640
+        end: 659
+      - access_flags:
+          - start: 640
+            end: 642
+          - - Public
+            - Abstract
+        name_index:
+          - start: 642
+            end: 644
+          - 29
+        descriptor_index:
+          - start: 644
+            end: 646
+          - 30
+        attribute_infos_len:
+          - start: 646
+            end: 648
+          - 1
+        attribute_infos:
+          - start: 648
+            end: 659
+          - - - start: 648
+                end: 659
+              - attribute_name_index:
+                  - start: 648
+                    end: 650
+                  - 9
+                attribute_len:
+                  - start: 650
+                    end: 654
+                  - 5
+                info:
+                  - start: 654
+                    end: 659
+                  - - 101
+                    - 0
+                    - 31
+                    - 0
+                    - 32
+                attribute:
+                  - start: 654
+                    end: 659
+                  - AnnotationDefault:
+                      default_value:
+                        - start: 654
+                          end: 659
+                        - tag:
+                            - start: 654
+                              end: 655
+                            - 101
+                          value:
+                            - start: 655
+                              end: 659
+                            - EnumConstValue:
+                                type_name_index:
+                                  - start: 655
+                                    end: 657
+                                  - 31
+                                const_name_index:
+                                  - start: 657
+                                    end: 659
+                                  - 32
+attributes_count:
+  - start: 659
+    end: 661
+  - 2
+attributes:
+  - start: 661
+    end: 702
+  - - - start: 661
+        end: 669
+      - attribute_name_index:
+          - start: 661
+            end: 663
+          - 33
+        attribute_len:
+          - start: 663
+            end: 667
+          - 2
+        info:
+          - start: 667
+            end: 669
+          - - 0
+            - 34
+        attribute:
+          - start: 667
+            end: 669
+          - SourceFile:
+              source_file_index:
+                - start: 667
+                  end: 669
+                - 34
+    - - start: 669
+        end: 702
+      - attribute_name_index:
+          - start: 669
+            end: 671
+          - 35
+        attribute_len:
+          - start: 671
+            end: 675
+          - 27
+        info:
+          - start: 675
+            end: 702
+          - - 0
+            - 2
+            - 0
+            - 36
+            - 0
+            - 1
+            - 0
+            - 37
+            - 91
+            - 0
+            - 1
+            - 101
+            - 0
+            - 38
+            - 0
+            - 39
+            - 0
+            - 40
+            - 0
+            - 1
+            - 0
+            - 37
+            - 101
+            - 0
+            - 41
+            - 0
+            - 42
+        attribute:
+          - start: 675
+            end: 702
+          - RuntimeVisibleAnnotations:
+              num_annotations:
+                - start: 675
+                  end: 677
+                - 2
+              annotations:
+                - start: 677
+                  end: 702
+                - - - start: 677
+                      end: 691
+                    - type_index:
+                        - start: 677
+                          end: 679
+                        - 36
+                      num_element_value_pairs:
+                        - start: 679
+                          end: 681
+                        - 1
+                      element_value_pairs:
+                        - start: 681
+                          end: 691
+                        - - - start: 681
+                              end: 691
+                            - element_name_index:
+                                - start: 681
+                                  end: 683
+                                - 37
+                              value:
+                                - start: 683
+                                  end: 691
+                                - tag:
+                                    - start: 683
+                                      end: 684
+                                    - 91
+                                  value:
+                                    - start: 684
+                                      end: 691
+                                    - ArrayValue:
+                                        num_values:
+                                          - start: 684
+                                            end: 686
+                                          - 1
+                                        values:
+                                          - start: 686
+                                            end: 691
+                                          - - - start: 686
+                                                end: 691
+                                              - tag:
+                                                  - start: 686
+                                                    end: 687
+                                                  - 101
+                                                value:
+                                                  - start: 687
+                                                    end: 691
+                                                  - EnumConstValue:
+                                                      type_name_index:
+                                                        - start: 687
+                                                          end: 689
+                                                        - 38
+                                                      const_name_index:
+                                                        - start: 689
+                                                          end: 691
+                                                        - 39
+                  - - start: 691
+                      end: 702
+                    - type_index:
+                        - start: 691
+                          end: 693
+                        - 40
+                      num_element_value_pairs:
+                        - start: 693
+                          end: 695
+                        - 1
+                      element_value_pairs:
+                        - start: 695
+                          end: 702
+                        - - - start: 695
+                              end: 702
+                            - element_name_index:
+                                - start: 695
+                                  end: 697
+                                - 37
+                              value:
+                                - start: 697
+                                  end: 702
+                                - tag:
+                                    - start: 697
+                                      end: 698
+                                    - 101
+                                  value:
+                                    - start: 698
+                                      end: 702
+                                    - EnumConstValue:
+                                        type_name_index:
+                                          - start: 698
+                                            end: 700
+                                          - 41
+                                        const_name_index:
+                                          - start: 700
+                                            end: 702
+                                          - 42
 
