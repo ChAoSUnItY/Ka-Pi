@@ -147,7 +147,9 @@ impl ConstValue {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Constant> {
-        constant_pool.get_constant(*self.const_value_index).map(|node| node)
+        constant_pool
+            .get_constant(*self.const_value_index)
+            .map(|node| node)
     }
 }
 

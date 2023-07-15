@@ -35,6 +35,7 @@ insta = { version = "1.28.0", features = ["yaml"] }
 rstest = "0.17.0"
 
 [features]
-default = ["parse"]
+default = ["parse", "serde_span"]
 parse = []
+serde_span = []
 generate = []

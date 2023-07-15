@@ -49,13 +49,15 @@ impl ConstantPool {
     }
 
     pub(crate) fn add(&mut self, cp_info: Node<ConstantInfo>) {
-        if cp_info.occupies_2_slots() {
+        let occupies_2_slots = cp_info.occupies_2_slots();
+
+        self.entries.insert(self.len, cp_info);
+
+        if occupies_2_slots {
             self.len += 2;
         } else {
             self.len += 1;
         }
-
-        self.entries.insert(self.len, cp_info);
     }
 
     /// Get [ConstantInfo] node reference from constant pool based on given index.
@@ -69,7 +71,7 @@ impl ConstantPool {
     pub fn get(&self, index: u16) -> Option<&Node<ConstantInfo>> {
         self.entries.get(&index)
     }
-    
+
     pub fn get_constant(&self, index: u16) -> Option<&Constant> {
         self.get(index).map(|node| &*node.constant)
     }
@@ -159,7 +161,6 @@ impl ConstantPool {
         /// [None] if the constant does not exist or match.
         => package, Package
     );
-    
 }
 
 impl Default for ConstantPool {
@@ -182,11 +183,11 @@ impl Deref for ConstantPool {
 impl From<Vec<Node<ConstantInfo>>> for ConstantPool {
     fn from(value: Vec<Node<ConstantInfo>>) -> Self {
         let mut constant_pool = ConstantPool::default();
-        
+
         for item in value {
             constant_pool.add(item);
         }
-        
+
         constant_pool
     }
 }
@@ -244,9 +245,7 @@ pub enum ConstantTag {
 /// Represents JVM constants.
 ///
 /// See [4.4 The Constant Pool](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=93).
-#[derive(
-    Debug, Clone, Eq, PartialEq, Serialize, Deserialize, IntoStaticStr,
-)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, IntoStaticStr)]
 pub enum Constant {
     Utf8(Utf8),
     Integer(Integer),
@@ -783,12 +782,15 @@ impl Dynamic {
     pub fn bootstrap_method<'bootstrap_method, 'attributes: 'bootstrap_method>(
         &self,
         attribute_infos: &'attributes Vec<AttributeInfo>,
-    ) -> Option<&'bootstrap_method BootstrapMethod> {
+    ) -> Option<&'bootstrap_method Node<BootstrapMethod>> {
         let bootstrap_methods = if let Some(AttributeInfo {
             attribute:
-                Some(Node(_, Attribute::BootstrapMethods(BootstrapMethods {
-                    bootstrap_methods, ..
-                }))),
+                Some(Node(
+                    _,
+                    Attribute::BootstrapMethods(BootstrapMethods {
+                        bootstrap_methods, ..
+                    }),
+                )),
             ..
         }) = attribute_infos.iter().find(|attribute_info| {
             matches!(
@@ -801,7 +803,7 @@ impl Dynamic {
             return None;
         };
 
-        bootstrap_methods.get(**self.bootstrap_method_attr_index as usize)
+        bootstrap_methods.get(*self.bootstrap_method_attr_index as usize)
     }
 
     /// Gets the descriptor of the [Dynamic].
@@ -837,12 +839,15 @@ impl InvokeDynamic {
     pub fn bootstrap_method<'bootstrap_method, 'attributes: 'bootstrap_method>(
         &self,
         attribute_infos: &'attributes Vec<AttributeInfo>,
-    ) -> Option<&'bootstrap_method BootstrapMethod> {
+    ) -> Option<&'bootstrap_method Node<BootstrapMethod>> {
         let bootstrap_methods = if let Some(AttributeInfo {
             attribute:
-                Some(Node(_, Attribute::BootstrapMethods(BootstrapMethods {
-                    bootstrap_methods, ..
-                }))),
+                Some(Node(
+                    _,
+                    Attribute::BootstrapMethods(BootstrapMethods {
+                        bootstrap_methods, ..
+                    }),
+                )),
             ..
         }) = attribute_infos.iter().find(|attribute_info| {
             matches!(
@@ -855,7 +860,7 @@ impl InvokeDynamic {
             return None;
         };
 
-        bootstrap_methods.get(**self.bootstrap_method_attr_index as usize)
+        bootstrap_methods.get(*self.bootstrap_method_attr_index as usize)
     }
 
     /// Gets the descriptor of the [InvokeDynamic].

@@ -326,7 +326,7 @@ pub enum Wide {
     LSTORE(Node<u16>),
     DSTORE(Node<u16>),
     RET(Node<u16>),
-    IINC(Node<u16>, Node<u16>),
+    IINC(Node<u16>, Node<i16>),
 }
 
 /// Represents a `multianewarray` instruction.

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::node::access_flag::FieldAccessFlag;
-use crate::node::attribute::{Attribute, AttributeInfo};
+use crate::node::attribute::AttributeInfo;
 use crate::node::constant::{ConstantPool, Utf8};
 use crate::node::{Node, Nodes};
 use crate::visitor::field::FieldVisitor;

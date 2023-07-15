@@ -1,18 +1,21 @@
 use std::fs::File;
 use std::io::Read;
-use std::ops::RangeFrom;
 use std::path::Path;
 
+use nom::bytes::complete::{tag, take};
 use nom::combinator::map;
-use nom::error::ParseError;
 use nom::number::complete::be_u16;
-use nom::{IResult, InputIter, InputLength, Slice};
+use nom::{IResult, Parser, Slice, ToUsize};
+
+use byte_span::{offset, BytesSpan};
 
 use crate::error::{KapiError, KapiResult};
 use crate::node::access_flag::AccessFlag;
 use crate::node::class::Class;
 use crate::node::constant::ConstantPool;
 use crate::node::signature::Signature;
+use crate::node::Node;
+use crate::parse::traits::{Append, LengthConstraint};
 
 pub(crate) mod attribute;
 pub(crate) mod class;
@@ -20,6 +23,10 @@ pub(crate) mod constant;
 pub(crate) mod field;
 pub(crate) mod method;
 pub(crate) mod signature;
+mod traits;
+
+type ParseResult<'fragment, T, E = nom::error::Error<BytesSpan<'fragment>>> =
+    IResult<BytesSpan<'fragment>, T, E>;
 
 pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
     let class_path = class_path.as_ref();
@@ -47,9 +54,9 @@ pub fn read_class<P: AsRef<Path>>(class_path: P) -> KapiResult<Class> {
 }
 
 pub fn to_class(class_bytes: &[u8]) -> KapiResult<Class> {
-    match class::class(&class_bytes[..]) {
+    match class::class(BytesSpan::new(&class_bytes[..])) {
         Ok((remain, class)) => {
-            if !remain.is_empty() {
+            if !remain.fragment.is_empty() {
                 Err(KapiError::ClassParseError(format!("Unable to parse class bytes, reason: class is fully parsed but there are {} bytes left, {remain:?}", remain.len())))
             } else {
                 Ok(class)
@@ -106,62 +113,133 @@ pub fn parse_method_signature(class_signature: &str) -> KapiResult<Signature> {
     }
 }
 
-fn collect<I, LP, TP, L, T, E: ParseError<I>>(
+fn node<'fragment, V, F, E>(
+    mut f: F,
+) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, Node<V>, E>
+where
+    F: Parser<BytesSpan<'fragment>, V, E>,
+    nom::Err<E>: From<nom::Err<nom::error::Error<BytesSpan<'fragment>>>>,
+{
+    move |input: BytesSpan| {
+        let (input, offset) = offset(input)?;
+        let (input, v) = f.parse(input)?;
+
+        Ok((input, Node(offset..input.offset, v)))
+    }
+}
+
+fn map_node<'fragment, O1, O2, F, G, E>(
+    mut f: F,
+    mut g: G,
+) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, Node<O2>, E>
+where
+    F: Parser<BytesSpan<'fragment>, O1, E>,
+    G: FnMut(O1) -> O2,
+    nom::Err<E>: From<nom::Err<nom::error::Error<BytesSpan<'fragment>>>>,
+{
+    move |input: BytesSpan| {
+        let (input, offset) = offset(input)?;
+        let (input, o1) = f.parse(input)?;
+
+        Ok((input, Node(offset..input.offset, g(o1))))
+    }
+}
+
+fn take_node<'fragment>(
+    count: impl ToUsize,
+) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, Node<&'fragment [u8]>> {
+    map(take(count), Into::<Node<_>>::into)
+}
+
+fn take_sized_node<const SIZE: usize>() -> impl FnMut(BytesSpan) -> ParseResult<Node<[u8; SIZE]>> {
+    move |input: BytesSpan| {
+        let (mut input, offset) = offset(input)?;
+        let mut container = [0u8; SIZE];
+
+        for i in 0..SIZE {
+            let (remain, byte) = take(1usize)(input)?;
+
+            container[i] = byte.fragment[0];
+            input = remain;
+        }
+
+        Ok((input, Node(offset..offset + SIZE, container)))
+    }
+}
+
+fn tag_sized_node<const SIZE: usize>(
+    sized_tag: [u8; SIZE],
+) -> impl FnMut(BytesSpan) -> ParseResult<Node<[u8; SIZE]>> {
+    move |input: BytesSpan| {
+        let (input, tag) = tag(&sized_tag[..])(input)?;
+        let mut container = [0u8; SIZE];
+
+        for i in 0..SIZE {
+            container[i] = tag.fragment[i];
+        }
+
+        Ok((input, Node(tag.range(), container)))
+    }
+}
+
+fn collect<'fragment, L, T, LP, TP, V, E>(
     mut len_parser: LP,
     mut item_parser: TP,
-) -> impl FnMut(I) -> IResult<I, (L, Vec<T>), E>
+) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, (L, Node<V>), E>
 where
-    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
-    LP: FnMut(I) -> IResult<I, L, E>,
-    TP: FnMut(I) -> IResult<I, T, E>,
-    L: Into<u64> + Copy,
+    L: ToUsize,
+    LP: Parser<BytesSpan<'fragment>, L, E>,
+    TP: Parser<BytesSpan<'fragment>, T, E>,
+    V: Append<Item = T> + LengthConstraint + Default,
+    nom::Err<E>: From<nom::Err<nom::error::Error<BytesSpan<'fragment>>>>,
 {
-    move |input: I| {
-        let (mut input, len) = len_parser(input)?;
-        let length = len.into();
-        let mut items = Vec::with_capacity(length as usize);
+    move |input| {
+        let (input, len) = len_parser.parse(input)?;
+        let (mut input, container_offset) = offset(input)?;
+        let mut items = V::default();
 
-        for _ in 0..length {
-            let (remain, item) = item_parser(input)?;
+        for _ in 0..V::constraint(len.to_usize()) {
+            let (remain, item) = item_parser.parse(input)?;
 
             items.push(item);
             input = remain;
         }
 
-        Ok((input, (len, items)))
+        Ok((input, (len, Node(container_offset..input.offset, items))))
     }
 }
 
-fn collect_with_constant_pool<'constant_pool, I, LP, TP, L, T, E: ParseError<I>>(
+fn collect_with_constant_pool<'input: 'constant_pool, 'constant_pool, L, T, LP, TP, V>(
     mut len_parser: LP,
     mut item_parser: TP,
     constant_pool: &'constant_pool ConstantPool,
-) -> impl FnMut(I) -> IResult<I, (L, Vec<T>), E> + '_
+) -> impl FnMut(BytesSpan<'input>) -> IResult<BytesSpan<'input>, (L, Node<V>)> + '_
 where
-    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
-    LP: FnMut(I) -> IResult<I, L, E> + 'constant_pool,
-    TP: FnMut(I, &'constant_pool ConstantPool) -> IResult<I, T, E> + 'constant_pool,
-    L: Into<u64> + Copy,
+    L: ToUsize,
+    LP: FnMut(BytesSpan<'input>) -> IResult<BytesSpan<'input>, L> + 'constant_pool,
+    TP: FnMut(BytesSpan<'input>, &'constant_pool ConstantPool) -> IResult<BytesSpan<'input>, T>
+        + 'constant_pool,
+    V: Append<Item = T> + LengthConstraint + Default,
 {
-    move |input: I| {
-        let (mut input, len) = len_parser(input)?;
-        let length = len.into();
-        let mut items = Vec::with_capacity(length as usize);
+    move |input: BytesSpan| {
+        let (input, len) = len_parser(input)?;
+        let (mut input, container_offset) = offset(input)?;
+        let mut items = V::default();
 
-        for _ in 0..length {
+        for _ in 0..V::constraint(len.to_usize()) {
             let (remain, item) = item_parser(input, constant_pool)?;
 
             items.push(item);
             input = remain;
         }
 
-        Ok((input, (len, items)))
+        Ok((input, (len, Node(container_offset..input.offset, items))))
     }
 }
 
-fn access_flag<F>(input: &[u8]) -> IResult<&[u8], Vec<F>>
+fn access_flag<F>(input: BytesSpan) -> ParseResult<Node<Vec<F>>>
 where
     F: AccessFlag,
 {
-    map(be_u16, F::extract_flags)(input)
+    map(node(be_u16), |node: Node<u16>| node.map(F::extract_flags))(input)
 }

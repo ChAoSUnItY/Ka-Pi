@@ -23,13 +23,30 @@ impl<'fragment> BytesSpan<'fragment> {
             fragment: fragment.into(),
         }
     }
-    
+
+    pub fn with_offset<F>(offset: usize, fragment: F) -> Self
+    where
+        F: Into<&'fragment [u8]>,
+    {
+        Self {
+            offset,
+            fragment: fragment.into(),
+        }
+    }
+
+    pub fn clear(&mut self) -> Self {
+        Self {
+            offset: self.offset,
+            fragment: &[],
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.input_len()
     }
-    
+
     pub fn range(&self) -> Range<usize> {
-        self.offset..self.len()
+        self.offset..self.offset + self.len()
     }
 }
 

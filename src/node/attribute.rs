@@ -6,8 +6,8 @@ use crate::node::attribute::annotation::{
 };
 use crate::node::attribute::module::{Exports, Opens, Provides, Requires};
 use crate::node::constant::{Class, Constant, ConstantPool, MethodHandle, NameAndType, Utf8};
-use crate::node::{Node, Nodes};
 use crate::node::opcode::Instruction;
+use crate::node::{Node, Nodes};
 
 pub mod annotation;
 pub mod module;
@@ -307,7 +307,7 @@ pub struct MethodParameters {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Module {
     pub module_name_index: Node<u16>,
-    pub module_flags: Nodes<ModuleAccessFlag>,
+    pub module_flags: Node<Vec<ModuleAccessFlag>>,
     pub module_version_index: Node<u16>,
     pub requires_count: Node<u16>,
     pub requires: Nodes<Requires>,
@@ -341,8 +341,7 @@ impl Module {
         index: usize,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        self
-            .uses_index
+        self.uses_index
             .get(index)
             .and_then(|uses_index| constant_pool.get_class(**uses_index))
     }
@@ -360,8 +359,7 @@ impl ModulePackages {
         index: usize,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        self
-            .package_index
+        self.package_index
             .get(index)
             .and_then(|package_index| constant_pool.get_utf8(**package_index))
     }
@@ -408,8 +406,7 @@ impl NestMembers {
         index: usize,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        self
-            .classes
+        self.classes
             .get(index)
             .and_then(|class_index| constant_pool.get_class(**class_index))
     }
@@ -434,8 +431,7 @@ impl PermittedSubclasses {
         index: usize,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        self
-            .classes
+        self.classes
             .get(index)
             .and_then(|class_index| constant_pool.get_class(**class_index))
     }
