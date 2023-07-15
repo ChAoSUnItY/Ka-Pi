@@ -7,6 +7,7 @@
 use std::ops::{Deref, DerefMut, Range};
 
 use serde::{Deserialize, Serialize};
+use byte_span::BytesSpan;
 
 pub mod access_flag;
 pub mod attribute;
@@ -20,6 +21,22 @@ pub mod signature;
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Node<T>(pub Span, pub T);
 pub type Span = Range<usize>;
+
+pub type Nodes<T> = Node<Vec<Node<T>>>;
+
+impl<T> Node<T> {
+    pub fn map<R>(self, mapper: impl FnMut(T) -> R) -> Node<R> {
+        let Self(span, t) = self;
+        
+        Node(span, mapper(t))
+    }
+}
+
+impl<'fragment> From<BytesSpan<'fragment>> for Node<&'fragment [u8]> {
+    fn from(value: BytesSpan<'fragment>) -> Self {
+        Node(value.range(), value.fragment)
+    }
+}
 
 impl<T> Deref for Node<T> {
     type Target = T;

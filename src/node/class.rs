@@ -6,7 +6,7 @@ use crate::node::attribute::AttributeInfo;
 use crate::node::constant::ConstantPool;
 use crate::node::field::Field;
 use crate::node::method::Method;
-use crate::node::Node;
+use crate::node::{Node, Nodes};
 use crate::visitor::class::ClassVisitor;
 use crate::visitor::constant::ConstantVisitor;
 use crate::visitor::field::FieldVisitor;
@@ -26,13 +26,13 @@ pub struct Class {
     pub this_class: Node<u16>,
     pub super_class: Node<u16>,
     pub interfaces_count: Node<u16>,
-    pub interfaces: Node<Vec<Node<u16>>>,
+    pub interfaces: Nodes<u16>,
     pub fields_count: Node<u16>,
-    pub fields: Node<Vec<Node<Field>>>,
-    pub methods_count: u16,
-    pub methods: Vec<Method>,
-    pub attributes_count: u16,
-    pub attributes: Vec<AttributeInfo>,
+    pub fields: Nodes<Field>,
+    pub methods_count: Node<u16>,
+    pub methods: Nodes<Method>,
+    pub attributes_count: Node<u16>,
+    pub attributes: Nodes<AttributeInfo>,
 }
 
 impl Class {

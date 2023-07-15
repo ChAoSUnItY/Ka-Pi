@@ -27,6 +27,10 @@ impl<'fragment> BytesSpan<'fragment> {
     pub fn len(&self) -> usize {
         self.input_len()
     }
+    
+    pub fn range(&self) -> Range<usize> {
+        self.offset..self.len()
+    }
 }
 
 impl AsBytes for BytesSpan<'_> {
@@ -268,4 +272,8 @@ impl Slice<RangeTo<usize>> for BytesSpan<'_> {
             fragment: next_fragment,
         }
     }
+}
+
+pub fn offset(input: BytesSpan) -> IResult<BytesSpan, usize> {
+    Ok((input, input.offset))
 }
