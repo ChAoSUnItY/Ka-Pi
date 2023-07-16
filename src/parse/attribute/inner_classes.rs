@@ -1,31 +1,38 @@
-use nom::combinator::map;
 use nom::number::complete::be_u16;
 use nom::sequence::tuple;
-use nom::IResult;
 
+use byte_span::BytesSpan;
+
+use crate::node::access_flag::NestedClassAccessFlag;
 use crate::node::attribute::{Attribute, InnerClass, InnerClasses};
-use crate::parse::{access_flag, collect};
+use crate::node::{Node, Nodes};
+use crate::parse::{access_flag, collect, map_node, node, ParseResult};
 
-pub(crate) fn inner_classes(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
-    let (input, (number_of_classes, class)) = collect(be_u16, inner_class)(input)?;
-
-    Ok((
-        input,
-        Some(Attribute::InnerClasses(InnerClasses {
-            number_of_classes,
-            class,
-        })),
-    ))
+pub(crate) fn inner_classes(input: BytesSpan) -> ParseResult<Node<Attribute>> {
+    map_node(
+        collect(node(be_u16), inner_class),
+        |(number_of_classes, class): (Node<u16>, Nodes<InnerClass>)| {
+            Attribute::InnerClasses(InnerClasses {
+                number_of_classes,
+                class,
+            })
+        },
+    )(input)
 }
 
-fn inner_class(input: &[u8]) -> IResult<&[u8], InnerClass> {
-    map(
-        tuple((be_u16, be_u16, be_u16, access_flag)),
+fn inner_class(input: BytesSpan) -> ParseResult<Node<InnerClass>> {
+    map_node(
+        tuple((node(be_u16), node(be_u16), node(be_u16), access_flag)),
         |(
             inner_class_info_index,
             outer_class_info_index,
             inner_name_index,
             inner_class_access_flags,
+        ): (
+            Node<u16>,
+            Node<u16>,
+            Node<u16>,
+            Node<Vec<NestedClassAccessFlag>>,
         )| InnerClass {
             inner_class_info_index,
             outer_class_info_index,

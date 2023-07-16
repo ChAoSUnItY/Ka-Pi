@@ -1,0 +1,9 @@
+/target
+.comment_regex
+.idea
+
+# IDEA
+*.iml
+
+# JNI logs
+*.log

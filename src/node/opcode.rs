@@ -1,15 +1,12 @@
-use std::collections::HashMap;
-
+use crate::node::{Node, Nodes};
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
-use crate::error::KapiResult;
 use crate::node::opcode::instruction::{
     ANewArray, CheckCast, GetField, GetStatic, InstanceOf, InvokeDynamic, InvokeInterface,
     InvokeSpecial, InvokeStatic, InvokeVirtual, Ldc, Ldc2_W, Ldc_W, MultiANewArray, New, PutField,
     PutStatic, Wide,
 };
-use crate::node::ConstantRearrangeable;
 
 pub mod instruction;
 
@@ -265,7 +262,7 @@ pub enum Opcode {
 
 // noinspection SpellCheckingInspection
 /// Represents opcode with accompany data.
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {
     NOP,
@@ -284,16 +281,16 @@ pub enum Instruction {
     FCONST_2,
     DCONST_0,
     DCONST_1,
-    BIPUSH(i8),
-    SIPUSH(i16),
+    BIPUSH(Node<i8>),
+    SIPUSH(Node<i16>),
     LDC(Ldc),
     LDC_W(Ldc_W),
     LDC2_W(Ldc2_W),
-    ILOAD(u8),
-    LLOAD(u8),
-    FLOAD(u8),
-    DLOAD(u8),
-    ALOAD(u8),
+    ILOAD(Node<u8>),
+    LLOAD(Node<u8>),
+    FLOAD(Node<u8>),
+    DLOAD(Node<u8>),
+    ALOAD(Node<u8>),
     ILOAD_0,
     ILOAD_1,
     ILOAD_2,
@@ -322,11 +319,11 @@ pub enum Instruction {
     BALOAD,
     CALOAD,
     SALOAD,
-    ISTORE(u8),
-    LSTORE(u8),
-    FSTORE(u8),
-    DSTORE(u8),
-    ASTORE(u8),
+    ISTORE(Node<u8>),
+    LSTORE(Node<u8>),
+    FSTORE(Node<u8>),
+    DSTORE(Node<u8>),
+    ASTORE(Node<u8>),
     ISTORE_0,
     ISTORE_1,
     ISTORE_2,
@@ -401,8 +398,8 @@ pub enum Instruction {
     IXOR,
     LXOR,
     IINC {
-        index: u8,
-        value: i8,
+        index: Node<u8>,
+        value: Node<i8>,
     },
     I2L,
     I2F,
@@ -424,33 +421,35 @@ pub enum Instruction {
     FCMPG,
     DCMPL,
     DCMPG,
-    IFEQ(i16),
-    IFNE(i16),
-    IFLT(i16),
-    IFGE(i16),
-    IFGT(i16),
-    IFLE(i16),
-    IF_ICMPEQ(i16),
-    IF_ICMPNE(i16),
-    IF_ICMPLT(i16),
-    IF_ICMPGE(i16),
-    IF_ICMPGT(i16),
-    IF_ICMPLE(i16),
-    IF_ACMPEQ(i16),
-    IF_ACMPNE(i16),
-    GOTO(i16),
-    JSR(i16),
-    RET(u8),
+    IFEQ(Node<i16>),
+    IFNE(Node<i16>),
+    IFLT(Node<i16>),
+    IFGE(Node<i16>),
+    IFGT(Node<i16>),
+    IFLE(Node<i16>),
+    IF_ICMPEQ(Node<i16>),
+    IF_ICMPNE(Node<i16>),
+    IF_ICMPLT(Node<i16>),
+    IF_ICMPGE(Node<i16>),
+    IF_ICMPGT(Node<i16>),
+    IF_ICMPLE(Node<i16>),
+    IF_ACMPEQ(Node<i16>),
+    IF_ACMPNE(Node<i16>),
+    GOTO(Node<i16>),
+    JSR(Node<i16>),
+    RET(Node<u8>),
     TABLESWITCH {
-        default: i32,
-        low: i32,
-        high: i32,
-        offsets: Vec<i32>,
+        alignment: Node<Box<[u8]>>,
+        default: Node<i32>,
+        low: Node<i32>,
+        high: Node<i32>,
+        offsets: Nodes<i32>,
     },
     LOOKUPSWITCH {
-        default: i32,
-        npairs: u32,
-        pairs: Vec<(i32, i32)>,
+        alignment: Node<Box<[u8]>>,
+        default: Node<i32>,
+        npairs: Node<u32>,
+        pairs: Nodes<(Node<i32>, Node<i32>)>,
     },
     IRETURN,
     LRETURN,
@@ -478,10 +477,10 @@ pub enum Instruction {
     MONITOREXIT,
     WIDE(Wide),
     MULTIANEWARRAY(MultiANewArray),
-    IFNULL(i16),
-    IFNONNULL(i16),
-    GOTO_W(i64),
-    JSR_W(i64),
+    IFNULL(Node<i16>),
+    IFNONNULL(Node<i16>),
+    GOTO_W(Node<i64>),
+    JSR_W(Node<i64>),
 }
 
 impl Instruction {
@@ -691,39 +690,5 @@ impl Instruction {
             Instruction::GOTO_W(..) => Opcode::GOTO_W,
             Instruction::JSR_W(..) => Opcode::JSR_W,
         }
-    }
-}
-
-impl ConstantRearrangeable for Instruction {
-    fn rearrange(&mut self, rearrangements: &HashMap<u16, u16>) -> KapiResult<()> {
-        match self {
-            Instruction::LDC(ldc) => ldc.rearrange(rearrangements)?,
-            Instruction::LDC_W(ldc_w) => ldc_w.rearrange(rearrangements)?,
-            Instruction::LDC2_W(ldc2_w) => ldc2_w.rearrange(rearrangements)?,
-            Instruction::GETSTATIC(get_static) => get_static.rearrange(rearrangements)?,
-            Instruction::PUTSTATIC(put_static) => put_static.rearrange(rearrangements)?,
-            Instruction::GETFIELD(get_field) => get_field.rearrange(rearrangements)?,
-            Instruction::PUTFIELD(put_field) => put_field.rearrange(rearrangements)?,
-            Instruction::INVOKEVIRTUAL(invoke_virtual) => {
-                invoke_virtual.rearrange(rearrangements)?
-            }
-            Instruction::INVOKESPECIAL(invoke_special) => {
-                invoke_special.rearrange(rearrangements)?
-            }
-            Instruction::INVOKESTATIC(invoke_static) => invoke_static.rearrange(rearrangements)?,
-            Instruction::INVOKEINTERFACE(invoke_interface) => {
-                invoke_interface.rearrange(rearrangements)?
-            }
-            Instruction::NEW(new) => new.rearrange(rearrangements)?,
-            Instruction::ANEWARRAY(a_new_array) => a_new_array.rearrange(rearrangements)?,
-            Instruction::CHECKCAST(check_cast) => check_cast.rearrange(rearrangements)?,
-            Instruction::INSTANCEOF(instance_of) => instance_of.rearrange(rearrangements)?,
-            Instruction::MULTIANEWARRAY(multi_a_new_array) => {
-                multi_a_new_array.rearrange(rearrangements)?
-            }
-            _ => {}
-        }
-
-        Ok(())
     }
 }

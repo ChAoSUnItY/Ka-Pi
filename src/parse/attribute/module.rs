@@ -1,23 +1,27 @@
-use nom::combinator::map;
 use nom::number::complete::be_u16;
 use nom::sequence::tuple;
-use nom::IResult;
 
+use byte_span::BytesSpan;
+
+use crate::node::access_flag::{
+    ExportsAccessFlag, ModuleAccessFlag, OpensAccessFlag, RequiresAccessFlag,
+};
 use crate::node::attribute::module::{Exports, Opens, Provides, Requires};
 use crate::node::attribute::{Attribute, Module};
-use crate::parse::{access_flag, collect};
+use crate::node::{Node, Nodes};
+use crate::parse::{access_flag, collect, map_node, node, ParseResult};
 
-pub(crate) fn module(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
-    map(
+pub(crate) fn module(input: BytesSpan) -> ParseResult<Node<Attribute>> {
+    map_node(
         tuple((
-            be_u16,
+            node(be_u16),
             access_flag,
-            be_u16,
-            collect(be_u16, requires),
-            collect(be_u16, exports),
-            collect(be_u16, opens),
-            collect(be_u16, be_u16),
-            collect(be_u16, provides),
+            node(be_u16),
+            collect(node(be_u16), requires),
+            collect(node(be_u16), exports),
+            collect(node(be_u16), opens),
+            collect(node(be_u16), node(be_u16)),
+            collect(node(be_u16), provides),
         )),
         |(
             module_name_index,
@@ -28,8 +32,17 @@ pub(crate) fn module(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
             (opens_count, opens),
             (uses_count, uses_index),
             (provides_count, provides),
+        ): (
+            Node<u16>,
+            Node<Vec<ModuleAccessFlag>>,
+            Node<u16>,
+            (Node<u16>, Nodes<Requires>),
+            (Node<u16>, Nodes<Exports>),
+            (Node<u16>, Nodes<Opens>),
+            (Node<u16>, Nodes<u16>),
+            (Node<u16>, Nodes<Provides>),
         )| {
-            Some(Attribute::Module(Module {
+            Attribute::Module(Module {
                 module_name_index,
                 module_flags,
                 module_version_index,
@@ -43,15 +56,19 @@ pub(crate) fn module(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
                 uses_index,
                 provides_count,
                 provides,
-            }))
+            })
         },
     )(input)
 }
 
-fn requires(input: &[u8]) -> IResult<&[u8], Requires> {
-    map(
-        tuple((be_u16, access_flag, be_u16)),
-        |(requires_index, requires_flags, requires_version_index)| Requires {
+fn requires(input: BytesSpan) -> ParseResult<Node<Requires>> {
+    map_node(
+        tuple((node(be_u16), access_flag, node(be_u16))),
+        |(requires_index, requires_flags, requires_version_index): (
+            Node<u16>,
+            Node<Vec<RequiresAccessFlag>>,
+            Node<u16>,
+        )| Requires {
             requires_index,
             requires_flags,
             requires_version_index,
@@ -59,10 +76,18 @@ fn requires(input: &[u8]) -> IResult<&[u8], Requires> {
     )(input)
 }
 
-fn exports(input: &[u8]) -> IResult<&[u8], Exports> {
-    map(
-        tuple((be_u16, access_flag, collect(be_u16, be_u16))),
-        |(exports_index, exports_flags, (exports_to_count, exports_to_index))| Exports {
+fn exports(input: BytesSpan) -> ParseResult<Node<Exports>> {
+    map_node(
+        tuple((
+            node(be_u16),
+            access_flag,
+            collect(node(be_u16), node(be_u16)),
+        )),
+        |(exports_index, exports_flags, (exports_to_count, exports_to_index)): (
+            Node<u16>,
+            Node<Vec<ExportsAccessFlag>>,
+            (Node<u16>, Nodes<u16>),
+        )| Exports {
             exports_index,
             exports_flags,
             exports_to_count,
@@ -71,10 +96,18 @@ fn exports(input: &[u8]) -> IResult<&[u8], Exports> {
     )(input)
 }
 
-fn opens(input: &[u8]) -> IResult<&[u8], Opens> {
-    map(
-        tuple((be_u16, access_flag, collect(be_u16, be_u16))),
-        |(opens_index, opens_flags, (opens_to_count, opens_to_index))| Opens {
+fn opens(input: BytesSpan) -> ParseResult<Node<Opens>> {
+    map_node(
+        tuple((
+            node(be_u16),
+            access_flag,
+            collect(node(be_u16), node(be_u16)),
+        )),
+        |(opens_index, opens_flags, (opens_to_count, opens_to_index)): (
+            Node<u16>,
+            Node<Vec<OpensAccessFlag>>,
+            (Node<u16>, Nodes<u16>),
+        )| Opens {
             opens_index,
             opens_flags,
             opens_to_count,
@@ -83,10 +116,13 @@ fn opens(input: &[u8]) -> IResult<&[u8], Opens> {
     )(input)
 }
 
-fn provides(input: &[u8]) -> IResult<&[u8], Provides> {
-    map(
-        tuple((be_u16, collect(be_u16, be_u16))),
-        |(provides_index, (provides_with_count, provides_with_index))| Provides {
+fn provides(input: BytesSpan) -> ParseResult<Node<Provides>> {
+    map_node(
+        tuple((node(be_u16), collect(node(be_u16), node(be_u16)))),
+        |(provides_index, (provides_with_count, provides_with_index)): (
+            Node<u16>,
+            (Node<u16>, Nodes<u16>),
+        )| Provides {
             provides_index,
             provides_with_count,
             provides_with_index,

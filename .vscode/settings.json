@@ -1,7 +1,4 @@
 {
-  "rust-analyzer.cargo.features": [
-    "reflection"
-  ],
   "files.autoSave": "afterDelay",
   "files.autoSaveDelay": 1000
 }
