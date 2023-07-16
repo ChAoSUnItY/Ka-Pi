@@ -1,14 +1,13 @@
 use nom::number::complete::be_u16;
 use nom::sequence::tuple;
-use nom::IResult;
 
 use byte_span::BytesSpan;
 
 use crate::node::attribute::{Attribute, BootstrapMethod, BootstrapMethods};
 use crate::node::{Node, Nodes};
-use crate::parse::{collect, map_node, node};
+use crate::parse::{collect, map_node, node, ParseResult};
 
-pub fn bootstrap_methods(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+pub fn bootstrap_methods(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), bootstrap_method),
         |(num_bootstrap_methods, bootstrap_methods): (Node<u16>, Nodes<BootstrapMethod>)| {
@@ -20,7 +19,7 @@ pub fn bootstrap_methods(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>
     )(input)
 }
 
-fn bootstrap_method(input: BytesSpan) -> IResult<BytesSpan, Node<BootstrapMethod>> {
+fn bootstrap_method(input: BytesSpan) -> ParseResult<Node<BootstrapMethod>> {
     map_node(
         tuple((node(be_u16), collect(node(be_u16), node(be_u16)))),
         |(bootstrap_method_ref, (num_bootstrap_arguments, bootstrap_arguments)): (

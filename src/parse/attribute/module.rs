@@ -1,6 +1,5 @@
 use nom::number::complete::be_u16;
 use nom::sequence::tuple;
-use nom::IResult;
 
 use byte_span::BytesSpan;
 
@@ -10,9 +9,9 @@ use crate::node::access_flag::{
 use crate::node::attribute::module::{Exports, Opens, Provides, Requires};
 use crate::node::attribute::{Attribute, Module};
 use crate::node::{Node, Nodes};
-use crate::parse::{access_flag, collect, map_node, node};
+use crate::parse::{access_flag, collect, map_node, node, ParseResult};
 
-pub(crate) fn module(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+pub(crate) fn module(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         tuple((
             node(be_u16),
@@ -62,7 +61,7 @@ pub(crate) fn module(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
     )(input)
 }
 
-fn requires(input: BytesSpan) -> IResult<BytesSpan, Node<Requires>> {
+fn requires(input: BytesSpan) -> ParseResult<Node<Requires>> {
     map_node(
         tuple((node(be_u16), access_flag, node(be_u16))),
         |(requires_index, requires_flags, requires_version_index): (
@@ -77,7 +76,7 @@ fn requires(input: BytesSpan) -> IResult<BytesSpan, Node<Requires>> {
     )(input)
 }
 
-fn exports(input: BytesSpan) -> IResult<BytesSpan, Node<Exports>> {
+fn exports(input: BytesSpan) -> ParseResult<Node<Exports>> {
     map_node(
         tuple((
             node(be_u16),
@@ -97,7 +96,7 @@ fn exports(input: BytesSpan) -> IResult<BytesSpan, Node<Exports>> {
     )(input)
 }
 
-fn opens(input: BytesSpan) -> IResult<BytesSpan, Node<Opens>> {
+fn opens(input: BytesSpan) -> ParseResult<Node<Opens>> {
     map_node(
         tuple((
             node(be_u16),
@@ -117,7 +116,7 @@ fn opens(input: BytesSpan) -> IResult<BytesSpan, Node<Opens>> {
     )(input)
 }
 
-fn provides(input: BytesSpan) -> IResult<BytesSpan, Node<Provides>> {
+fn provides(input: BytesSpan) -> ParseResult<Node<Provides>> {
     map_node(
         tuple((node(be_u16), collect(node(be_u16), node(be_u16)))),
         |(provides_index, (provides_with_count, provides_with_index)): (

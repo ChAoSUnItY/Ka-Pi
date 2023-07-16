@@ -1,9 +1,9 @@
 use nom::combinator::map;
 use nom::error::ErrorKind;
+use nom::error_position;
 use nom::number::complete::{be_u16, be_u8};
 use nom::sequence::tuple;
 use nom::Err::Error;
-use nom::{error_position, IResult};
 
 use byte_span::{offset, BytesSpan};
 
@@ -11,9 +11,9 @@ use crate::node::attribute::{
     Attribute, Object, StackMapFrameEntry, StackMapTable, VerificationType,
 };
 use crate::node::{Node, Nodes};
-use crate::parse::{collect, map_node, node};
+use crate::parse::{collect, map_node, node, ParseResult};
 
-pub(crate) fn stack_map_table(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+pub(crate) fn stack_map_table(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), stack_map_frame_entry),
         |(number_of_entries, entries): (Node<u16>, Nodes<StackMapFrameEntry>)| {
@@ -25,7 +25,7 @@ pub(crate) fn stack_map_table(input: BytesSpan) -> IResult<BytesSpan, Node<Attri
     )(input)
 }
 
-fn stack_map_frame_entry(input: BytesSpan) -> IResult<BytesSpan, Node<StackMapFrameEntry>> {
+fn stack_map_frame_entry(input: BytesSpan) -> ParseResult<Node<StackMapFrameEntry>> {
     let (input, entry_offset) = offset(input)?;
     let (input, frame_type) = node(be_u8)(input)?;
     let (input, frame_entry) = match frame_type.1 {
@@ -111,7 +111,7 @@ fn stack_map_frame_entry(input: BytesSpan) -> IResult<BytesSpan, Node<StackMapFr
     Ok((input, Node(entry_offset..input.offset, frame_entry)))
 }
 
-fn verification_type(input: BytesSpan) -> IResult<BytesSpan, Node<VerificationType>> {
+fn verification_type(input: BytesSpan) -> ParseResult<Node<VerificationType>> {
     let (input, offset) = offset(input)?;
     let (input, tag) = be_u8(input)?;
     let (input, verification_type) = match tag {

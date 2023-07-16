@@ -114,7 +114,7 @@ pub fn parse_method_signature(class_signature: &str) -> KapiResult<Signature> {
 
 fn node<'fragment, V, F, E>(
     mut f: F,
-) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, Node<V>, E>
+) -> impl FnMut(BytesSpan<'fragment>) -> ParseResult<'fragment, Node<V>, E>
 where
     F: Parser<BytesSpan<'fragment>, V, E>,
     nom::Err<E>: From<nom::Err<nom::error::Error<BytesSpan<'fragment>>>>,
@@ -130,7 +130,7 @@ where
 fn map_node<'fragment, O1, O2, F, G, E>(
     mut f: F,
     mut g: G,
-) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, Node<O2>, E>
+) -> impl FnMut(BytesSpan<'fragment>) -> ParseResult<'fragment, Node<O2>, E>
 where
     F: Parser<BytesSpan<'fragment>, O1, E>,
     G: FnMut(O1) -> O2,
@@ -146,7 +146,7 @@ where
 
 fn take_node<'fragment>(
     count: impl ToUsize,
-) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, Node<&'fragment [u8]>> {
+) -> impl FnMut(BytesSpan<'fragment>) -> ParseResult<'fragment, Node<&'fragment [u8]>> {
     map(take(count), Into::<Node<_>>::into)
 }
 
@@ -184,7 +184,7 @@ fn tag_sized_node<const SIZE: usize>(
 fn collect<'fragment, L, T, LP, TP, E>(
     mut len_parser: LP,
     mut item_parser: TP,
-) -> impl FnMut(BytesSpan<'fragment>) -> IResult<BytesSpan<'fragment>, (L, Node<Vec<T>>), E>
+) -> impl FnMut(BytesSpan<'fragment>) -> ParseResult<'fragment, (L, Node<Vec<T>>), E>
 where
     L: ToUsize,
     LP: Parser<BytesSpan<'fragment>, L, E>,
@@ -208,16 +208,17 @@ where
     }
 }
 
-fn collect_with_constant_pool<'input: 'constant_pool, 'constant_pool, L, T, LP, TP>(
+fn collect_with_constant_pool<'fragment: 'constant_pool, 'constant_pool, L, T, LP, TP, E>(
     mut len_parser: LP,
     mut item_parser: TP,
     constant_pool: &'constant_pool ConstantPool,
-) -> impl FnMut(BytesSpan<'input>) -> IResult<BytesSpan<'input>, (L, Node<Vec<T>>)> + '_
+) -> impl FnMut(BytesSpan<'fragment>) -> ParseResult<'fragment, (L, Node<Vec<T>>), E> + '_
 where
     L: ToUsize,
-    LP: FnMut(BytesSpan<'input>) -> IResult<BytesSpan<'input>, L> + 'constant_pool,
-    TP: FnMut(BytesSpan<'input>, &'constant_pool ConstantPool) -> IResult<BytesSpan<'input>, T>
+    LP: FnMut(BytesSpan<'fragment>) -> ParseResult<'fragment, L, E> + 'constant_pool,
+    TP: FnMut(BytesSpan<'fragment>, &'constant_pool ConstantPool) -> ParseResult<'fragment, T, E>
         + 'constant_pool,
+    nom::Err<E>: From<nom::Err<nom::error::Error<BytesSpan<'fragment>>>>,
 {
     move |input: BytesSpan| {
         let (input, len) = len_parser(input)?;

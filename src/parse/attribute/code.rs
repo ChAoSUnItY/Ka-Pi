@@ -5,7 +5,7 @@ use nom::multi::{count, many0};
 use nom::number::complete::{be_i16, be_i32, be_i64, be_i8, be_u16, be_u32, be_u8};
 use nom::sequence::tuple;
 use nom::Err::Error;
-use nom::{IResult, Offset};
+use nom::Offset;
 
 use byte_span::{offset, BytesSpan};
 
@@ -19,12 +19,12 @@ use crate::node::opcode::instruction::{
 use crate::node::opcode::{ArrayType, Instruction, Opcode};
 use crate::node::{Node, Nodes};
 use crate::parse::attribute::attribute_info;
-use crate::parse::{collect, collect_with_constant_pool, map_node, node, take_node};
+use crate::parse::{collect, collect_with_constant_pool, map_node, node, take_node, ParseResult};
 
-pub(crate) fn code<'input: 'constant_pool, 'constant_pool>(
-    input: BytesSpan<'input>,
+pub(crate) fn code<'fragment: 'constant_pool, 'constant_pool>(
+    input: BytesSpan<'fragment>,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<BytesSpan<'input>, Node<Attribute>> {
+) -> ParseResult<'fragment, Node<Attribute>> {
     let (input, code_offset) = offset(input)?;
     let (input, max_stack) = node(be_u16)(input)?;
     let (input, max_locals) = node(be_u16)(input)?;
@@ -55,7 +55,7 @@ pub(crate) fn code<'input: 'constant_pool, 'constant_pool>(
     ))
 }
 
-fn exception(input: BytesSpan) -> IResult<BytesSpan, Node<Exception>> {
+fn exception(input: BytesSpan) -> ParseResult<Node<Exception>> {
     map_node(
         tuple((node(be_u16), node(be_u16), node(be_u16), node(be_u16))),
         |(start_pc, end_pc, handler_pc, catch_type)| Exception {
@@ -69,7 +69,7 @@ fn exception(input: BytesSpan) -> IResult<BytesSpan, Node<Exception>> {
 
 fn instructions<'fragment>(
     code: BytesSpan<'fragment>,
-) -> IResult<BytesSpan<'fragment>, Nodes<Instruction>> {
+) -> ParseResult<'fragment, Nodes<Instruction>> {
     node(many0(complete(move |input: BytesSpan<'fragment>| {
         let (input, address) = opcode_offset(code, input)?;
 
@@ -77,7 +77,7 @@ fn instructions<'fragment>(
     })))(code)
 }
 
-fn instruction(input: BytesSpan, address: usize) -> IResult<BytesSpan, Node<Instruction>> {
+fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction>> {
     let (input, opcode_offset) = offset(input)?;
     let (input, opcode) = node(be_u8)(input)?;
     let (input, instruction) = if let Ok(opcode) = Opcode::try_from(*opcode) {
@@ -430,11 +430,11 @@ fn instruction(input: BytesSpan, address: usize) -> IResult<BytesSpan, Node<Inst
     Ok((input, Node(opcode_offset..input.offset, instruction)))
 }
 
-fn lookup_table_pair(input: BytesSpan) -> IResult<BytesSpan, Node<(Node<i32>, Node<i32>)>> {
+fn lookup_table_pair(input: BytesSpan) -> ParseResult<Node<(Node<i32>, Node<i32>)>> {
     node(tuple((node(be_i32), node(be_i32))))(input)
 }
 
-fn wide(input: BytesSpan) -> IResult<BytesSpan, Wide> {
+fn wide(input: BytesSpan) -> ParseResult<Wide> {
     let (input, widened_opcode) = be_u8(input)?;
 
     return if let Ok(widened_opcode) = Opcode::try_from(widened_opcode) {
@@ -464,11 +464,11 @@ fn wide(input: BytesSpan) -> IResult<BytesSpan, Wide> {
 fn opcode_offset<'remain>(
     input: BytesSpan,
     remain: BytesSpan<'remain>,
-) -> IResult<BytesSpan<'remain>, usize> {
+) -> ParseResult<'remain, usize> {
     Ok((remain, input.offset(&remain)))
 }
 
-fn align(input: BytesSpan, address: usize) -> IResult<BytesSpan, BytesSpan> {
+fn align(input: BytesSpan, address: usize) -> ParseResult<BytesSpan> {
     take((4 - address % 4) % 4)(input)
 }
 

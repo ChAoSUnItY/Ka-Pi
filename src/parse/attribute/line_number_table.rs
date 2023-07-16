@@ -1,14 +1,13 @@
 use nom::number::complete::be_u16;
 use nom::sequence::tuple;
-use nom::IResult;
 
 use byte_span::BytesSpan;
 
 use crate::node::attribute::{Attribute, LineNumber, LineNumberTable};
 use crate::node::{Node, Nodes};
-use crate::parse::{collect, map_node, node};
+use crate::parse::{collect, map_node, node, ParseResult};
 
-pub(crate) fn line_number_table(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+pub(crate) fn line_number_table(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), line_number),
         |(line_number_table_length, line_number_table): (Node<u16>, Nodes<LineNumber>)| {
@@ -20,7 +19,7 @@ pub(crate) fn line_number_table(input: BytesSpan) -> IResult<BytesSpan, Node<Att
     )(input)
 }
 
-fn line_number(input: BytesSpan) -> IResult<BytesSpan, Node<LineNumber>> {
+fn line_number(input: BytesSpan) -> ParseResult<Node<LineNumber>> {
     map_node(
         tuple((node(be_u16), node(be_u16))),
         |(start_pc, line_number): (Node<u16>, Node<u16>)| LineNumber {

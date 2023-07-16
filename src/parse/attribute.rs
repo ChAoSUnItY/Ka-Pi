@@ -1,9 +1,9 @@
 use nom::combinator::map;
+use nom::error;
 use nom::error::ErrorKind;
 use nom::number::complete::{be_u16, be_u32};
 use nom::sequence::tuple;
 use nom::Err::Error;
-use nom::{error, IResult};
 
 use byte_span::{offset, BytesSpan};
 
@@ -29,7 +29,7 @@ use crate::parse::attribute::method_parameters::method_parameters;
 use crate::parse::attribute::module::module;
 use crate::parse::attribute::record::record;
 use crate::parse::attribute::stack_map_table::stack_map_table;
-use crate::parse::{collect, map_node, node, take_node};
+use crate::parse::{collect, map_node, node, take_node, ParseResult};
 
 mod annotation;
 mod bootstrap_methods;
@@ -43,10 +43,10 @@ mod module;
 mod record;
 mod stack_map_table;
 
-pub(crate) fn attribute_info<'input: 'constant_pool, 'constant_pool>(
-    input: BytesSpan<'input>,
+pub(crate) fn attribute_info<'fragment: 'constant_pool, 'constant_pool>(
+    input: BytesSpan<'fragment>,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<BytesSpan<'input>, Node<AttributeInfo>> {
+) -> ParseResult<'fragment, Node<AttributeInfo>> {
     let (input, offset) = offset(input)?;
     let (input, attribute_name_index) = node(be_u16)(input)?;
     let (input, attribute_len) = node(be_u32)(input)?;
@@ -88,12 +88,12 @@ pub(crate) fn attribute_info<'input: 'constant_pool, 'constant_pool>(
     ))
 }
 
-fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
-    mut input: BytesSpan<'input>,
+fn attribute<'fragment: 'constant_pool, 'constant_pool: 'data, 'data>(
+    mut input: BytesSpan<'fragment>,
     constant_pool: &'constant_pool ConstantPool,
     attribute_len: u32,
     data: &'data str,
-) -> IResult<BytesSpan<'input>, Option<Node<Attribute>>> {
+) -> ParseResult<'fragment, Option<Node<Attribute>>> {
     let (input, attribute) = match data {
         attribute::CONSTANT_VALUE => map(
             node(be_u16),
@@ -151,7 +151,7 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data>(
     Ok((input, Some(attribute)))
 }
 
-fn exceptions(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+fn exceptions(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), node(be_u16)),
         |(number_of_exceptions, exception_index_table): (Node<u16>, Nodes<u16>)| {
@@ -163,7 +163,7 @@ fn exceptions(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
     )(input)
 }
 
-fn enclosing_method(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+fn enclosing_method(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         tuple((node(be_u16), node(be_u16))),
         |(class_index, method_index): (Node<u16>, Node<u16>)| {
@@ -175,22 +175,19 @@ fn enclosing_method(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
     )(input)
 }
 
-fn signature(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+fn signature(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(node(be_u16), |signature_index: Node<u16>| {
         Attribute::Signature(Signature { signature_index })
     })(input)
 }
 
-fn source_file(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+fn source_file(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(node(be_u16), |source_file_index: Node<u16>| {
         Attribute::SourceFile(SourceFile { source_file_index })
     })(input)
 }
 
-fn source_debug_extension(
-    input: BytesSpan,
-    attribute_len: u32,
-) -> IResult<BytesSpan, Node<Attribute>> {
+fn source_debug_extension(input: BytesSpan, attribute_len: u32) -> ParseResult<Node<Attribute>> {
     map_node(take_node(attribute_len), |debug_extension: Node<&[u8]>| {
         Attribute::SourceDebugExtension(SourceDebugExtension {
             debug_extension: debug_extension.map(<[u8]>::to_vec),
@@ -198,7 +195,7 @@ fn source_debug_extension(
     })(input)
 }
 
-fn module_packages(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+fn module_packages(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), node(be_u16)),
         |(package_count, package_index): (Node<u16>, Nodes<u16>)| {
@@ -210,19 +207,19 @@ fn module_packages(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
     )(input)
 }
 
-fn module_main_class(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+fn module_main_class(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(node(be_u16), |main_class_index| {
         Attribute::ModuleMainClass(ModuleMainClass { main_class_index })
     })(input)
 }
 
-fn nest_host(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+fn nest_host(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(node(be_u16), |host_class_index: Node<u16>| {
         Attribute::NestHost(NestHost { host_class_index })
     })(input)
 }
 
-fn nest_members(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+fn nest_members(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), node(be_u16)),
         |(number_of_classes, classes): (Node<u16>, Nodes<u16>)| {
@@ -234,7 +231,7 @@ fn nest_members(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
     )(input)
 }
 
-fn permitted_subclasses(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+fn permitted_subclasses(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), node(be_u16)),
         |(number_of_classes, classes): (Node<u16>, Nodes<u16>)| {

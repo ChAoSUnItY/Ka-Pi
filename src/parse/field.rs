@@ -1,7 +1,6 @@
 use nom::combinator::map;
 use nom::number::complete::be_u16;
 use nom::sequence::tuple;
-use nom::IResult;
 
 use byte_span::BytesSpan;
 
@@ -11,19 +10,19 @@ use crate::node::constant::ConstantPool;
 use crate::node::field::Field;
 use crate::node::Node;
 use crate::parse::attribute::attribute_info;
-use crate::parse::{access_flag, collect_with_constant_pool, node};
+use crate::parse::{access_flag, collect_with_constant_pool, node, ParseResult};
 
-pub(crate) fn fields<'input: 'constant_pool, 'constant_pool>(
-    input: BytesSpan<'input>,
+pub(crate) fn fields<'fragment: 'constant_pool, 'constant_pool>(
+    input: BytesSpan<'fragment>,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<BytesSpan<'input>, (Node<u16>, Node<Vec<Node<Field>>>)> {
+) -> ParseResult<'fragment, (Node<u16>, Node<Vec<Node<Field>>>)> {
     collect_with_constant_pool(node(be_u16), field, constant_pool)(input)
 }
 
-fn field<'input: 'constant_pool, 'constant_pool>(
-    input: BytesSpan<'input>,
+fn field<'fragment: 'constant_pool, 'constant_pool>(
+    input: BytesSpan<'fragment>,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<BytesSpan<'input>, Node<Field>> {
+) -> ParseResult<'fragment, Node<Field>> {
     map(
         node(tuple((
             access_flag,

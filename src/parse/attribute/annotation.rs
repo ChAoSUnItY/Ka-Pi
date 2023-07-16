@@ -2,7 +2,6 @@ use nom::error::{make_error, ErrorKind};
 use nom::number::complete::{be_u16, be_u8};
 use nom::sequence::tuple;
 use nom::Err::Error;
-use nom::IResult;
 
 use byte_span::{offset, BytesSpan};
 
@@ -16,9 +15,9 @@ use crate::node::attribute::{
     RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, RuntimeVisibleTypeAnnotations,
 };
 use crate::node::{Node, Nodes};
-use crate::parse::{collect, map_node, node};
+use crate::parse::{collect, map_node, node, ParseResult};
 
-pub(crate) fn runtime_visible_annotations(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+pub(crate) fn runtime_visible_annotations(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), annotation),
         |(num_annotations, annotations): (Node<u16>, Nodes<Annotation>)| {
@@ -30,9 +29,7 @@ pub(crate) fn runtime_visible_annotations(input: BytesSpan) -> IResult<BytesSpan
     )(input)
 }
 
-pub(crate) fn runtime_invisible_annotations(
-    input: BytesSpan,
-) -> IResult<BytesSpan, Node<Attribute>> {
+pub(crate) fn runtime_invisible_annotations(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), annotation),
         |(num_annotations, annotations): (Node<u16>, Nodes<Annotation>)| {
@@ -46,7 +43,7 @@ pub(crate) fn runtime_invisible_annotations(
 
 pub(crate) fn runtime_visible_parameter_annotations(
     input: BytesSpan,
-) -> IResult<BytesSpan, Node<Attribute>> {
+) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), parameter_annotation),
         |(num_parameters, parameter_annotations): (Node<u16>, Nodes<ParameterAnnotation>)| {
@@ -60,7 +57,7 @@ pub(crate) fn runtime_visible_parameter_annotations(
 
 pub(crate) fn runtime_invisible_parameter_annotations(
     input: BytesSpan,
-) -> IResult<BytesSpan, Node<Attribute>> {
+) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), parameter_annotation),
         |(num_parameters, parameter_annotations): (Node<u16>, Nodes<ParameterAnnotation>)| {
@@ -72,7 +69,7 @@ pub(crate) fn runtime_invisible_parameter_annotations(
     )(input)
 }
 
-fn parameter_annotation(input: BytesSpan) -> IResult<BytesSpan, Node<ParameterAnnotation>> {
+fn parameter_annotation(input: BytesSpan) -> ParseResult<Node<ParameterAnnotation>> {
     map_node(
         collect(node(be_u16), annotation),
         |(num_annotations, annotations): (Node<u16>, Nodes<Annotation>)| ParameterAnnotation {
@@ -82,9 +79,7 @@ fn parameter_annotation(input: BytesSpan) -> IResult<BytesSpan, Node<ParameterAn
     )(input)
 }
 
-pub(crate) fn runtime_visible_type_annotations(
-    input: BytesSpan,
-) -> IResult<BytesSpan, Node<Attribute>> {
+pub(crate) fn runtime_visible_type_annotations(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), type_annotation),
         |(num_annotations, type_annotations): (Node<u16>, Nodes<TypeAnnotation>)| {
@@ -96,9 +91,7 @@ pub(crate) fn runtime_visible_type_annotations(
     )(input)
 }
 
-pub(crate) fn runtime_invisible_type_annotations(
-    input: BytesSpan,
-) -> IResult<BytesSpan, Node<Attribute>> {
+pub(crate) fn runtime_invisible_type_annotations(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), type_annotation),
         |(num_annotations, type_annotations): (Node<u16>, Nodes<TypeAnnotation>)| {
@@ -110,7 +103,7 @@ pub(crate) fn runtime_invisible_type_annotations(
     )(input)
 }
 
-fn type_annotation(input: BytesSpan) -> IResult<BytesSpan, Node<TypeAnnotation>> {
+fn type_annotation(input: BytesSpan) -> ParseResult<Node<TypeAnnotation>> {
     let (input, offset) = offset(input)?;
     let (input, target_type) = node(be_u16)(input)?;
     let (input, target_info) = target_info(input, *target_type)?;
@@ -135,7 +128,7 @@ fn type_annotation(input: BytesSpan) -> IResult<BytesSpan, Node<TypeAnnotation>>
     ))
 }
 
-fn target_info(input: BytesSpan, target_type: u16) -> IResult<BytesSpan, Node<TargetInfo>> {
+fn target_info(input: BytesSpan, target_type: u16) -> ParseResult<Node<TargetInfo>> {
     match target_type {
         0x00..=0x01 => map_node(node(be_u8), |type_parameter_index: Node<u8>| {
             TargetInfo::TypeParameter {
@@ -189,7 +182,7 @@ fn target_info(input: BytesSpan, target_type: u16) -> IResult<BytesSpan, Node<Ta
     }
 }
 
-fn table_entry(input: BytesSpan) -> IResult<BytesSpan, Node<TableEntry>> {
+fn table_entry(input: BytesSpan) -> ParseResult<Node<TableEntry>> {
     map_node(
         tuple((node(be_u16), node(be_u16), node(be_u16))),
         |(start_pc, length, index): (Node<u16>, Node<u16>, Node<u16>)| TableEntry {
@@ -200,14 +193,14 @@ fn table_entry(input: BytesSpan) -> IResult<BytesSpan, Node<TableEntry>> {
     )(input)
 }
 
-fn type_path(input: BytesSpan) -> IResult<BytesSpan, Node<TypePath>> {
+fn type_path(input: BytesSpan) -> ParseResult<Node<TypePath>> {
     map_node(
         collect(node(be_u8), path_segment),
         |(path_length, path): (Node<u8>, Nodes<PathSegment>)| TypePath { path_length, path },
     )(input)
 }
 
-fn path_segment(input: BytesSpan) -> IResult<BytesSpan, Node<PathSegment>> {
+fn path_segment(input: BytesSpan) -> ParseResult<Node<PathSegment>> {
     map_node(
         tuple((node(be_u8), node(be_u8))),
         |(type_path_kind, type_argument_index)| PathSegment {
@@ -217,13 +210,13 @@ fn path_segment(input: BytesSpan) -> IResult<BytesSpan, Node<PathSegment>> {
     )(input)
 }
 
-pub(crate) fn annotation_default(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+pub(crate) fn annotation_default(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(element_value, |default_value: Node<ElementValue>| {
         Attribute::AnnotationDefault(AnnotationDefault { default_value })
     })(input)
 }
 
-fn annotation(input: BytesSpan) -> IResult<BytesSpan, Node<Annotation>> {
+fn annotation(input: BytesSpan) -> ParseResult<Node<Annotation>> {
     map_node(
         tuple((node(be_u16), collect(node(be_u16), element_value_pairs))),
         |(type_index, (num_element_value_pairs, element_value_pairs)): (
@@ -237,7 +230,7 @@ fn annotation(input: BytesSpan) -> IResult<BytesSpan, Node<Annotation>> {
     )(input)
 }
 
-fn element_value_pairs(input: BytesSpan) -> IResult<BytesSpan, Node<ElementValuePair>> {
+fn element_value_pairs(input: BytesSpan) -> ParseResult<Node<ElementValuePair>> {
     map_node(
         tuple((node(be_u16), element_value)),
         |(element_name_index, value): (Node<u16>, Node<ElementValue>)| ElementValuePair {
@@ -247,7 +240,7 @@ fn element_value_pairs(input: BytesSpan) -> IResult<BytesSpan, Node<ElementValue
     )(input)
 }
 
-fn element_value(input: BytesSpan) -> IResult<BytesSpan, Node<ElementValue>> {
+fn element_value(input: BytesSpan) -> ParseResult<Node<ElementValue>> {
     let (input, offset) = offset(input)?;
     let (input, tag) = node(be_u8)(input)?;
     let (input, value) = value(input, *tag)?;
@@ -258,7 +251,7 @@ fn element_value(input: BytesSpan) -> IResult<BytesSpan, Node<ElementValue>> {
     ))
 }
 
-fn value(input: BytesSpan, tag: u8) -> IResult<BytesSpan, Node<Value>> {
+fn value(input: BytesSpan, tag: u8) -> ParseResult<Node<Value>> {
     match tag as char {
         'B' | 'C' | 'D' | 'F' | 'I' | 'J' | 'S' | 'Z' | 's' => {
             map_node(node(be_u16), |const_value_index: Node<u16>| {

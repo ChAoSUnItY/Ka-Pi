@@ -1,7 +1,6 @@
 use nom::combinator::map;
 use nom::number::complete::be_u16;
 use nom::sequence::tuple;
-use nom::IResult;
 
 use byte_span::BytesSpan;
 
@@ -11,19 +10,19 @@ use crate::node::constant::ConstantPool;
 use crate::node::method::Method;
 use crate::node::{Node, Nodes};
 use crate::parse::attribute::attribute_info;
-use crate::parse::{access_flag, collect_with_constant_pool, node};
+use crate::parse::{access_flag, collect_with_constant_pool, node, ParseResult};
 
-pub(crate) fn methods<'input: 'constant_pool, 'constant_pool>(
-    input: BytesSpan<'input>,
+pub(crate) fn methods<'fragment: 'constant_pool, 'constant_pool>(
+    input: BytesSpan<'fragment>,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<BytesSpan<'input>, (Node<u16>, Nodes<Method>)> {
+) -> ParseResult<'fragment, (Node<u16>, Nodes<Method>)> {
     collect_with_constant_pool(node(be_u16), method, constant_pool)(input)
 }
 
-fn method<'input: 'constant_pool, 'constant_pool>(
-    input: BytesSpan<'input>,
+fn method<'fragment: 'constant_pool, 'constant_pool>(
+    input: BytesSpan<'fragment>,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<BytesSpan<'input>, Node<Method>> {
+) -> ParseResult<'fragment, Node<Method>> {
     map(
         node(tuple((
             access_flag,

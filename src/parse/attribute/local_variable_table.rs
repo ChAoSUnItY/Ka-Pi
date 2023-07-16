@@ -1,14 +1,13 @@
 use nom::number::complete::be_u16;
 use nom::sequence::tuple;
-use nom::IResult;
 
 use byte_span::BytesSpan;
 
 use crate::node::attribute::{Attribute, LocalVariable, LocalVariableTable};
 use crate::node::{Node, Nodes};
-use crate::parse::{collect, map_node, node};
+use crate::parse::{collect, map_node, node, ParseResult};
 
-pub(crate) fn local_variable_table(input: BytesSpan) -> IResult<BytesSpan, Node<Attribute>> {
+pub(crate) fn local_variable_table(input: BytesSpan) -> ParseResult<Node<Attribute>> {
     map_node(
         collect(node(be_u16), local_variable),
         |(local_variable_table_length, local_variable_table): (Node<u16>, Nodes<LocalVariable>)| {
@@ -20,7 +19,7 @@ pub(crate) fn local_variable_table(input: BytesSpan) -> IResult<BytesSpan, Node<
     )(input)
 }
 
-fn local_variable(input: BytesSpan) -> IResult<BytesSpan, Node<LocalVariable>> {
+fn local_variable(input: BytesSpan) -> ParseResult<Node<LocalVariable>> {
     map_node(
         tuple((
             node(be_u16),
