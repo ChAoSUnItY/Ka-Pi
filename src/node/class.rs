@@ -5,7 +5,6 @@ use crate::node::attribute::AttributeInfo;
 use crate::node::constant::ConstantPool;
 use crate::node::field::Field;
 use crate::node::method::Method;
-use crate::node::{Node, Nodes};
 use crate::visitor::class::ClassVisitor;
 use crate::visitor::constant::ConstantVisitor;
 use crate::visitor::field::FieldVisitor;
@@ -17,39 +16,38 @@ use crate::visitor::Visitable;
 /// See [4.1 The ClassFile Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=82).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Class {
-    pub magic_number: Node<[u8; 4]>,
-    pub java_version: Node<JavaVersion>,
-    pub constant_pool_count: Node<u16>,
-    pub constant_pool: Node<ConstantPool>,
-    pub access_flags: Node<Vec<ClassAccessFlag>>,
-    pub this_class: Node<u16>,
-    pub super_class: Node<u16>,
-    pub interfaces_count: Node<u16>,
-    pub interfaces: Nodes<u16>,
-    pub fields_count: Node<u16>,
-    pub fields: Nodes<Field>,
-    pub methods_count: Node<u16>,
-    pub methods: Nodes<Method>,
-    pub attributes_count: Node<u16>,
-    pub attributes: Nodes<AttributeInfo>,
+    pub java_version: JavaVersion,
+    pub constant_pool_count: u16,
+    pub constant_pool: ConstantPool,
+    pub access_flags: Vec<ClassAccessFlag>,
+    pub this_class: u16,
+    pub super_class: u16,
+    pub interfaces_count: u16,
+    pub interfaces: Vec<u16>,
+    pub fields_count: u16,
+    pub fields: Vec<Field>,
+    pub methods_count: u16,
+    pub methods: Vec<Method>,
+    pub attributes_count: u16,
+    pub attributes: Vec<AttributeInfo>,
 }
 
 impl Class {
     /// Get current class from constant pool.
     pub fn this_class(&self) -> Option<&crate::node::constant::Class> {
-        self.constant_pool.get_class(self.this_class.1)
+        self.constant_pool.get_class(self.this_class)
     }
 
     /// Get super class from constant pool.
     pub fn super_class(&self) -> Option<&crate::node::constant::Class> {
-        self.constant_pool.get_class(self.super_class.1)
+        self.constant_pool.get_class(self.super_class)
     }
 
     /// Get interface from constant pool at given index.
     pub fn interface(&self, index: u16) -> Option<&crate::node::constant::Class> {
         self.interfaces
             .get(index as usize)
-            .and_then(|interface_index| self.constant_pool.get_class(interface_index.1))
+            .and_then(|interface_index| self.constant_pool.get_class(*interface_index))
     }
 }
 
@@ -69,7 +67,7 @@ where
         visitor.visit_constant_pool(&self.constant_pool);
 
         for (index, constant) in self.constant_pool.iter() {
-            visitor.visit_constant(index, &constant.constant);
+            visitor.visit_constant(index, constant);
         }
 
         visitor.visit_access_flags(&self.access_flags);
@@ -116,7 +114,7 @@ where
 
         visitor.visit_methods(&self.methods);
 
-        for method in &*self.methods {
+        for method in &self.methods {
             let name = method
                 .name(&self.constant_pool)
                 .and_then(|utf8| utf8.string().ok());

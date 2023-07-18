@@ -61,13 +61,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3e2c3daef883ecc1b5d58c15adae93470a91d425f3532ba1695849656af3fc1"
 
 [[package]]
-name = "byte-span"
-version = "0.1.0"
-dependencies = [
- "nom",
-]
-
-[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -437,7 +430,6 @@ name = "ka-pi"
 version = "0.1.0"
 dependencies = [
  "aquamarine",
- "byte-span",
  "cesu8",
  "criterion",
  "either",
