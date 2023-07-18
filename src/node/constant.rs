@@ -202,9 +202,7 @@ pub enum ConstantTag {
 /// Represents JVM constants.
 ///
 /// See [4.4 The Constant Pool](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=93).
-#[derive(
-    Debug, Clone, Eq, PartialEq, Serialize, Deserialize, IntoStaticStr,
-)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, IntoStaticStr)]
 pub enum Constant {
     Utf8(Utf8),
     Integer(Integer),
