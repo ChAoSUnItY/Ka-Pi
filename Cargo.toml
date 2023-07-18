@@ -33,9 +33,14 @@ byte-span = { path = "byte-span" }
 [dev-dependencies]
 insta = { version = "1.28.0", features = ["yaml"] }
 rstest = "0.17.0"
+criterion = { version = "0.4" }
 
 [features]
 default = ["parse", "serde_span"]
 parse = []
 serde_span = []
 generate = []
+
+[[bench]]
+name = "parse"
+harness = false
