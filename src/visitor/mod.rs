@@ -8,5 +8,5 @@ pub mod signature;
 /// A marker trait marks data structure visitable by visitors.
 pub trait Visitable<V> {
     /// Visits the data structure with visitor.
-    fn visit(&mut self, visitor: &mut V);
+    fn visit(&self, visitor: &mut V);
 }

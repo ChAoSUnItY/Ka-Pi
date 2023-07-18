@@ -147,7 +147,7 @@ pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     ///
     /// This would be called on every class type except `java/lang/Object` which does not have any
     /// super type.
-    fn visit_super_class(&mut self, super_class: &mut ClassType) -> Self::SCTV;
+    fn visit_super_class(&mut self, super_class: &ClassType) -> Self::SCTV;
 
     /// Visits class signature's interface types.
     ///
@@ -156,7 +156,7 @@ pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     /// Consider class signature `Ljava/lang/Object;java/lang/Runnable;java/lang/AutoCloseable`,
     /// parameter `interfaces` will be `[java/lang/Runnable, java/lang/AutoCloseable]`, then
     /// interface types will be visited by [Self::visit_interface].
-    fn visit_interfaces(&mut self, interfaces: &mut Vec<ClassType>) {}
+    fn visit_interfaces(&mut self, interfaces: &Vec<ClassType>) {}
 
     /// Visits class signature's interface type.
     ///
@@ -165,7 +165,7 @@ pub trait ClassSignatureVisitor: FormalTypeParameterVisitable {
     /// Consider class signature `Ljava/lang/Object;java/lang/Runnable;java/lang/AutoCloseable`,
     /// parameter `interface` will be `java/lang/Runnable` and `java/lang/AutoCloseable`, then
     /// interface types will be visited by [TypeVisitor] provided by [Self::ITV].
-    fn visit_interface(&mut self, interface: &mut ClassType) -> Self::ITV;
+    fn visit_interface(&mut self, interface: &ClassType) -> Self::ITV;
 }
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
@@ -189,7 +189,7 @@ pub trait FieldSignatureVisitor {
     ///
     /// Consider field signature `Ljava/lang/String;`, parameter `field_type` will be [ClassType]
     /// `java/lang/String`, then the type will be visited by [TypeVisitor] provided by [Self::FTV].
-    fn visit_field_type(&mut self, field_type: &mut ReferenceType) -> Self::FTV;
+    fn visit_field_type(&mut self, field_type: &ReferenceType) -> Self::FTV;
 }
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
@@ -224,7 +224,7 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     ///
     /// Consider method signature `(Ljava/lang/Object;I)I`, parameter `parameter_types` will be
     /// `[java/lang/Object, I]`, then parameter types will be visited by [Self::visit_parameter_type].
-    fn visit_parameter_types(&mut self, parameter_types: &mut Vec<SignatureType>) {}
+    fn visit_parameter_types(&mut self, parameter_types: &Vec<SignatureType>) {}
 
     /// Visits method signature's parameter type.
     ///
@@ -233,7 +233,7 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     /// Consider method signature `(Ljava/lang/Object;I)I`, parameter `parameter_type` will be
     /// [ClassType] `java/lang/Object` and [BaseType] `I`, then parameter types will be visited by
     /// [TypeVisitor] provided by [Self::PTV].
-    fn visit_parameter_type(&mut self, parameter_type: &mut SignatureType) -> Self::PTV;
+    fn visit_parameter_type(&mut self, parameter_type: &SignatureType) -> Self::PTV;
 
     /// Visits method generic signature's return type.
     ///
@@ -241,7 +241,7 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     ///
     /// Consider method signature `(Ljava/lang/Object;I)I`, parameter `return_type` will be
     /// [BaseType] `I`, then return type will be visited by [TypeVisitor] provided by [Self::RTV].
-    fn visit_return_type(&mut self, return_type: &mut SignatureType) -> Self::RTV;
+    fn visit_return_type(&mut self, return_type: &SignatureType) -> Self::RTV;
 
     /// Visits method signature's exception types.
     ///
@@ -249,7 +249,7 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     ///
     /// Consider method signature `()V^TT1;^TT2;`, parameter `throws_types` will be `[T1, T2]`, then
     /// throws types will be visited by [Self::visit_exception_type].
-    fn visit_exception_types(&mut self, throws_types: &mut Vec<ThrowsType>) {}
+    fn visit_exception_types(&mut self, throws_types: &Vec<ThrowsType>) {}
 
     /// Visits method signature's exception type.
     ///
@@ -258,7 +258,7 @@ pub trait MethodSignatureVisitor: FormalTypeParameterVisitable {
     /// Consider method signature `()V^TT;`, parameter `throws_type` will be
     /// [TypeVariable](crate::node::signature::TypeVariable) `T`, then throws type will be
     /// visited by [TypeVisitor] provided by [Self::ETV].
-    fn visit_exception_type(&mut self, throws_type: &mut ThrowsType) -> Self::ETV;
+    fn visit_exception_type(&mut self, throws_type: &ThrowsType) -> Self::ETV;
 }
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
@@ -285,11 +285,7 @@ pub trait FormalTypeParameterVisitable {
     ///
     /// Consider formal type parameters `[T:R:]`, parameter `formal_type_parameters` will be
     /// `[T, R]`, then formal type parameters will be visited by [Self::visit_formal_type_parameter].
-    fn visit_formal_type_parameters(
-        &mut self,
-        formal_type_parameters: &mut Vec<FormalTypeParameter>,
-    ) {
-    }
+    fn visit_formal_type_parameters(&mut self, formal_type_parameters: &Vec<FormalTypeParameter>) {}
 
     /// Visits signature's formal type parameter.
     ///
@@ -300,7 +296,7 @@ pub trait FormalTypeParameterVisitable {
     /// parameters will be visited by [TypeVisitor] provided by [Self::FTPV].
     fn visit_formal_type_parameter(
         &mut self,
-        formal_type_parameter: &mut FormalTypeParameter,
+        formal_type_parameter: &FormalTypeParameter,
     ) -> Self::FTPV;
 }
 
@@ -340,7 +336,7 @@ pub trait FormalTypeParameterVisitor {
     /// ## when class bound does not exists
     ///
     /// Consider formal type parameter `T:`, then [Self::visit_class_bound] will not be called.
-    fn visit_class_bound(&mut self, class_bound_type: &mut ClassType) -> Self::CBTV;
+    fn visit_class_bound(&mut self, class_bound_type: &ClassType) -> Self::CBTV;
 
     /// Visits formal type parameter's interface bounds.
     ///
@@ -349,7 +345,7 @@ pub trait FormalTypeParameterVisitor {
     /// Consider formal type parameter `T::Ljava/lang/Runnable;:Ljava/lang/AutoCloseable;`, parameter
     /// `interface_bound_types` will be `[java/lang/Runnable, java/lang/AutoCloseable]`, then interface
     /// bound types will be visited by [Self::visit_interface_bound].
-    fn visit_interface_bounds(&mut self, interface_bound_types: &mut Vec<ClassType>) {}
+    fn visit_interface_bounds(&mut self, interface_bound_types: &Vec<ClassType>) {}
 
     /// Visits formal type parameter's interface bound.
     ///
@@ -358,7 +354,7 @@ pub trait FormalTypeParameterVisitor {
     /// Consider formal type parameter `T::Ljava/lang/Runnable;:Ljava/lang/AutoCloseable;`, parameter
     /// `interface_bound_type` will be [ClassType] `java/lang/Runnable` and `java/lang/AutoCloseable`,
     /// then interface bound types will be visited by [TypeVisitor] provided by [Self::IBTV].
-    fn visit_interface_bound(&mut self, interface_bound_type: &mut ClassType) -> Self::IBTV;
+    fn visit_interface_bound(&mut self, interface_bound_type: &ClassType) -> Self::IBTV;
 }
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
@@ -421,7 +417,7 @@ pub trait TypeVisitor {
     /// Consider primitive type `I`, parameter `base_type` will be [BaseType::Int], since [BaseType]
     /// is guaranteed to be an terminal node of the signature, no more visiting will be occurred on
     /// this type.
-    fn visit_base_type(&mut self, base_type: &mut BaseType) {}
+    fn visit_base_type(&mut self, base_type: &BaseType) {}
 
     /// Visits [ArrayType].
     ///
@@ -429,7 +425,7 @@ pub trait TypeVisitor {
     ///
     /// Consider type `[[example/Class[TT1;].InnerClass[TT2;]`, parameter `array_type` will be same
     /// as the type given, and the base type will be visited by other visit functions if satisfied.
-    fn visit_array_type(&mut self, array_type: &mut ArrayType) {}
+    fn visit_array_type(&mut self, array_type: &ArrayType) {}
 
     /// Visits [ClassType].
     ///
@@ -439,7 +435,7 @@ pub trait TypeVisitor {
     /// will be `example/Class`, the type arguments of the class type will be visited by
     /// [Self::visit_type_arguments] and [Self::visit_type_argument]. And inner classes will be visited
     /// by [Self::visit_inner_class_types] and [Self::visit_inner_class_type].
-    fn visit_class_type(&mut self, class_type: &mut ClassType) {}
+    fn visit_class_type(&mut self, class_type: &ClassType) {}
 
     /// Visits type variable [TypeVariable](crate::node::signature::TypeVariable).
     ///
@@ -448,7 +444,7 @@ pub trait TypeVisitor {
     /// Consider type variable `TT;` parameter `name` will be `"T"`, since
     /// [TypeVariable](crate::node::signature::TypeVariable) is guaranteed to be an terminal node
     /// of the signature, no more visiting will be occurred on this type.
-    fn visit_type_variable(&mut self, name: &mut String) {}
+    fn visit_type_variable(&mut self, name: &String) {}
 
     /// Visits inner classes of [ClassType].
     ///
@@ -457,7 +453,7 @@ pub trait TypeVisitor {
     /// Consider class path `example/Class.InnerClass[TT1;].InnerMostClass[TT2;]`, parameter
     /// `inner_classes` will be `[InnerClass[TT1;], InnerMostClass[TT2;]]`, and type arguments of both
     /// inner classes will be visited by [Self::visit_type_arguments] in order.
-    fn visit_inner_class_types(&mut self, inner_classes: &mut Vec<(String, Vec<TypeArgument>)>) {}
+    fn visit_inner_class_types(&mut self, inner_classes: &Vec<(String, Vec<TypeArgument>)>) {}
 
     /// Visits inner class of [ClassType].
     ///
@@ -466,7 +462,7 @@ pub trait TypeVisitor {
     /// Consider class path `example/Class.InnerClass[TT1;].InnerMostClass[TT2;]`, parameter
     /// `name` will be `InnerClass` and `InnerMostClass` in order in different calls. and their type
     /// parameters of both inner classes will be visited by [Self::visit_type_arguments] in order.
-    fn visit_inner_class_type(&mut self, name: &mut String) {}
+    fn visit_inner_class_type(&mut self, name: &String) {}
 
     /// Visits all [TypeArgument] of [ClassType] or its inner class type.
     ///
@@ -474,7 +470,7 @@ pub trait TypeVisitor {
     ///
     /// Consider type argument signature `[TT1;TT2;]`, parameter `type_arguments` will be `[T1, T2]`,
     /// then each type arguments will be visited by [Self::visit_type_argument].
-    fn visit_type_arguments(&mut self, type_arguments: &mut Vec<TypeArgument>) {}
+    fn visit_type_arguments(&mut self, type_arguments: &Vec<TypeArgument>) {}
 
     /// Visits [TypeArgument].
     ///
@@ -483,7 +479,7 @@ pub trait TypeVisitor {
     /// Consider type argument `[+Ljava/lang/Object;]`, parameter `type_argument` will be `java/lang/Object`,
     /// then the type argument will be visited by either [Self::visit_type_argument_bounded] or
     /// [Self::visit_type_argument_wildcard].
-    fn visit_type_argument(&mut self, type_argument: &mut TypeArgument) {}
+    fn visit_type_argument(&mut self, type_argument: &TypeArgument) {}
 
     /// Visits [TypeArgument::Bounded].
     ///
@@ -495,8 +491,8 @@ pub trait TypeVisitor {
     /// [Self::visit_class_type], or [Self::visit_type_variable].
     fn visit_type_argument_bounded(
         &mut self,
-        wildcard: &mut WildcardIndicator,
-        reference_type: &mut ReferenceType,
+        wildcard: &WildcardIndicator,
+        reference_type: &ReferenceType,
     ) {
     }
 

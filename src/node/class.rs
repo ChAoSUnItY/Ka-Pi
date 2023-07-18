@@ -63,87 +63,74 @@ where
     FV: FieldVisitor,
     CV: ClassVisitor<CPV = CPV, TCCV = TCCV, SCCV = SCCV, ICV = ICV, MV = MV, FV = FV>,
 {
-    fn visit(&mut self, visitor: &mut CV) {
-        // FIXME(ChAoSUnItY): Rework visitor
-        // visitor.visit_version(&mut self.java_version);
+    fn visit(&self, visitor: &mut CV) {
+        visitor.visit_version(&self.java_version);
 
-        // visitor.visit_constant_pool(&self.constant_pool);
+        visitor.visit_constant_pool(&self.constant_pool);
 
-        // for (index, constant) in self.constant_pool.iter() {
-        //     visitor.visit_constant(index, constant);
-        // }
+        for (index, constant) in self.constant_pool.iter() {
+            visitor.visit_constant(index, &constant.constant);
+        }
 
-        // visitor.visit_access_flags(&mut self.access_flags);
+        visitor.visit_access_flags(&self.access_flags);
 
-        // let mut this_class_visitor = visitor.visit_this_class();
+        let mut this_class_visitor = visitor.visit_this_class();
 
-        // if let Some(this_class) = self.this_class_mut() {
-        //     this_class.visit(&mut this_class_visitor)
-        // }
+        if let Some(this_class) = self.this_class() {
+            this_class.visit(&mut this_class_visitor)
+        }
 
-        // let mut super_class_visitor = visitor.visit_super_class();
+        let mut super_class_visitor = visitor.visit_super_class();
 
-        // if let Some(super_class) = self.super_class_mut() {
-        //     super_class.visit(&mut super_class_visitor);
-        // }
+        if let Some(super_class) = self.super_class() {
+            super_class.visit(&mut super_class_visitor);
+        }
 
-        // visitor.visit_interfaces(&self.interfaces);
+        visitor.visit_interfaces(&self.interfaces);
 
-        // if self.interfaces.len() != self.interfaces_count as usize {
-        //     self.interfaces_count = self.interfaces.len() as u16;
-        // }
+        for index in 0..self.interfaces.len() {
+            let mut interface_visitor = visitor.visit_interface();
 
-        // for index in 0..self.interfaces.len() {
-        //     let mut interface_visitor = visitor.visit_interface();
+            if let Some(interface_constant) = self.interface(index as u16) {
+                interface_constant.visit(&mut interface_visitor);
+            }
+        }
 
-        //     if let Some(interface_constant) = self.interface_mut(index as u16) {
-        //         interface_constant.visit(&mut interface_visitor);
-        //     }
-        // }
+        visitor.visit_fields(&self.fields);
 
-        // visitor.visit_fields(&mut self.fields);
+        for field in &*self.fields {
+            let name = field
+                .name(&self.constant_pool)
+                .and_then(|utf8| utf8.string().ok());
+            let descriptor = field
+                .descriptor(&self.constant_pool)
+                .and_then(|utf8| utf8.string().ok());
 
-        // if self.fields.len() != self.fields_count as usize {
-        //     self.fields_count = self.fields.len() as u16;
-        // }
+            if let (Some(name), Some(descriptor)) = (name, descriptor) {
+                let mut field_visitor =
+                    visitor.visit_field(&field.access_flags, &name, &descriptor);
 
-        // for field in &mut self.fields {
-        //     let name = field
-        //         .name(&self.constant_pool)
-        //         .and_then(|utf8| utf8.string().ok());
-        //     let descriptor = field
-        //         .descriptor(&self.constant_pool)
-        //         .and_then(|utf8| utf8.string().ok());
+                field.visit(&mut field_visitor);
+            }
+        }
 
-        //     if let (Some(name), Some(descriptor)) = (name, descriptor) {
-        //         let mut field_visitor =
-        //             visitor.visit_field(&mut field.access_flags, &name, &descriptor);
+        visitor.visit_methods(&self.methods);
 
-        //         field.visit(&mut field_visitor);
-        //     }
-        // }
+        for method in &*self.methods {
+            let name = method
+                .name(&self.constant_pool)
+                .and_then(|utf8| utf8.string().ok());
+            let descriptor = method
+                .descriptor(&self.constant_pool)
+                .and_then(|utf8| utf8.string().ok());
 
-        // visitor.visit_methods(&mut self.methods);
+            if let (Some(name), Some(descriptor)) = (name, descriptor) {
+                let mut method_visitor =
+                    visitor.visit_method(&method.access_flags, &name, &descriptor);
 
-        // if self.methods.len() != self.methods_count as usize {
-        //     self.methods_count = self.methods.len() as u16;
-        // }
-
-        // for method in &mut self.methods {
-        //     let name = method
-        //         .name(&self.constant_pool)
-        //         .and_then(|utf8| utf8.string().ok());
-        //     let descriptor = method
-        //         .descriptor(&self.constant_pool)
-        //         .and_then(|utf8| utf8.string().ok());
-
-        //     if let (Some(name), Some(descriptor)) = (name, descriptor) {
-        //         let mut method_visitor =
-        //             visitor.visit_method(&mut method.access_flags, &name, &descriptor);
-
-        //         method.visit(&mut method_visitor);
-        //     }
-        // }
+                method.visit(&mut method_visitor);
+            }
+        }
     }
 }
 

@@ -1,3 +1,5 @@
+use byte_span::BytesSpan;
+use nom::error::{ErrorKind, ParseError};
 use std::{
     error::Error,
     fmt::{Debug, Display},
@@ -16,7 +18,7 @@ where
     E: Into<KapiError>,
 {
     fn into_kapi(self) -> KapiResult<T> {
-        self.map_err(|e| e.into())
+        self.map_err(Into::into)
     }
 }
 
