@@ -295,7 +295,7 @@ impl<CV> Visitable<CV> for Constant
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         match self {
             Constant::Utf8(utf8) => utf8.visit(visitor),
             Constant::Integer(integer) => integer.visit(visitor),
@@ -347,7 +347,7 @@ impl<CV> Visitable<CV> for Utf8
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_utf8(self);
     }
 }
@@ -371,7 +371,7 @@ impl<CV> Visitable<CV> for Integer
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_integer(self);
     }
 }
@@ -395,7 +395,7 @@ impl<CV> Visitable<CV> for Float
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_float(self);
     }
 }
@@ -424,7 +424,7 @@ impl<CV> Visitable<CV> for Long
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_long(self);
     }
 }
@@ -453,7 +453,7 @@ impl<CV> Visitable<CV> for Double
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_double(self);
     }
 }
@@ -481,7 +481,7 @@ impl<CV> Visitable<CV> for Class
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_class(self);
     }
 }
@@ -508,7 +508,7 @@ impl<CV> Visitable<CV> for String
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_string(self);
     }
 }
@@ -545,7 +545,7 @@ impl<CV> Visitable<CV> for FieldRef
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_field_ref(self);
     }
 }
@@ -582,7 +582,7 @@ impl<CV> Visitable<CV> for MethodRef
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_method_ref(self);
     }
 }
@@ -619,7 +619,7 @@ impl<CV> Visitable<CV> for InterfaceMethodRef
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_interface_method_ref(self);
     }
 }
@@ -656,7 +656,7 @@ impl<CV> Visitable<CV> for NameAndType
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_name_and_type(self);
     }
 }
@@ -735,7 +735,7 @@ impl<CV> Visitable<CV> for MethodHandle
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_method_handle(self);
     }
 }
@@ -762,7 +762,7 @@ impl<CV> Visitable<CV> for MethodType
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_method_type(self);
     }
 }
@@ -819,7 +819,7 @@ impl<CV> Visitable<CV> for Dynamic
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_dynamic(self);
     }
 }
@@ -876,7 +876,7 @@ impl<CV> Visitable<CV> for InvokeDynamic
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_invoke_dynamic(self);
     }
 }
@@ -904,7 +904,7 @@ impl<CV> Visitable<CV> for Module
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_module(self);
     }
 }
@@ -932,7 +932,7 @@ impl<CV> Visitable<CV> for Package
 where
     CV: ConstantVisitor,
 {
-    fn visit(&mut self, visitor: &mut CV) {
+    fn visit(&self, visitor: &mut CV) {
         visitor.visit_package(self);
     }
 }

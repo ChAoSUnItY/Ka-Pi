@@ -42,7 +42,7 @@ impl<MV> Visitable<MV> for Method
 where
     MV: MethodVisitor,
 {
-    fn visit(&mut self, visitor: &mut MV) {
+    fn visit(&self, visitor: &mut MV) {
         // TODO: Implement with MethodVisitor here
     }
 }

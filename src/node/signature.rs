@@ -46,7 +46,7 @@ where
         FTPV = FTPV,
     >,
 {
-    fn visit(&mut self, visitor: &mut SV) {
+    fn visit(&self, visitor: &mut SV) {
         match self {
             Signature::Class {
                 formal_type_parameters,
@@ -131,16 +131,16 @@ where
     IBTV: TypeVisitor,
     FTPV: FormalTypeParameterVisitor<CBTV = CBTV, IBTV = IBTV>,
 {
-    fn visit(&mut self, visitor: &mut FTPV) {
-        if let Some(class_bound) = &mut self.class_bound {
+    fn visit(&self, visitor: &mut FTPV) {
+        if let Some(class_bound) = &self.class_bound {
             let mut class_bound_type_visitor = visitor.visit_class_bound(class_bound);
 
             class_bound.visit(&mut class_bound_type_visitor);
         }
 
-        visitor.visit_interface_bounds(&mut self.interface_bounds);
+        visitor.visit_interface_bounds(&self.interface_bounds);
 
-        for interface_bound in &mut self.interface_bounds {
+        for interface_bound in &self.interface_bounds {
             let mut interface_bound_type_visitor = visitor.visit_interface_bound(interface_bound);
 
             interface_bound.visit(&mut interface_bound_type_visitor);
@@ -161,7 +161,7 @@ impl<TV> Visitable<TV> for TypeArgument
 where
     TV: TypeVisitor,
 {
-    fn visit(&mut self, visitor: &mut TV) {
+    fn visit(&self, visitor: &mut TV) {
         visitor.visit_type_argument(self);
 
         match self {
@@ -250,7 +250,7 @@ impl<TV> Visitable<TV> for SignatureType
 where
     TV: TypeVisitor,
 {
-    fn visit(&mut self, visitor: &mut TV) {
+    fn visit(&self, visitor: &mut TV) {
         match self {
             SignatureType::BaseType(base_type) => visitor.visit_base_type(base_type),
             SignatureType::ReferenceType(reference_type) => {
@@ -270,7 +270,7 @@ impl<TV> Visitable<TV> for ThrowsType
 where
     TV: TypeVisitor,
 {
-    fn visit(&mut self, visitor: &mut TV) {
+    fn visit(&self, visitor: &mut TV) {
         match self {
             ThrowsType::Class(class_type) => {
                 class_type.visit(visitor);
@@ -294,15 +294,15 @@ impl<TV> Visitable<TV> for ReferenceType
 where
     TV: TypeVisitor,
 {
-    fn visit(&mut self, visitor: &mut TV) {
+    fn visit(&self, visitor: &mut TV) {
         match self {
             ReferenceType::Array(inner_type) => {
                 visitor.visit_array_type(inner_type);
 
-                let mut inner_type = inner_type.0.as_mut();
+                let mut inner_type = inner_type.0.as_ref();
 
                 while let SignatureType::ReferenceType(ReferenceType::Array(typ)) = inner_type {
-                    inner_type = typ.0.as_mut();
+                    inner_type = typ.0.as_ref();
                 }
 
                 inner_type.visit(visitor);
@@ -324,7 +324,7 @@ impl<TV> Visitable<TV> for ArrayType
 where
     TV: TypeVisitor,
 {
-    fn visit(&mut self, visitor: &mut TV) {
+    fn visit(&self, visitor: &mut TV) {
         self.0.visit(visitor)
     }
 }
@@ -341,16 +341,16 @@ impl<TV> Visitable<TV> for ClassType
 where
     TV: TypeVisitor,
 {
-    fn visit(&mut self, visitor: &mut TV) {
+    fn visit(&self, visitor: &mut TV) {
         visitor.visit_class_type(self);
 
-        for type_argument in &mut self.type_arguments {
+        for type_argument in &self.type_arguments {
             type_argument.visit(visitor);
         }
 
-        visitor.visit_inner_class_types(&mut self.inner_classes);
+        visitor.visit_inner_class_types(&self.inner_classes);
 
-        for (inner_class_name, type_arguments) in &mut self.inner_classes {
+        for (inner_class_name, type_arguments) in &self.inner_classes {
             visitor.visit_inner_class_type(inner_class_name);
 
             for type_argument in type_arguments {
@@ -367,8 +367,8 @@ impl<TV> Visitable<TV> for TypeVariable
 where
     TV: TypeVisitor,
 {
-    fn visit(&mut self, visitor: &mut TV) {
-        visitor.visit_type_variable(&mut self.0);
+    fn visit(&self, visitor: &mut TV) {
+        visitor.visit_type_variable(&self.0);
     }
 }
 
@@ -390,7 +390,7 @@ impl<TV> Visitable<TV> for BaseType
 where
     TV: TypeVisitor,
 {
-    fn visit(&mut self, visitor: &mut TV) {
+    fn visit(&self, visitor: &mut TV) {
         visitor.visit_base_type(self);
     }
 }
