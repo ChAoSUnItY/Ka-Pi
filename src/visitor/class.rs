@@ -3,7 +3,6 @@ use crate::node::class::JavaVersion;
 use crate::node::constant::{Constant, ConstantPool};
 use crate::node::field::Field;
 use crate::node::method::Method;
-use crate::node::{Node, Nodes};
 use crate::visitor::constant::ConstantVisitor;
 use crate::visitor::field::FieldVisitor;
 use crate::visitor::method::MethodVisitor;
@@ -27,16 +26,16 @@ pub trait ClassVisitor {
     type FV: FieldVisitor;
 
     /// Visits [major and minor versions](JavaVersion).
-    fn visit_version(&mut self, version: &Node<JavaVersion>) {}
+    fn visit_version(&mut self, version: &JavaVersion) {}
 
     /// Visits [ConstantPool].
-    fn visit_constant_pool(&mut self, constant_pool: &Node<ConstantPool>) {}
+    fn visit_constant_pool(&mut self, constant_pool: &ConstantPool) {}
 
     /// Visits [constants](Constant) in [constant pool](ConstantPool).
-    fn visit_constant(&mut self, index: &u16, constant: &Node<Constant>) -> Self::CPV;
+    fn visit_constant(&mut self, index: &u16, constant: &Constant) -> Self::CPV;
 
     /// Visits [ClassAccessFlag]s.
-    fn visit_access_flags(&mut self, access_flags: &Node<Vec<ClassAccessFlag>>) {}
+    fn visit_access_flags(&mut self, access_flags: &[ClassAccessFlag]) {}
 
     /// Visits this class [constant](Constant), it is guaranteed only function
     /// [visit_utf8](ConstantVisitor::visit_utf8) will be invoked on [Self::TCCV].
@@ -47,30 +46,30 @@ pub trait ClassVisitor {
     fn visit_super_class(&mut self) -> Self::SCCV;
 
     /// Visits interface constant indices.
-    fn visit_interfaces(&mut self, interface_indices: &Nodes<u16>) {}
+    fn visit_interfaces(&mut self, interface_indices: &[u16]) {}
 
     /// Visits [interface constant](Constant), it is guaranteed only function
     /// [visit_utf8](ConstantVisitor::visit_utf8) will be invoked on [Self::ICV].
     fn visit_interface(&mut self) -> Self::ICV;
 
     /// Visits [fields](Field).
-    fn visit_fields(&mut self, fields: &Nodes<Field>) {}
+    fn visit_fields(&mut self, fields: &[Field]) {}
 
     /// Visits [Field].
     fn visit_field(
         &mut self,
-        access_flags: &Node<Vec<FieldAccessFlag>>,
+        access_flags: &[FieldAccessFlag],
         name: &str,
         descriptor: &str,
     ) -> Self::FV;
 
     /// Visits [methods](Method).
-    fn visit_methods(&mut self, methods: &Nodes<Method>) {}
+    fn visit_methods(&mut self, methods: &[Method]) {}
 
     /// Visits [Method].
     fn visit_method(
         &mut self,
-        access_flags: &Node<Vec<MethodAccessFlag>>,
+        access_flags: &[MethodAccessFlag],
         name: &str,
         descriptor: &str,
     ) -> Self::MV;

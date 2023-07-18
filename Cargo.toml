@@ -28,14 +28,18 @@ cesu8 = "1.1.0"
 strum = { version = "0.24.1", features = ["derive"] }
 aquamarine = "0.3.2"
 paste = "1.0.13"
-byte-span = { path = "byte-span" }
 
 [dev-dependencies]
 insta = { version = "1.28.0", features = ["yaml"] }
 rstest = "0.17.0"
+criterion = { version = "0.4" }
 
 [features]
 default = ["parse", "serde_span"]
 parse = []
 serde_span = []
 generate = []
+
+[[bench]]
+name = "parse"
+harness = false

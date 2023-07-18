@@ -7,7 +7,6 @@ use crate::node::attribute::annotation::{
 use crate::node::attribute::module::{Exports, Opens, Provides, Requires};
 use crate::node::constant::{Class, Constant, ConstantPool, MethodHandle, NameAndType, Utf8};
 use crate::node::opcode::Instruction;
-use crate::node::{Node, Nodes};
 
 pub mod annotation;
 pub mod module;
@@ -51,10 +50,10 @@ pub(crate) const RECORD: &'static str = "Record";
 /// See [4.7 Attributes](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=371).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct AttributeInfo {
-    pub attribute_name_index: Node<u16>,
-    pub attribute_len: Node<u32>,
-    pub info: Node<Vec<u8>>,
-    pub attribute: Option<Node<Attribute>>,
+    pub attribute_name_index: u16,
+    pub attribute_len: u32,
+    pub info: Vec<u8>,
+    pub attribute: Option<Attribute>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -134,7 +133,7 @@ impl Attribute {
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ConstantValue {
-    pub constant_value_index: Node<u16>,
+    pub constant_value_index: u16,
 }
 
 impl ConstantValue {
@@ -142,45 +141,45 @@ impl ConstantValue {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Constant> {
-        constant_pool.get_constant(*self.constant_value_index)
+        constant_pool.get_constant(self.constant_value_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Code {
-    pub max_stack: Node<u16>,
-    pub max_locals: Node<u16>,
-    pub code_length: Node<u32>,
-    pub code: Node<Vec<u8>>,
-    pub instructions: Nodes<Instruction>,
-    pub exception_table_length: Node<u16>,
-    pub exception_table: Nodes<Exception>,
-    pub attributes_length: Node<u16>,
-    pub attributes: Nodes<AttributeInfo>,
+    pub max_stack: u16,
+    pub max_locals: u16,
+    pub code_length: u32,
+    pub code: Vec<u8>,
+    pub instructions: Vec<Instruction>,
+    pub exception_table_length: u16,
+    pub exception_table: Vec<Exception>,
+    pub attributes_length: u16,
+    pub attributes: Vec<AttributeInfo>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct StackMapTable {
-    pub number_of_entries: Node<u16>,
-    pub entries: Nodes<StackMapFrameEntry>,
+    pub number_of_entries: u16,
+    pub entries: Vec<StackMapFrameEntry>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Exceptions {
-    pub number_of_exceptions: Node<u16>,
-    pub exception_index_table: Nodes<u16>,
+    pub number_of_exceptions: u16,
+    pub exception_index_table: Vec<u16>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct InnerClasses {
-    pub number_of_classes: Node<u16>,
-    pub class: Nodes<InnerClass>,
+    pub number_of_classes: u16,
+    pub class: Vec<InnerClass>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct EnclosingMethod {
-    pub class_index: Node<u16>,
-    pub method_index: Node<u16>,
+    pub class_index: u16,
+    pub method_index: u16,
 }
 
 impl EnclosingMethod {
@@ -188,20 +187,20 @@ impl EnclosingMethod {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.class_index)
+        constant_pool.get_class(self.class_index)
     }
 
     pub fn method_name_and_type<'attribute, 'constant_pool: 'attribute>(
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        constant_pool.get_name_and_type(*self.method_index)
+        constant_pool.get_name_and_type(self.method_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Signature {
-    pub signature_index: Node<u16>,
+    pub signature_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -210,13 +209,13 @@ impl Signature {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.signature_index)
+        constant_pool.get_utf8(self.signature_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SourceFile {
-    pub source_file_index: Node<u16>,
+    pub source_file_index: u16,
 }
 
 impl SourceFile {
@@ -224,101 +223,101 @@ impl SourceFile {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.source_file_index)
+        constant_pool.get_utf8(self.source_file_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SourceDebugExtension {
-    pub debug_extension: Node<Vec<u8>>,
+    pub debug_extension: Vec<u8>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LineNumberTable {
-    pub line_number_table_length: Node<u16>,
-    pub line_number_table: Nodes<LineNumber>,
+    pub line_number_table_length: u16,
+    pub line_number_table: Vec<LineNumber>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LocalVariableTable {
-    pub local_variable_table_length: Node<u16>,
-    pub local_variable_table: Nodes<LocalVariable>,
+    pub local_variable_table_length: u16,
+    pub local_variable_table: Vec<LocalVariable>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LocalVariableTypeTable {
-    pub local_variable_type_table_length: Node<u16>,
-    pub local_variable_type_table: Nodes<LocalVariableType>,
+    pub local_variable_type_table_length: u16,
+    pub local_variable_type_table: Vec<LocalVariableType>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RuntimeVisibleAnnotations {
-    pub num_annotations: Node<u16>,
-    pub annotations: Nodes<Annotation>,
+    pub num_annotations: u16,
+    pub annotations: Vec<Annotation>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RuntimeInvisibleAnnotations {
-    pub num_annotations: Node<u16>,
-    pub annotations: Nodes<Annotation>,
+    pub num_annotations: u16,
+    pub annotations: Vec<Annotation>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RuntimeVisibleParameterAnnotations {
-    pub num_parameters: Node<u16>,
-    pub parameter_annotations: Nodes<ParameterAnnotation>,
+    pub num_parameters: u16,
+    pub parameter_annotations: Vec<ParameterAnnotation>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RuntimeInvisibleParameterAnnotations {
-    pub num_parameters: Node<u16>,
-    pub parameter_annotations: Nodes<ParameterAnnotation>,
+    pub num_parameters: u16,
+    pub parameter_annotations: Vec<ParameterAnnotation>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RuntimeVisibleTypeAnnotations {
-    pub num_annotations: Node<u16>,
-    pub type_annotations: Nodes<TypeAnnotation>,
+    pub num_annotations: u16,
+    pub type_annotations: Vec<TypeAnnotation>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RuntimeInvisibleTypeAnnotations {
-    pub num_annotations: Node<u16>,
-    pub type_annotations: Nodes<TypeAnnotation>,
+    pub num_annotations: u16,
+    pub type_annotations: Vec<TypeAnnotation>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct AnnotationDefault {
-    pub default_value: Node<ElementValue>,
+    pub default_value: ElementValue,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BootstrapMethods {
-    pub num_bootstrap_methods: Node<u16>,
-    pub bootstrap_methods: Nodes<BootstrapMethod>,
+    pub num_bootstrap_methods: u16,
+    pub bootstrap_methods: Vec<BootstrapMethod>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MethodParameters {
-    pub parameters_count: Node<u8>,
-    pub parameters: Nodes<MethodParameter>,
+    pub parameters_count: u8,
+    pub parameters: Vec<MethodParameter>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Module {
-    pub module_name_index: Node<u16>,
-    pub module_flags: Node<Vec<ModuleAccessFlag>>,
-    pub module_version_index: Node<u16>,
-    pub requires_count: Node<u16>,
-    pub requires: Nodes<Requires>,
-    pub exports_count: Node<u16>,
-    pub exports: Nodes<Exports>,
-    pub opens_count: Node<u16>,
-    pub opens: Nodes<Opens>,
-    pub uses_count: Node<u16>,
-    pub uses_index: Nodes<u16>,
-    pub provides_count: Node<u16>,
-    pub provides: Nodes<Provides>,
+    pub module_name_index: u16,
+    pub module_flags: Vec<ModuleAccessFlag>,
+    pub module_version_index: u16,
+    pub requires_count: u16,
+    pub requires: Vec<Requires>,
+    pub exports_count: u16,
+    pub exports: Vec<Exports>,
+    pub opens_count: u16,
+    pub opens: Vec<Opens>,
+    pub uses_count: u16,
+    pub uses_index: Vec<u16>,
+    pub provides_count: u16,
+    pub provides: Vec<Provides>,
 }
 
 impl Module {
@@ -326,14 +325,14 @@ impl Module {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.module_name_index)
+        constant_pool.get_utf8(self.module_name_index)
     }
 
     pub fn module_version<'attribute, 'constant_pool: 'attribute>(
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.module_version_index)
+        constant_pool.get_utf8(self.module_version_index)
     }
 
     pub fn uses<'attribute, 'constant_pool: 'attribute>(
@@ -343,14 +342,14 @@ impl Module {
     ) -> Option<&'constant_pool Class> {
         self.uses_index
             .get(index)
-            .and_then(|uses_index| constant_pool.get_class(**uses_index))
+            .and_then(|uses_index| constant_pool.get_class(*uses_index))
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ModulePackages {
-    pub package_count: Node<u16>,
-    pub package_index: Nodes<u16>,
+    pub package_count: u16,
+    pub package_index: Vec<u16>,
 }
 
 impl ModulePackages {
@@ -361,13 +360,13 @@ impl ModulePackages {
     ) -> Option<&'constant_pool Utf8> {
         self.package_index
             .get(index)
-            .and_then(|package_index| constant_pool.get_utf8(**package_index))
+            .and_then(|package_index| constant_pool.get_utf8(*package_index))
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ModuleMainClass {
-    pub main_class_index: Node<u16>,
+    pub main_class_index: u16,
 }
 
 impl ModuleMainClass {
@@ -375,13 +374,13 @@ impl ModuleMainClass {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.main_class_index)
+        constant_pool.get_class(self.main_class_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NestHost {
-    pub host_class_index: Node<u16>,
+    pub host_class_index: u16,
 }
 
 impl NestHost {
@@ -389,14 +388,14 @@ impl NestHost {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.host_class_index)
+        constant_pool.get_class(self.host_class_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NestMembers {
-    pub number_of_classes: Node<u16>,
-    pub classes: Nodes<u16>,
+    pub number_of_classes: u16,
+    pub classes: Vec<u16>,
 }
 
 //noinspection DuplicatedCode
@@ -408,20 +407,20 @@ impl NestMembers {
     ) -> Option<&'constant_pool Class> {
         self.classes
             .get(index)
-            .and_then(|class_index| constant_pool.get_class(**class_index))
+            .and_then(|class_index| constant_pool.get_class(*class_index))
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Record {
-    pub components_count: Node<u16>,
-    pub components: Nodes<RecordComponent>,
+    pub components_count: u16,
+    pub components: Vec<RecordComponent>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PermittedSubclasses {
-    pub number_of_classes: Node<u16>,
-    pub classes: Nodes<u16>,
+    pub number_of_classes: u16,
+    pub classes: Vec<u16>,
 }
 
 //noinspection DuplicatedCode
@@ -433,7 +432,7 @@ impl PermittedSubclasses {
     ) -> Option<&'constant_pool Class> {
         self.classes
             .get(index)
-            .and_then(|class_index| constant_pool.get_class(**class_index))
+            .and_then(|class_index| constant_pool.get_class(*class_index))
     }
 }
 
@@ -441,10 +440,10 @@ impl PermittedSubclasses {
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Exception {
-    pub start_pc: Node<u16>,
-    pub end_pc: Node<u16>,
-    pub handler_pc: Node<u16>,
-    pub catch_type: Node<u16>,
+    pub start_pc: u16,
+    pub end_pc: u16,
+    pub handler_pc: u16,
+    pub catch_type: u16,
 }
 
 impl Exception {
@@ -452,7 +451,7 @@ impl Exception {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.catch_type)
+        constant_pool.get_class(self.catch_type)
     }
 }
 
@@ -460,37 +459,37 @@ impl Exception {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum StackMapFrameEntry {
     Same {
-        frame_type: Node<u8>,
+        frame_type: u8,
     },
     SameLocal1StackItem {
-        frame_type: Node<u8>,
-        stack: Node<VerificationType>,
+        frame_type: u8,
+        stack: VerificationType,
     },
     SameLocal1StackItemExtended {
-        frame_type: Node<u8>,
-        offset_delta: Node<u16>,
-        stack: Node<VerificationType>,
+        frame_type: u8,
+        offset_delta: u16,
+        stack: VerificationType,
     },
     Chop {
-        frame_type: Node<u8>,
-        offset_delta: Node<u16>,
+        frame_type: u8,
+        offset_delta: u16,
     },
     SameExtended {
-        frame_type: Node<u8>,
-        offset_delta: Node<u16>,
+        frame_type: u8,
+        offset_delta: u16,
     },
     Append {
-        frame_type: Node<u8>,
-        offset_delta: Node<u16>,
-        locals: Nodes<VerificationType>,
+        frame_type: u8,
+        offset_delta: u16,
+        locals: Vec<VerificationType>,
     },
     Full {
-        frame_type: Node<u8>,
-        offset_delta: Node<u16>,
-        number_of_locals: Node<u16>,
-        locals: Nodes<VerificationType>,
-        number_of_stack_items: Node<u16>,
-        stack: Nodes<VerificationType>,
+        frame_type: u8,
+        offset_delta: u16,
+        number_of_locals: u16,
+        locals: Vec<VerificationType>,
+        number_of_stack_items: u16,
+        stack: Vec<VerificationType>,
     },
 }
 
@@ -506,13 +505,14 @@ pub enum VerificationType {
     Null,
     UninitializedThis,
     Object(Object),
-    Uninitialized { offset: Node<u16> },
+    Uninitialized { offset: u16 },
 }
 
 //noinspection SpellCheckingInspection
+
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Object {
-    pub(crate) cpool_index: Node<u16>,
+    pub(crate) cpool_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -521,16 +521,16 @@ impl Object {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.cpool_index)
+        constant_pool.get_class(self.cpool_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct InnerClass {
-    pub inner_class_info_index: Node<u16>,
-    pub outer_class_info_index: Node<u16>,
-    pub inner_name_index: Node<u16>,
-    pub inner_class_access_flags: Node<Vec<NestedClassAccessFlag>>,
+    pub inner_class_info_index: u16,
+    pub outer_class_info_index: u16,
+    pub inner_name_index: u16,
+    pub inner_class_access_flags: Vec<NestedClassAccessFlag>,
 }
 
 impl InnerClass {
@@ -538,37 +538,37 @@ impl InnerClass {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.inner_class_info_index)
+        constant_pool.get_class(self.inner_class_info_index)
     }
 
     pub fn outer_class<'attribute, 'constant_pool: 'attribute>(
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.outer_class_info_index)
+        constant_pool.get_class(self.outer_class_info_index)
     }
 
     pub fn inner_name<'attribute, 'constant_pool: 'attribute>(
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.inner_name_index)
+        constant_pool.get_utf8(self.inner_name_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LineNumber {
-    pub start_pc: Node<u16>,
-    pub line_number: Node<u16>,
+    pub start_pc: u16,
+    pub line_number: u16,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LocalVariable {
-    pub start_pc: Node<u16>,
-    pub length: Node<u16>,
-    pub name_index: Node<u16>,
-    pub descriptor_index: Node<u16>,
-    pub index: Node<u16>,
+    pub start_pc: u16,
+    pub length: u16,
+    pub name_index: u16,
+    pub descriptor_index: u16,
+    pub index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -577,24 +577,24 @@ impl LocalVariable {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.name_index)
+        constant_pool.get_utf8(self.name_index)
     }
 
     pub fn descriptor<'attribute, 'constant_pool: 'attribute>(
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.descriptor_index)
+        constant_pool.get_utf8(self.descriptor_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LocalVariableType {
-    pub start_pc: Node<u16>,
-    pub length: Node<u16>,
-    pub name_index: Node<u16>,
-    pub signature_index: Node<u16>,
-    pub index: Node<u16>,
+    pub start_pc: u16,
+    pub length: u16,
+    pub name_index: u16,
+    pub signature_index: u16,
+    pub index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -603,30 +603,38 @@ impl LocalVariableType {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.name_index)
+        constant_pool.get_utf8(self.name_index)
     }
 
     pub fn signature<'attribute, 'constant_pool: 'attribute>(
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.signature_index)
+        constant_pool.get_utf8(self.signature_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BootstrapMethod {
-    pub bootstrap_method_ref: Node<u16>,
-    pub num_bootstrap_arguments: Node<u16>,
-    pub bootstrap_arguments: Nodes<u16>,
+    pub bootstrap_method_ref: u16,
+    pub num_bootstrap_arguments: u16,
+    pub bootstrap_arguments: Vec<u16>,
 }
 
 impl BootstrapMethod {
+    pub fn new(bootstrap_method_ref: u16, boostrap_arguments_indices: Vec<u16>) -> Self {
+        Self {
+            bootstrap_method_ref,
+            num_bootstrap_arguments: boostrap_arguments_indices.len() as u16,
+            bootstrap_arguments: boostrap_arguments_indices,
+        }
+    }
+
     pub fn bootstrap_method_handle<'attribute, 'constant_pool: 'attribute>(
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool MethodHandle> {
-        constant_pool.get_method_handle(*self.bootstrap_method_ref)
+        constant_pool.get_method_handle(self.bootstrap_method_ref)
     }
 
     pub fn bootstrap_argument<'attribute, 'constant_pool: 'attribute>(
@@ -636,14 +644,14 @@ impl BootstrapMethod {
     ) -> Option<&'constant_pool Constant> {
         self.bootstrap_arguments
             .get(index)
-            .and_then(|argument_index| constant_pool.get_constant(**argument_index))
+            .and_then(|argument_index| constant_pool.get_constant(*argument_index))
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MethodParameter {
-    pub name_index: Node<u16>,
-    pub access_flags: Node<Vec<ParameterAccessFlag>>,
+    pub name_index: u16,
+    pub access_flags: Vec<ParameterAccessFlag>,
 }
 
 //noinspection DuplicatedCode
@@ -652,16 +660,16 @@ impl MethodParameter {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.name_index)
+        constant_pool.get_utf8(self.name_index)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RecordComponent {
-    pub name_index: Node<u16>,
-    pub descriptor_index: Node<u16>,
-    pub attributes_count: Node<u16>,
-    pub attributes: Nodes<AttributeInfo>,
+    pub name_index: u16,
+    pub descriptor_index: u16,
+    pub attributes_count: u16,
+    pub attributes: Vec<AttributeInfo>,
 }
 
 //noinspection DuplicatedCode
@@ -670,13 +678,13 @@ impl RecordComponent {
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.name_index)
+        constant_pool.get_utf8(self.name_index)
     }
 
     pub fn descriptor<'attribute, 'constant_pool: 'attribute>(
         &'attribute self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.descriptor_index)
+        constant_pool.get_utf8(self.descriptor_index)
     }
 }

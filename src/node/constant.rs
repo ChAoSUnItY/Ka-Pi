@@ -8,7 +8,6 @@ use strum::IntoStaticStr;
 
 use crate::error::{KapiError, KapiResult};
 use crate::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods};
-use crate::node::Node;
 use crate::visitor::constant::ConstantVisitor;
 use crate::visitor::Visitable;
 
@@ -17,13 +16,7 @@ macro_rules! const_getter {
         paste! {
             $(#[$attr])*
             pub fn [< get_ $variant_name >] (&self, index: u16) -> Option<&$variant> {
-                if let Some(Node(
-                    _,
-                    ConstantInfo {
-                        tag: _,
-                        constant: Node(_, Constant:: $variant(constant)),
-                    },
-                )) = self.get(index)
+                if let Some(Constant::$variant(constant)) = self.get(&index)
                 {
                     Some(constant)
                 } else {
@@ -40,7 +33,7 @@ macro_rules! const_getter {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ConstantPool {
     len: u16,
-    entries: BTreeMap<u16, Node<ConstantInfo>>,
+    entries: BTreeMap<u16, Constant>,
 }
 
 impl ConstantPool {
@@ -48,10 +41,10 @@ impl ConstantPool {
         self.len
     }
 
-    pub(crate) fn add(&mut self, cp_info: Node<ConstantInfo>) {
-        let occupies_2_slots = cp_info.occupies_2_slots();
+    pub(crate) fn add(&mut self, constant: Constant) {
+        let occupies_2_slots = constant.occupies_2_slots();
 
-        self.entries.insert(self.len, cp_info);
+        self.entries.insert(self.len, constant);
 
         if occupies_2_slots {
             self.len += 2;
@@ -60,20 +53,8 @@ impl ConstantPool {
         }
     }
 
-    /// Get [ConstantInfo] node reference from constant pool based on given index.
-    ///
-    /// ### Index
-    ///
-    /// There are two scenarios which will return a [None]:
-    /// 1. The given index is out of bound, which is 0 < index <= self.len().
-    /// 2. The given index is located at an placeholder constant, which is followed after [Constant::Long]
-    ///    and [Constant::Double].
-    pub fn get(&self, index: u16) -> Option<&Node<ConstantInfo>> {
-        self.entries.get(&index)
-    }
-
     pub fn get_constant(&self, index: u16) -> Option<&Constant> {
-        self.get(index).map(|node| &*node.constant)
+        self.get(&index)
     }
 
     const_getter!(
@@ -173,34 +154,10 @@ impl Default for ConstantPool {
 }
 
 impl Deref for ConstantPool {
-    type Target = BTreeMap<u16, Node<ConstantInfo>>;
+    type Target = BTreeMap<u16, Constant>;
 
     fn deref(&self) -> &Self::Target {
         &self.entries
-    }
-}
-
-impl From<Vec<Node<ConstantInfo>>> for ConstantPool {
-    fn from(value: Vec<Node<ConstantInfo>>) -> Self {
-        let mut constant_pool = ConstantPool::default();
-
-        for item in value {
-            constant_pool.add(item);
-        }
-
-        constant_pool
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct ConstantInfo {
-    pub tag: Node<ConstantTag>,
-    pub constant: Node<Constant>,
-}
-
-impl ConstantInfo {
-    pub fn occupies_2_slots(&self) -> bool {
-        matches!(*self.tag, ConstantTag::Long | ConstantTag::Double)
     }
 }
 
@@ -289,6 +246,13 @@ impl Constant {
             Constant::Package(..) => ConstantTag::Package,
         }
     }
+
+    pub const fn occupies_2_slots(&self) -> bool {
+        match self {
+            Constant::Long(_) | Constant::Double(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl<CV> Visitable<CV> for Constant
@@ -325,8 +289,8 @@ where
 /// See [4.4.7 The CONSTANT_Utf8_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=102).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Utf8 {
-    pub length: Node<u16>,
-    pub bytes: Node<Vec<u8>>,
+    pub length: u16,
+    pub bytes: Vec<u8>,
 }
 
 impl Utf8 {
@@ -357,13 +321,13 @@ where
 /// See [4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=98).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Integer {
-    pub bytes: Node<[u8; 4]>,
+    pub bytes: [u8; 4],
 }
 
 impl Integer {
     /// Converts bytes into i32.
     pub fn as_i32(&self) -> i32 {
-        i32::from_be_bytes(*self.bytes)
+        i32::from_be_bytes(self.bytes)
     }
 }
 
@@ -381,13 +345,13 @@ where
 /// See [4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=98).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Float {
-    pub bytes: Node<[u8; 4]>,
+    pub bytes: [u8; 4],
 }
 
 impl Float {
     /// Converts bytes into f32.
     pub fn as_f32(&self) -> f32 {
-        f32::from_be_bytes(*self.bytes)
+        f32::from_be_bytes(self.bytes)
     }
 }
 
@@ -405,16 +369,16 @@ where
 /// See [4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=100).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Long {
-    pub high_bytes: Node<[u8; 4]>,
-    pub low_bytes: Node<[u8; 4]>,
+    pub high_bytes: [u8; 4],
+    pub low_bytes: [u8; 4],
 }
 
 impl Long {
     /// Converts bytes into i64.
     pub fn as_i64(&self) -> i64 {
         let mut bytes = [0u8; 8];
-        bytes[..4].copy_from_slice(&*self.high_bytes);
-        bytes[4..].copy_from_slice(&*self.low_bytes);
+        bytes[..4].copy_from_slice(&self.high_bytes);
+        bytes[4..].copy_from_slice(&self.low_bytes);
 
         i64::from_be_bytes(bytes)
     }
@@ -434,16 +398,16 @@ where
 /// See [4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=100).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Double {
-    pub high_bytes: Node<[u8; 4]>,
-    pub low_bytes: Node<[u8; 4]>,
+    pub high_bytes: [u8; 4],
+    pub low_bytes: [u8; 4],
 }
 
 impl Double {
     /// Converts bytes into f64.
     pub fn as_f64(&self) -> f64 {
         let mut bytes = [0u8; 8];
-        bytes[..4].copy_from_slice(&*self.high_bytes);
-        bytes[4..].copy_from_slice(&*self.low_bytes);
+        bytes[..4].copy_from_slice(&self.high_bytes);
+        bytes[4..].copy_from_slice(&self.low_bytes);
 
         f64::from_be_bytes(bytes)
     }
@@ -460,10 +424,10 @@ where
 
 /// Represents constant Class.
 ///
-/// See [4.4 The CONSTANT_Class_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=96).
+/// See [4.4.1 The CONSTANT_Class_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=96).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Class {
-    pub name_index: Node<u16>,
+    pub name_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -473,7 +437,7 @@ impl Class {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.name_index)
+        constant_pool.get_utf8(self.name_index)
     }
 }
 
@@ -491,7 +455,7 @@ where
 /// See [4.4.3 The CONSTANT_String_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=98).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct String {
-    pub string_index: Node<u16>,
+    pub string_index: u16,
 }
 
 impl String {
@@ -500,7 +464,7 @@ impl String {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.string_index)
+        constant_pool.get_utf8(self.string_index)
     }
 }
 
@@ -518,8 +482,8 @@ where
 /// See [4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=97).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FieldRef {
-    pub class_index: Node<u16>,
-    pub name_and_type_index: Node<u16>,
+    pub class_index: u16,
+    pub name_and_type_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -529,7 +493,7 @@ impl FieldRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.class_index)
+        constant_pool.get_class(self.class_index)
     }
 
     /// Gets [NameAndType] of field.
@@ -537,7 +501,7 @@ impl FieldRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        constant_pool.get_name_and_type(*self.name_and_type_index)
+        constant_pool.get_name_and_type(self.name_and_type_index)
     }
 }
 
@@ -555,8 +519,8 @@ where
 /// See [4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=97).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MethodRef {
-    pub class_index: Node<u16>,
-    pub name_and_type_index: Node<u16>,
+    pub class_index: u16,
+    pub name_and_type_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -566,7 +530,7 @@ impl MethodRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.class_index)
+        constant_pool.get_class(self.class_index)
     }
 
     /// Gets [NameAndType] of method.
@@ -574,7 +538,7 @@ impl MethodRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        constant_pool.get_name_and_type(*self.class_index)
+        constant_pool.get_name_and_type(self.name_and_type_index)
     }
 }
 
@@ -592,8 +556,8 @@ where
 /// See [4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=97).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct InterfaceMethodRef {
-    pub class_index: Node<u16>,
-    pub name_and_type_index: Node<u16>,
+    pub class_index: u16,
+    pub name_and_type_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -603,7 +567,7 @@ impl InterfaceMethodRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Class> {
-        constant_pool.get_class(*self.class_index)
+        constant_pool.get_class(self.class_index)
     }
 
     /// Gets [NameAndType] of interface method.
@@ -611,7 +575,7 @@ impl InterfaceMethodRef {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        constant_pool.get_name_and_type(*self.name_and_type_index)
+        constant_pool.get_name_and_type(self.name_and_type_index)
     }
 }
 
@@ -629,8 +593,8 @@ where
 /// See [4.4.6 The CONSTANT_NameAndType_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=101).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NameAndType {
-    pub name_index: Node<u16>,
-    pub type_index: Node<u16>,
+    pub name_index: u16,
+    pub type_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -640,7 +604,7 @@ impl NameAndType {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.name_index)
+        constant_pool.get_utf8(self.name_index)
     }
 
     /// Gets the type of [NameAndType].
@@ -648,7 +612,7 @@ impl NameAndType {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.type_index)
+        constant_pool.get_utf8(self.type_index)
     }
 }
 
@@ -666,14 +630,20 @@ where
 /// See [4.4.8 The CONSTANT_MethodHandle_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=104).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MethodHandle {
-    pub reference_kind: Node<RefKind>,
-    pub reference_index: Node<u16>,
+    pub reference_kind: u8,
+    pub reference_index: u16,
 }
 
 impl MethodHandle {
     /// Gets [RefKind] of MethodHandle.
-    pub fn reference_kind(&self) -> RefKind {
-        *self.reference_kind
+    pub fn reference_kind(&self) -> KapiResult<RefKind> {
+        RefKind::try_from(self.reference_kind).map_err(|err| {
+            KapiError::ClassParseError(format!(
+                "Reference kind {} does not match any kinds described in specification, reason: {}",
+                err.number,
+                err.to_string()
+            ))
+        })
     }
 
     /// Gets the referenced constant of MethodHandle.
@@ -681,46 +651,52 @@ impl MethodHandle {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> KapiResult<Option<&'constant_pool Constant>> {
-        if let Some(constant) = constant_pool.get(*self.reference_index) {
-            match *self.reference_kind {
+        if let Some(constant) = constant_pool.get_constant(self.reference_index) {
+            match self.reference_kind()? {
                 RefKind::GetField | RefKind::GetStatic | RefKind::PutField | RefKind::PutStatic => {
-                    match &*constant.constant {
-                        constant @ Constant::FieldRef(_) => Ok(Some(constant)),
-                        _ => Err(KapiError::ClassParseError(format!(
+                    if let Constant::FieldRef(_) = constant {
+                        Ok(Some(constant))
+                    } else {
+                        Err(KapiError::ClassParseError(format!(
                             "Expected referenced constant FieldRef at #{} but got {}",
-                            *self.reference_index,
-                            Into::<&'static str>::into(&*constant.constant)
+                            self.reference_index,
+                            Into::<&'static str>::into(constant)
                         )))
                     }
                 }
                 RefKind::InvokeVirtual | RefKind::NewInvokeSpecial => {
-                    match &*constant.constant {
-                        constant @ Constant::MethodRef(_) => Ok(Some(constant)),
-                        _ => Err(KapiError::ClassParseError(format!(
+                    if let Constant::MethodRef(_) = constant {
+                        Ok(Some(constant))
+                    } else {
+                        Err(KapiError::ClassParseError(format!(
                             "Expected referenced constant MethodRef at #{} but got {}",
-                            *self.reference_index,
-                            Into::<&'static str>::into(&*constant.constant)
+                            self.reference_index,
+                            Into::<&'static str>::into(constant)
                         )))
                     }
                 }
                 RefKind::InvokeStatic | RefKind::InvokeSpecial => {
-                    match &*constant.constant {
-                        constant @ Constant::MethodRef(_) => Ok(Some(constant)),
-                        constant @ Constant::InterfaceMethodRef(_) => Ok(Some(constant)),
-                        _ => Err(KapiError::ClassParseError(format!(
+                    if matches!(
+                        constant,
+                        Constant::MethodRef(_) | Constant::InterfaceMethodRef(_)
+                    ) {
+                        Ok(Some(constant))
+                    } else {
+                        Err(KapiError::ClassParseError(format!(
                             "Expected referenced either constant MethodRef or constant InterfaceMethodRef at #{} but got {}",
-                            *self.reference_index,
-                            Into::<&'static str>::into(&*constant.constant)
+                            self.reference_index,
+                            Into::<&'static str>::into(constant)
                         )))
                     }
                 }
                 RefKind::InvokeInterface => {
-                    match &*constant.constant {
-                        constant @ Constant::InterfaceMethodRef(_) => Ok(Some(constant)),
-                        _ => Err(KapiError::ClassParseError(format!(
+                    if let Constant::InterfaceMethodRef(_) = constant {
+                        Ok(Some(constant))
+                    } else {
+                        Err(KapiError::ClassParseError(format!(
                             "Expected referenced constant InterfaceMethodRef at #{} but got {}",
-                            *self.reference_index,
-                            Into::<&'static str>::into(&*constant.constant)
+                            self.reference_index,
+                            Into::<&'static str>::into(constant)
                         )))
                     }
                 }
@@ -745,7 +721,7 @@ where
 /// See [4.4.9 The CONSTANT_MethodType_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=106).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MethodType {
-    pub descriptor_index: Node<u16>,
+    pub descriptor_index: u16,
 }
 
 impl MethodType {
@@ -754,7 +730,7 @@ impl MethodType {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.descriptor_index)
+        constant_pool.get_utf8(self.descriptor_index)
     }
 }
 
@@ -772,8 +748,8 @@ where
 /// See [4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=106).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Dynamic {
-    pub bootstrap_method_attr_index: Node<u16>,
-    pub name_and_type_index: Node<u16>,
+    pub bootstrap_method_attr_index: u16,
+    pub name_and_type_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -782,20 +758,17 @@ impl Dynamic {
     pub fn bootstrap_method<'bootstrap_method, 'attributes: 'bootstrap_method>(
         &self,
         attribute_infos: &'attributes Vec<AttributeInfo>,
-    ) -> Option<&'bootstrap_method Node<BootstrapMethod>> {
+    ) -> Option<&'bootstrap_method BootstrapMethod> {
         let bootstrap_methods = if let Some(AttributeInfo {
             attribute:
-                Some(Node(
-                    _,
-                    Attribute::BootstrapMethods(BootstrapMethods {
-                        bootstrap_methods, ..
-                    }),
-                )),
+                Some(Attribute::BootstrapMethods(BootstrapMethods {
+                    bootstrap_methods, ..
+                })),
             ..
         }) = attribute_infos.iter().find(|attribute_info| {
             matches!(
                 attribute_info.attribute,
-                Some(Node(_, Attribute::BootstrapMethods { .. }))
+                Some(Attribute::BootstrapMethods { .. })
             )
         }) {
             bootstrap_methods
@@ -803,7 +776,7 @@ impl Dynamic {
             return None;
         };
 
-        bootstrap_methods.get(*self.bootstrap_method_attr_index as usize)
+        bootstrap_methods.get(self.bootstrap_method_attr_index as usize)
     }
 
     /// Gets the descriptor of the [Dynamic].
@@ -811,7 +784,7 @@ impl Dynamic {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        constant_pool.get_name_and_type(*self.name_and_type_index)
+        constant_pool.get_name_and_type(self.name_and_type_index)
     }
 }
 
@@ -829,8 +802,8 @@ where
 /// See [4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=106).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct InvokeDynamic {
-    pub bootstrap_method_attr_index: Node<u16>,
-    pub name_and_type_index: Node<u16>,
+    pub bootstrap_method_attr_index: u16,
+    pub name_and_type_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -839,20 +812,17 @@ impl InvokeDynamic {
     pub fn bootstrap_method<'bootstrap_method, 'attributes: 'bootstrap_method>(
         &self,
         attribute_infos: &'attributes Vec<AttributeInfo>,
-    ) -> Option<&'bootstrap_method Node<BootstrapMethod>> {
+    ) -> Option<&'bootstrap_method BootstrapMethod> {
         let bootstrap_methods = if let Some(AttributeInfo {
             attribute:
-                Some(Node(
-                    _,
-                    Attribute::BootstrapMethods(BootstrapMethods {
-                        bootstrap_methods, ..
-                    }),
-                )),
+                Some(Attribute::BootstrapMethods(BootstrapMethods {
+                    bootstrap_methods, ..
+                })),
             ..
         }) = attribute_infos.iter().find(|attribute_info| {
             matches!(
                 attribute_info.attribute,
-                Some(Node(_, Attribute::BootstrapMethods { .. }))
+                Some(Attribute::BootstrapMethods { .. })
             )
         }) {
             bootstrap_methods
@@ -860,7 +830,7 @@ impl InvokeDynamic {
             return None;
         };
 
-        bootstrap_methods.get(*self.bootstrap_method_attr_index as usize)
+        bootstrap_methods.get(self.bootstrap_method_attr_index as usize)
     }
 
     /// Gets the descriptor of the [InvokeDynamic].
@@ -868,7 +838,7 @@ impl InvokeDynamic {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
-        constant_pool.get_name_and_type(*self.name_and_type_index)
+        constant_pool.get_name_and_type(self.name_and_type_index)
     }
 }
 
@@ -886,7 +856,7 @@ where
 /// See [4.4.11 The CONSTANT_Module_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=107).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Module {
-    pub name_index: Node<u16>,
+    pub name_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -896,7 +866,7 @@ impl Module {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.name_index)
+        constant_pool.get_utf8(self.name_index)
     }
 }
 
@@ -914,7 +884,7 @@ where
 /// See [4.4.12 The CONSTANT_Package_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=108).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Package {
-    pub name_index: Node<u16>,
+    pub name_index: u16,
 }
 
 //noinspection DuplicatedCode
@@ -924,7 +894,7 @@ impl Package {
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
-        constant_pool.get_utf8(*self.name_index)
+        constant_pool.get_utf8(self.name_index)
     }
 }
 

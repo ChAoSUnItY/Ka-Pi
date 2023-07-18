@@ -2,2365 +2,1023 @@
 source: tests/class_parse.rs
 expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/Main.class\"))?"
 ---
-magic_number:
-  - start: 0
-    end: 4
-  - - 202
-    - 254
-    - 186
-    - 190
-java_version:
-  - start: 4
-    end: 8
-  - V17
-constant_pool_count:
-  - start: 8
-    end: 10
-  - 60
+java_version: V17
+constant_pool_count: 60
 constant_pool:
-  - start: 10
-    end: 537
-  - len: 60
-    entries:
-      1:
-        - start: 10
-          end: 15
-        - tag:
-            - start: 10
-              end: 11
-            - MethodRef
-          constant:
-            - start: 11
-              end: 15
-            - MethodRef:
-                class_index:
-                  - start: 11
-                    end: 13
-                  - 2
-                name_and_type_index:
-                  - start: 13
-                    end: 15
-                  - 3
-      2:
-        - start: 15
-          end: 18
-        - tag:
-            - start: 15
-              end: 16
-            - Class
-          constant:
-            - start: 16
-              end: 18
-            - Class:
-                name_index:
-                  - start: 16
-                    end: 18
-                  - 4
-      3:
-        - start: 18
-          end: 23
-        - tag:
-            - start: 18
-              end: 19
-            - NameAndType
-          constant:
-            - start: 19
-              end: 23
-            - NameAndType:
-                name_index:
-                  - start: 19
-                    end: 21
-                  - 5
-                type_index:
-                  - start: 21
-                    end: 23
-                  - 6
-      4:
-        - start: 23
-          end: 42
-        - tag:
-            - start: 23
-              end: 24
-            - Utf8
-          constant:
-            - start: 24
-              end: 42
-            - Utf8:
-                length:
-                  - start: 24
-                    end: 26
-                  - 16
-                bytes:
-                  - start: 26
-                    end: 42
-                  - - 106
-                    - 97
-                    - 118
-                    - 97
-                    - 47
-                    - 108
-                    - 97
-                    - 110
-                    - 103
-                    - 47
-                    - 79
-                    - 98
-                    - 106
-                    - 101
-                    - 99
-                    - 116
-      5:
-        - start: 42
-          end: 51
-        - tag:
-            - start: 42
-              end: 43
-            - Utf8
-          constant:
-            - start: 43
-              end: 51
-            - Utf8:
-                length:
-                  - start: 43
-                    end: 45
-                  - 6
-                bytes:
-                  - start: 45
-                    end: 51
-                  - - 60
-                    - 105
-                    - 110
-                    - 105
-                    - 116
-                    - 62
-      6:
-        - start: 51
-          end: 57
-        - tag:
-            - start: 51
-              end: 52
-            - Utf8
-          constant:
-            - start: 52
-              end: 57
-            - Utf8:
-                length:
-                  - start: 52
-                    end: 54
-                  - 3
-                bytes:
-                  - start: 54
-                    end: 57
-                  - - 40
-                    - 41
-                    - 86
-      7:
-        - start: 57
-          end: 62
-        - tag:
-            - start: 57
-              end: 58
-            - FieldRef
-          constant:
-            - start: 58
-              end: 62
-            - FieldRef:
-                class_index:
-                  - start: 58
-                    end: 60
-                  - 8
-                name_and_type_index:
-                  - start: 60
-                    end: 62
-                  - 9
-      8:
-        - start: 62
-          end: 65
-        - tag:
-            - start: 62
-              end: 63
-            - Class
-          constant:
-            - start: 63
-              end: 65
-            - Class:
-                name_index:
-                  - start: 63
-                    end: 65
-                  - 10
-      9:
-        - start: 65
-          end: 70
-        - tag:
-            - start: 65
-              end: 66
-            - NameAndType
-          constant:
-            - start: 66
-              end: 70
-            - NameAndType:
-                name_index:
-                  - start: 66
-                    end: 68
-                  - 11
-                type_index:
-                  - start: 68
-                    end: 70
-                  - 12
-      10:
-        - start: 70
-          end: 89
-        - tag:
-            - start: 70
-              end: 71
-            - Utf8
-          constant:
-            - start: 71
-              end: 89
-            - Utf8:
-                length:
-                  - start: 71
-                    end: 73
-                  - 16
-                bytes:
-                  - start: 73
-                    end: 89
-                  - - 106
-                    - 97
-                    - 118
-                    - 97
-                    - 47
-                    - 108
-                    - 97
-                    - 110
-                    - 103
-                    - 47
-                    - 83
-                    - 121
-                    - 115
-                    - 116
-                    - 101
-                    - 109
-      11:
-        - start: 89
-          end: 95
-        - tag:
-            - start: 89
-              end: 90
-            - Utf8
-          constant:
-            - start: 90
-              end: 95
-            - Utf8:
-                length:
-                  - start: 90
-                    end: 92
-                  - 3
-                bytes:
-                  - start: 92
-                    end: 95
-                  - - 111
-                    - 117
-                    - 116
-      12:
-        - start: 95
-          end: 119
-        - tag:
-            - start: 95
-              end: 96
-            - Utf8
-          constant:
-            - start: 96
-              end: 119
-            - Utf8:
-                length:
-                  - start: 96
-                    end: 98
-                  - 21
-                bytes:
-                  - start: 98
-                    end: 119
-                  - - 76
-                    - 106
-                    - 97
-                    - 118
-                    - 97
-                    - 47
-                    - 105
-                    - 111
-                    - 47
-                    - 80
-                    - 114
-                    - 105
-                    - 110
-                    - 116
-                    - 83
-                    - 116
-                    - 114
-                    - 101
-                    - 97
-                    - 109
-                    - 59
-      13:
-        - start: 119
-          end: 122
-        - tag:
-            - start: 119
-              end: 120
-            - String
-          constant:
-            - start: 120
-              end: 122
-            - String:
-                string_index:
-                  - start: 120
-                    end: 122
-                  - 14
-      14:
-        - start: 122
-          end: 137
-        - tag:
-            - start: 122
-              end: 123
-            - Utf8
-          constant:
-            - start: 123
-              end: 137
-            - Utf8:
-                length:
-                  - start: 123
-                    end: 125
-                  - 12
-                bytes:
-                  - start: 125
-                    end: 137
-                  - - 72
-                    - 101
-                    - 108
-                    - 108
-                    - 111
-                    - 32
-                    - 119
-                    - 111
-                    - 114
-                    - 108
-                    - 100
-                    - 33
-      15:
-        - start: 137
-          end: 142
-        - tag:
-            - start: 137
-              end: 138
-            - MethodRef
-          constant:
-            - start: 138
-              end: 142
-            - MethodRef:
-                class_index:
-                  - start: 138
-                    end: 140
-                  - 16
-                name_and_type_index:
-                  - start: 140
-                    end: 142
-                  - 17
-      16:
-        - start: 142
-          end: 145
-        - tag:
-            - start: 142
-              end: 143
-            - Class
-          constant:
-            - start: 143
-              end: 145
-            - Class:
-                name_index:
-                  - start: 143
-                    end: 145
-                  - 18
-      17:
-        - start: 145
-          end: 150
-        - tag:
-            - start: 145
-              end: 146
-            - NameAndType
-          constant:
-            - start: 146
-              end: 150
-            - NameAndType:
-                name_index:
-                  - start: 146
-                    end: 148
-                  - 19
-                type_index:
-                  - start: 148
-                    end: 150
-                  - 20
-      18:
-        - start: 150
-          end: 172
-        - tag:
-            - start: 150
-              end: 151
-            - Utf8
-          constant:
-            - start: 151
-              end: 172
-            - Utf8:
-                length:
-                  - start: 151
-                    end: 153
-                  - 19
-                bytes:
-                  - start: 153
-                    end: 172
-                  - - 106
-                    - 97
-                    - 118
-                    - 97
-                    - 47
-                    - 105
-                    - 111
-                    - 47
-                    - 80
-                    - 114
-                    - 105
-                    - 110
-                    - 116
-                    - 83
-                    - 116
-                    - 114
-                    - 101
-                    - 97
-                    - 109
-      19:
-        - start: 172
-          end: 182
-        - tag:
-            - start: 172
-              end: 173
-            - Utf8
-          constant:
-            - start: 173
-              end: 182
-            - Utf8:
-                length:
-                  - start: 173
-                    end: 175
-                  - 7
-                bytes:
-                  - start: 175
-                    end: 182
-                  - - 112
-                    - 114
-                    - 105
-                    - 110
-                    - 116
-                    - 108
-                    - 110
-      20:
-        - start: 182
-          end: 206
-        - tag:
-            - start: 182
-              end: 183
-            - Utf8
-          constant:
-            - start: 183
-              end: 206
-            - Utf8:
-                length:
-                  - start: 183
-                    end: 185
-                  - 21
-                bytes:
-                  - start: 185
-                    end: 206
-                  - - 40
-                    - 76
-                    - 106
-                    - 97
-                    - 118
-                    - 97
-                    - 47
-                    - 108
-                    - 97
-                    - 110
-                    - 103
-                    - 47
-                    - 83
-                    - 116
-                    - 114
-                    - 105
-                    - 110
-                    - 103
-                    - 59
-                    - 41
-                    - 86
-      21:
-        - start: 206
-          end: 209
-        - tag:
-            - start: 206
-              end: 207
-            - Class
-          constant:
-            - start: 207
-              end: 209
-            - Class:
-                name_index:
-                  - start: 207
-                    end: 209
-                  - 22
-      22:
-        - start: 209
-          end: 217
-        - tag:
-            - start: 209
-              end: 210
-            - Utf8
-          constant:
-            - start: 210
-              end: 217
-            - Utf8:
-                length:
-                  - start: 210
-                    end: 212
-                  - 5
-                bytes:
-                  - start: 212
-                    end: 217
-                  - - 67
-                    - 108
-                    - 97
-                    - 115
-                    - 115
-      23:
-        - start: 217
-          end: 222
-        - tag:
-            - start: 217
-              end: 218
-            - MethodRef
-          constant:
-            - start: 218
-              end: 222
-            - MethodRef:
-                class_index:
-                  - start: 218
-                    end: 220
-                  - 21
-                name_and_type_index:
-                  - start: 220
-                    end: 222
-                  - 3
-      24:
-        - start: 222
-          end: 227
-        - tag:
-            - start: 222
-              end: 223
-            - FieldRef
-          constant:
-            - start: 223
-              end: 227
-            - FieldRef:
-                class_index:
-                  - start: 223
-                    end: 225
-                  - 25
-                name_and_type_index:
-                  - start: 225
-                    end: 227
-                  - 26
-      25:
-        - start: 227
-          end: 230
-        - tag:
-            - start: 227
-              end: 228
-            - Class
-          constant:
-            - start: 228
-              end: 230
-            - Class:
-                name_index:
-                  - start: 228
-                    end: 230
-                  - 27
-      26:
-        - start: 230
-          end: 235
-        - tag:
-            - start: 230
-              end: 231
-            - NameAndType
-          constant:
-            - start: 231
-              end: 235
-            - NameAndType:
-                name_index:
-                  - start: 231
-                    end: 233
-                  - 28
-                type_index:
-                  - start: 233
-                    end: 235
-                  - 29
-      27:
-        - start: 235
-          end: 242
-        - tag:
-            - start: 235
-              end: 236
-            - Utf8
-          constant:
-            - start: 236
-              end: 242
-            - Utf8:
-                length:
-                  - start: 236
-                    end: 238
-                  - 4
-                bytes:
-                  - start: 238
-                    end: 242
-                  - - 77
-                    - 97
-                    - 105
-                    - 110
-      28:
-        - start: 242
-          end: 250
-        - tag:
-            - start: 242
-              end: 243
-            - Utf8
-          constant:
-            - start: 243
-              end: 250
-            - Utf8:
-                length:
-                  - start: 243
-                    end: 245
-                  - 5
-                bytes:
-                  - start: 245
-                    end: 250
-                  - - 99
-                    - 108
-                    - 97
-                    - 122
-                    - 122
-      29:
-        - start: 250
-          end: 260
-        - tag:
-            - start: 250
-              end: 251
-            - Utf8
-          constant:
-            - start: 251
-              end: 260
-            - Utf8:
-                length:
-                  - start: 251
-                    end: 253
-                  - 7
-                bytes:
-                  - start: 253
-                    end: 260
-                  - - 76
-                    - 67
-                    - 108
-                    - 97
-                    - 115
-                    - 115
-                    - 59
-      30:
-        - start: 260
-          end: 265
-        - tag:
-            - start: 260
-              end: 261
-            - FieldRef
-          constant:
-            - start: 261
-              end: 265
-            - FieldRef:
-                class_index:
-                  - start: 261
-                    end: 263
-                  - 31
-                name_and_type_index:
-                  - start: 263
-                    end: 265
-                  - 32
-      31:
-        - start: 265
-          end: 268
-        - tag:
-            - start: 265
-              end: 266
-            - Class
-          constant:
-            - start: 266
-              end: 268
-            - Class:
-                name_index:
-                  - start: 266
-                    end: 268
-                  - 33
-      32:
-        - start: 268
-          end: 273
-        - tag:
-            - start: 268
-              end: 269
-            - NameAndType
-          constant:
-            - start: 269
-              end: 273
-            - NameAndType:
-                name_index:
-                  - start: 269
-                    end: 271
-                  - 34
-                type_index:
-                  - start: 271
-                    end: 273
-                  - 35
-      33:
-        - start: 273
-          end: 280
-        - tag:
-            - start: 273
-              end: 274
-            - Utf8
-          constant:
-            - start: 274
-              end: 280
-            - Utf8:
-                length:
-                  - start: 274
-                    end: 276
-                  - 4
-                bytes:
-                  - start: 276
-                    end: 280
-                  - - 69
-                    - 110
-                    - 117
-                    - 109
-      34:
-        - start: 280
-          end: 287
-        - tag:
-            - start: 280
-              end: 281
-            - Utf8
-          constant:
-            - start: 281
-              end: 287
-            - Utf8:
-                length:
-                  - start: 281
-                    end: 283
-                  - 4
-                bytes:
-                  - start: 283
-                    end: 287
-                  - - 75
-                    - 65
-                    - 80
-                    - 73
-      35:
-        - start: 287
-          end: 296
-        - tag:
-            - start: 287
-              end: 288
-            - Utf8
-          constant:
-            - start: 288
-              end: 296
-            - Utf8:
-                length:
-                  - start: 288
-                    end: 290
-                  - 6
-                bytes:
-                  - start: 290
-                    end: 296
-                  - - 76
-                    - 69
-                    - 110
-                    - 117
-                    - 109
-                    - 59
-      36:
-        - start: 296
-          end: 301
-        - tag:
-            - start: 296
-              end: 297
-            - FieldRef
-          constant:
-            - start: 297
-              end: 301
-            - FieldRef:
-                class_index:
-                  - start: 297
-                    end: 299
-                  - 25
-                name_and_type_index:
-                  - start: 299
-                    end: 301
-                  - 37
-      37:
-        - start: 301
-          end: 306
-        - tag:
-            - start: 301
-              end: 302
-            - NameAndType
-          constant:
-            - start: 302
-              end: 306
-            - NameAndType:
-                name_index:
-                  - start: 302
-                    end: 304
-                  - 38
-                type_index:
-                  - start: 304
-                    end: 306
-                  - 35
-      38:
-        - start: 306
-          end: 310
-        - tag:
-            - start: 306
-              end: 307
-            - Utf8
-          constant:
-            - start: 307
-              end: 310
-            - Utf8:
-                length:
-                  - start: 307
-                    end: 309
-                  - 1
-                bytes:
-                  - start: 309
-                    end: 310
-                  - - 101
-      39:
-        - start: 310
-          end: 313
-        - tag:
-            - start: 310
-              end: 311
-            - Class
-          constant:
-            - start: 311
-              end: 313
-            - Class:
-                name_index:
-                  - start: 311
-                    end: 313
-                  - 40
-      40:
-        - start: 313
-          end: 322
-        - tag:
-            - start: 313
-              end: 314
-            - Utf8
-          constant:
-            - start: 314
-              end: 322
-            - Utf8:
-                length:
-                  - start: 314
-                    end: 316
-                  - 6
-                bytes:
-                  - start: 316
-                    end: 322
-                  - - 82
-                    - 101
-                    - 99
-                    - 111
-                    - 114
-                    - 100
-      41:
-        - start: 322
-          end: 327
-        - tag:
-            - start: 322
-              end: 323
-            - MethodRef
-          constant:
-            - start: 323
-              end: 327
-            - MethodRef:
-                class_index:
-                  - start: 323
-                    end: 325
-                  - 39
-                name_and_type_index:
-                  - start: 325
-                    end: 327
-                  - 42
-      42:
-        - start: 327
-          end: 332
-        - tag:
-            - start: 327
-              end: 328
-            - NameAndType
-          constant:
-            - start: 328
-              end: 332
-            - NameAndType:
-                name_index:
-                  - start: 328
-                    end: 330
-                  - 5
-                type_index:
-                  - start: 330
-                    end: 332
-                  - 43
-      43:
-        - start: 332
-          end: 353
-        - tag:
-            - start: 332
-              end: 333
-            - Utf8
-          constant:
-            - start: 333
-              end: 353
-            - Utf8:
-                length:
-                  - start: 333
-                    end: 335
-                  - 18
-                bytes:
-                  - start: 335
-                    end: 353
-                  - - 40
-                    - 66
-                    - 83
-                    - 73
-                    - 70
-                    - 74
-                    - 68
-                    - 90
-                    - 76
-                    - 82
-                    - 101
-                    - 99
-                    - 111
-                    - 114
-                    - 100
-                    - 59
-                    - 41
-                    - 86
-      44:
-        - start: 353
-          end: 358
-        - tag:
-            - start: 353
-              end: 354
-            - FieldRef
-          constant:
-            - start: 354
-              end: 358
-            - FieldRef:
-                class_index:
-                  - start: 354
-                    end: 356
-                  - 25
-                name_and_type_index:
-                  - start: 356
-                    end: 358
-                  - 45
-      45:
-        - start: 358
-          end: 363
-        - tag:
-            - start: 358
-              end: 359
-            - NameAndType
-          constant:
-            - start: 359
-              end: 363
-            - NameAndType:
-                name_index:
-                  - start: 359
-                    end: 361
-                  - 46
-                type_index:
-                  - start: 361
-                    end: 363
-                  - 47
-      46:
-        - start: 363
-          end: 367
-        - tag:
-            - start: 363
-              end: 364
-            - Utf8
-          constant:
-            - start: 364
-              end: 367
-            - Utf8:
-                length:
-                  - start: 364
-                    end: 366
-                  - 1
-                bytes:
-                  - start: 366
-                    end: 367
-                  - - 114
-      47:
-        - start: 367
-          end: 378
-        - tag:
-            - start: 367
-              end: 368
-            - Utf8
-          constant:
-            - start: 368
-              end: 378
-            - Utf8:
-                length:
-                  - start: 368
-                    end: 370
-                  - 8
-                bytes:
-                  - start: 370
-                    end: 378
-                  - - 76
-                    - 82
-                    - 101
-                    - 99
-                    - 111
-                    - 114
-                    - 100
-                    - 59
-      48:
-        - start: 378
-          end: 385
-        - tag:
-            - start: 378
-              end: 379
-            - Utf8
-          constant:
-            - start: 379
-              end: 385
-            - Utf8:
-                length:
-                  - start: 379
-                    end: 381
-                  - 4
-                bytes:
-                  - start: 381
-                    end: 385
-                  - - 67
-                    - 111
-                    - 100
-                    - 101
-      49:
-        - start: 385
-          end: 403
-        - tag:
-            - start: 385
-              end: 386
-            - Utf8
-          constant:
-            - start: 386
-              end: 403
-            - Utf8:
-                length:
-                  - start: 386
-                    end: 388
-                  - 15
-                bytes:
-                  - start: 388
-                    end: 403
-                  - - 76
-                    - 105
-                    - 110
-                    - 101
-                    - 78
-                    - 117
-                    - 109
-                    - 98
-                    - 101
-                    - 114
-                    - 84
-                    - 97
-                    - 98
-                    - 108
-                    - 101
-      50:
-        - start: 403
-          end: 424
-        - tag:
-            - start: 403
-              end: 404
-            - Utf8
-          constant:
-            - start: 404
-              end: 424
-            - Utf8:
-                length:
-                  - start: 404
-                    end: 406
-                  - 18
-                bytes:
-                  - start: 406
-                    end: 424
-                  - - 76
-                    - 111
-                    - 99
-                    - 97
-                    - 108
-                    - 86
-                    - 97
-                    - 114
-                    - 105
-                    - 97
-                    - 98
-                    - 108
-                    - 101
-                    - 84
-                    - 97
-                    - 98
-                    - 108
-                    - 101
-      51:
-        - start: 424
-          end: 431
-        - tag:
-            - start: 424
-              end: 425
-            - Utf8
-          constant:
-            - start: 425
-              end: 431
-            - Utf8:
-                length:
-                  - start: 425
-                    end: 427
-                  - 4
-                bytes:
-                  - start: 427
-                    end: 431
-                  - - 116
-                    - 104
-                    - 105
-                    - 115
-      52:
-        - start: 431
-          end: 440
-        - tag:
-            - start: 431
-              end: 432
-            - Utf8
-          constant:
-            - start: 432
-              end: 440
-            - Utf8:
-                length:
-                  - start: 432
-                    end: 434
-                  - 6
-                bytes:
-                  - start: 434
-                    end: 440
-                  - - 76
-                    - 77
-                    - 97
-                    - 105
-                    - 110
-                    - 59
-      53:
-        - start: 440
-          end: 447
-        - tag:
-            - start: 440
-              end: 441
-            - Utf8
-          constant:
-            - start: 441
-              end: 447
-            - Utf8:
-                length:
-                  - start: 441
-                    end: 443
-                  - 4
-                bytes:
-                  - start: 443
-                    end: 447
-                  - - 109
-                    - 97
-                    - 105
-                    - 110
-      54:
-        - start: 447
-          end: 472
-        - tag:
-            - start: 447
-              end: 448
-            - Utf8
-          constant:
-            - start: 448
-              end: 472
-            - Utf8:
-                length:
-                  - start: 448
-                    end: 450
-                  - 22
-                bytes:
-                  - start: 450
-                    end: 472
-                  - - 40
-                    - 91
-                    - 76
-                    - 106
-                    - 97
-                    - 118
-                    - 97
-                    - 47
-                    - 108
-                    - 97
-                    - 110
-                    - 103
-                    - 47
-                    - 83
-                    - 116
-                    - 114
-                    - 105
-                    - 110
-                    - 103
-                    - 59
-                    - 41
-                    - 86
-      55:
-        - start: 472
-          end: 479
-        - tag:
-            - start: 472
-              end: 473
-            - Utf8
-          constant:
-            - start: 473
-              end: 479
-            - Utf8:
-                length:
-                  - start: 473
-                    end: 475
-                  - 4
-                bytes:
-                  - start: 475
-                    end: 479
-                  - - 97
-                    - 114
-                    - 103
-                    - 115
-      56:
-        - start: 479
-          end: 501
-        - tag:
-            - start: 479
-              end: 480
-            - Utf8
-          constant:
-            - start: 480
-              end: 501
-            - Utf8:
-                length:
-                  - start: 480
-                    end: 482
-                  - 19
-                bytes:
-                  - start: 482
-                    end: 501
-                  - - 91
-                    - 76
-                    - 106
-                    - 97
-                    - 118
-                    - 97
-                    - 47
-                    - 108
-                    - 97
-                    - 110
-                    - 103
-                    - 47
-                    - 83
-                    - 116
-                    - 114
-                    - 105
-                    - 110
-                    - 103
-                    - 59
-      57:
-        - start: 501
-          end: 512
-        - tag:
-            - start: 501
-              end: 502
-            - Utf8
-          constant:
-            - start: 502
-              end: 512
-            - Utf8:
-                length:
-                  - start: 502
-                    end: 504
-                  - 8
-                bytes:
-                  - start: 504
-                    end: 512
-                  - - 60
-                    - 99
-                    - 108
-                    - 105
-                    - 110
-                    - 105
-                    - 116
-                    - 62
-      58:
-        - start: 512
-          end: 525
-        - tag:
-            - start: 512
-              end: 513
-            - Utf8
-          constant:
-            - start: 513
-              end: 525
-            - Utf8:
-                length:
-                  - start: 513
-                    end: 515
-                  - 10
-                bytes:
-                  - start: 515
-                    end: 525
-                  - - 83
-                    - 111
-                    - 117
-                    - 114
-                    - 99
-                    - 101
-                    - 70
-                    - 105
-                    - 108
-                    - 101
-      59:
-        - start: 525
-          end: 537
-        - tag:
-            - start: 525
-              end: 526
-            - Utf8
-          constant:
-            - start: 526
-              end: 537
-            - Utf8:
-                length:
-                  - start: 526
-                    end: 528
-                  - 9
-                bytes:
-                  - start: 528
-                    end: 537
-                  - - 77
-                    - 97
-                    - 105
-                    - 110
-                    - 46
-                    - 106
-                    - 97
-                    - 118
-                    - 97
-access_flags:
-  - start: 537
-    end: 539
-  - - Public
-    - Super
-this_class:
-  - start: 539
-    end: 541
-  - 25
-super_class:
-  - start: 541
-    end: 543
-  - 2
-interfaces_count:
-  - start: 543
-    end: 545
-  - 0
-interfaces:
-  - start: 545
-    end: 545
-  - []
-fields_count:
-  - start: 545
-    end: 547
-  - 3
-fields:
-  - start: 547
-    end: 571
-  - - - start: 547
-        end: 555
-      - access_flags:
-          - start: 547
-            end: 549
-          - - Public
-            - Static
-        name_index:
-          - start: 549
-            end: 551
-          - 28
-        descriptor_index:
-          - start: 551
-            end: 553
-          - 29
-        attribute_infos_len:
-          - start: 553
-            end: 555
-          - 0
-        attribute_infos:
-          - start: 555
-            end: 555
-          - []
-    - - start: 555
-        end: 563
-      - access_flags:
-          - start: 555
-            end: 557
-          - - Public
-            - Static
-        name_index:
-          - start: 557
-            end: 559
-          - 38
-        descriptor_index:
-          - start: 559
-            end: 561
-          - 35
-        attribute_infos_len:
-          - start: 561
-            end: 563
-          - 0
-        attribute_infos:
-          - start: 563
-            end: 563
-          - []
-    - - start: 563
-        end: 571
-      - access_flags:
-          - start: 563
-            end: 565
-          - - Public
-            - Static
-        name_index:
-          - start: 565
-            end: 567
-          - 46
-        descriptor_index:
-          - start: 567
-            end: 569
+  len: 60
+  entries:
+    1:
+      MethodRef:
+        class_index: 2
+        name_and_type_index: 3
+    2:
+      Class:
+        name_index: 4
+    3:
+      NameAndType:
+        name_index: 5
+        type_index: 6
+    4:
+      Utf8:
+        length: 16
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
           - 47
-        attribute_infos_len:
-          - start: 569
-            end: 571
-          - 0
-        attribute_infos:
-          - start: 571
-            end: 571
-          - []
-methods_count:
-  - start: 571
-    end: 573
-  - 3
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 79
+          - 98
+          - 106
+          - 101
+          - 99
+          - 116
+    5:
+      Utf8:
+        length: 6
+        bytes:
+          - 60
+          - 105
+          - 110
+          - 105
+          - 116
+          - 62
+    6:
+      Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 86
+    7:
+      FieldRef:
+        class_index: 8
+        name_and_type_index: 9
+    8:
+      Class:
+        name_index: 10
+    9:
+      NameAndType:
+        name_index: 11
+        type_index: 12
+    10:
+      Utf8:
+        length: 16
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 121
+          - 115
+          - 116
+          - 101
+          - 109
+    11:
+      Utf8:
+        length: 3
+        bytes:
+          - 111
+          - 117
+          - 116
+    12:
+      Utf8:
+        length: 21
+        bytes:
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 105
+          - 111
+          - 47
+          - 80
+          - 114
+          - 105
+          - 110
+          - 116
+          - 83
+          - 116
+          - 114
+          - 101
+          - 97
+          - 109
+          - 59
+    13:
+      String:
+        string_index: 14
+    14:
+      Utf8:
+        length: 12
+        bytes:
+          - 72
+          - 101
+          - 108
+          - 108
+          - 111
+          - 32
+          - 119
+          - 111
+          - 114
+          - 108
+          - 100
+          - 33
+    15:
+      MethodRef:
+        class_index: 16
+        name_and_type_index: 17
+    16:
+      Class:
+        name_index: 18
+    17:
+      NameAndType:
+        name_index: 19
+        type_index: 20
+    18:
+      Utf8:
+        length: 19
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 105
+          - 111
+          - 47
+          - 80
+          - 114
+          - 105
+          - 110
+          - 116
+          - 83
+          - 116
+          - 114
+          - 101
+          - 97
+          - 109
+    19:
+      Utf8:
+        length: 7
+        bytes:
+          - 112
+          - 114
+          - 105
+          - 110
+          - 116
+          - 108
+          - 110
+    20:
+      Utf8:
+        length: 21
+        bytes:
+          - 40
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+          - 41
+          - 86
+    21:
+      Class:
+        name_index: 22
+    22:
+      Utf8:
+        length: 5
+        bytes:
+          - 67
+          - 108
+          - 97
+          - 115
+          - 115
+    23:
+      MethodRef:
+        class_index: 21
+        name_and_type_index: 3
+    24:
+      FieldRef:
+        class_index: 25
+        name_and_type_index: 26
+    25:
+      Class:
+        name_index: 27
+    26:
+      NameAndType:
+        name_index: 28
+        type_index: 29
+    27:
+      Utf8:
+        length: 4
+        bytes:
+          - 77
+          - 97
+          - 105
+          - 110
+    28:
+      Utf8:
+        length: 5
+        bytes:
+          - 99
+          - 108
+          - 97
+          - 122
+          - 122
+    29:
+      Utf8:
+        length: 7
+        bytes:
+          - 76
+          - 67
+          - 108
+          - 97
+          - 115
+          - 115
+          - 59
+    30:
+      FieldRef:
+        class_index: 31
+        name_and_type_index: 32
+    31:
+      Class:
+        name_index: 33
+    32:
+      NameAndType:
+        name_index: 34
+        type_index: 35
+    33:
+      Utf8:
+        length: 4
+        bytes:
+          - 69
+          - 110
+          - 117
+          - 109
+    34:
+      Utf8:
+        length: 4
+        bytes:
+          - 75
+          - 65
+          - 80
+          - 73
+    35:
+      Utf8:
+        length: 6
+        bytes:
+          - 76
+          - 69
+          - 110
+          - 117
+          - 109
+          - 59
+    36:
+      FieldRef:
+        class_index: 25
+        name_and_type_index: 37
+    37:
+      NameAndType:
+        name_index: 38
+        type_index: 35
+    38:
+      Utf8:
+        length: 1
+        bytes:
+          - 101
+    39:
+      Class:
+        name_index: 40
+    40:
+      Utf8:
+        length: 6
+        bytes:
+          - 82
+          - 101
+          - 99
+          - 111
+          - 114
+          - 100
+    41:
+      MethodRef:
+        class_index: 39
+        name_and_type_index: 42
+    42:
+      NameAndType:
+        name_index: 5
+        type_index: 43
+    43:
+      Utf8:
+        length: 18
+        bytes:
+          - 40
+          - 66
+          - 83
+          - 73
+          - 70
+          - 74
+          - 68
+          - 90
+          - 76
+          - 82
+          - 101
+          - 99
+          - 111
+          - 114
+          - 100
+          - 59
+          - 41
+          - 86
+    44:
+      FieldRef:
+        class_index: 25
+        name_and_type_index: 45
+    45:
+      NameAndType:
+        name_index: 46
+        type_index: 47
+    46:
+      Utf8:
+        length: 1
+        bytes:
+          - 114
+    47:
+      Utf8:
+        length: 8
+        bytes:
+          - 76
+          - 82
+          - 101
+          - 99
+          - 111
+          - 114
+          - 100
+          - 59
+    48:
+      Utf8:
+        length: 4
+        bytes:
+          - 67
+          - 111
+          - 100
+          - 101
+    49:
+      Utf8:
+        length: 15
+        bytes:
+          - 76
+          - 105
+          - 110
+          - 101
+          - 78
+          - 117
+          - 109
+          - 98
+          - 101
+          - 114
+          - 84
+          - 97
+          - 98
+          - 108
+          - 101
+    50:
+      Utf8:
+        length: 18
+        bytes:
+          - 76
+          - 111
+          - 99
+          - 97
+          - 108
+          - 86
+          - 97
+          - 114
+          - 105
+          - 97
+          - 98
+          - 108
+          - 101
+          - 84
+          - 97
+          - 98
+          - 108
+          - 101
+    51:
+      Utf8:
+        length: 4
+        bytes:
+          - 116
+          - 104
+          - 105
+          - 115
+    52:
+      Utf8:
+        length: 6
+        bytes:
+          - 76
+          - 77
+          - 97
+          - 105
+          - 110
+          - 59
+    53:
+      Utf8:
+        length: 4
+        bytes:
+          - 109
+          - 97
+          - 105
+          - 110
+    54:
+      Utf8:
+        length: 22
+        bytes:
+          - 40
+          - 91
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+          - 41
+          - 86
+    55:
+      Utf8:
+        length: 4
+        bytes:
+          - 97
+          - 114
+          - 103
+          - 115
+    56:
+      Utf8:
+        length: 19
+        bytes:
+          - 91
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+    57:
+      Utf8:
+        length: 8
+        bytes:
+          - 60
+          - 99
+          - 108
+          - 105
+          - 110
+          - 105
+          - 116
+          - 62
+    58:
+      Utf8:
+        length: 10
+        bytes:
+          - 83
+          - 111
+          - 117
+          - 114
+          - 99
+          - 101
+          - 70
+          - 105
+          - 108
+          - 101
+    59:
+      Utf8:
+        length: 9
+        bytes:
+          - 77
+          - 97
+          - 105
+          - 110
+          - 46
+          - 106
+          - 97
+          - 118
+          - 97
+access_flags:
+  - Public
+  - Super
+this_class: 25
+super_class: 2
+interfaces_count: 0
+interfaces: []
+fields_count: 3
+fields:
+  - access_flags:
+      - Public
+      - Static
+    name_index: 28
+    descriptor_index: 29
+    attribute_infos_len: 0
+    attribute_infos: []
+  - access_flags:
+      - Public
+      - Static
+    name_index: 38
+    descriptor_index: 35
+    attribute_infos_len: 0
+    attribute_infos: []
+  - access_flags:
+      - Public
+      - Static
+    name_index: 46
+    descriptor_index: 47
+    attribute_infos_len: 0
+    attribute_infos: []
+methods_count: 3
 methods:
-  - start: 573
-    end: 784
-  - - - start: 573
-        end: 634
-      - access_flags:
-          - start: 573
-            end: 575
-          - - Public
-        name_index:
-          - start: 575
-            end: 577
-          - 5
-        descriptor_index:
-          - start: 577
-            end: 579
-          - 6
-        attribute_infos_len:
-          - start: 579
-            end: 581
-          - 1
-        attribute_infos:
-          - start: 581
-            end: 634
-          - - - start: 581
-                end: 634
-              - attribute_name_index:
-                  - start: 581
-                    end: 583
-                  - 48
-                attribute_len:
-                  - start: 583
-                    end: 587
-                  - 47
-                info:
-                  - start: 587
-                    end: 634
-                  - - 0
-                    - 1
-                    - 0
-                    - 1
-                    - 0
-                    - 0
-                    - 0
-                    - 5
-                    - 42
-                    - 183
-                    - 0
-                    - 1
-                    - 177
-                    - 0
-                    - 0
-                    - 0
-                    - 2
-                    - 0
-                    - 49
-                    - 0
-                    - 0
-                    - 0
-                    - 6
-                    - 0
-                    - 1
-                    - 0
-                    - 0
-                    - 0
-                    - 1
-                    - 0
-                    - 50
-                    - 0
-                    - 0
-                    - 0
-                    - 12
-                    - 0
-                    - 1
-                    - 0
-                    - 0
-                    - 0
-                    - 5
-                    - 0
-                    - 51
-                    - 0
-                    - 52
-                    - 0
-                    - 0
-                attribute:
-                  - start: 587
-                    end: 634
-                  - Code:
-                      max_stack:
-                        - start: 587
-                          end: 589
-                        - 1
-                      max_locals:
-                        - start: 589
-                          end: 591
-                        - 1
-                      code_length:
-                        - start: 591
-                          end: 595
-                        - 5
-                      code:
-                        - start: 595
-                          end: 600
-                        - - 42
-                          - 183
-                          - 0
-                          - 1
-                          - 177
-                      instructions:
-                        - start: 595
-                          end: 600
-                        - - - start: 595
-                              end: 596
-                            - ALOAD_0
-                          - - start: 596
-                              end: 599
-                            - INVOKESPECIAL:
-                                index:
-                                  - start: 597
-                                    end: 599
-                                  - 1
-                          - - start: 599
-                              end: 600
-                            - RETURN
-                      exception_table_length:
-                        - start: 600
-                          end: 602
-                        - 0
-                      exception_table:
-                        - start: 602
-                          end: 602
-                        - []
-                      attributes_length:
-                        - start: 602
-                          end: 604
-                        - 2
-                      attributes:
-                        - start: 604
-                          end: 634
-                        - - - start: 604
-                              end: 616
-                            - attribute_name_index:
-                                - start: 604
-                                  end: 606
-                                - 49
-                              attribute_len:
-                                - start: 606
-                                  end: 610
-                                - 6
-                              info:
-                                - start: 610
-                                  end: 616
-                                - - 0
-                                  - 1
-                                  - 0
-                                  - 0
-                                  - 0
-                                  - 1
-                              attribute:
-                                - start: 610
-                                  end: 616
-                                - LineNumberTable:
-                                    line_number_table_length:
-                                      - start: 610
-                                        end: 612
-                                      - 1
-                                    line_number_table:
-                                      - start: 612
-                                        end: 616
-                                      - - - start: 612
-                                            end: 616
-                                          - start_pc:
-                                              - start: 612
-                                                end: 614
-                                              - 0
-                                            line_number:
-                                              - start: 614
-                                                end: 616
-                                              - 1
-                          - - start: 616
-                              end: 634
-                            - attribute_name_index:
-                                - start: 616
-                                  end: 618
-                                - 50
-                              attribute_len:
-                                - start: 618
-                                  end: 622
-                                - 12
-                              info:
-                                - start: 622
-                                  end: 634
-                                - - 0
-                                  - 1
-                                  - 0
-                                  - 0
-                                  - 0
-                                  - 5
-                                  - 0
-                                  - 51
-                                  - 0
-                                  - 52
-                                  - 0
-                                  - 0
-                              attribute:
-                                - start: 622
-                                  end: 634
-                                - LocalVariableTable:
-                                    local_variable_table_length:
-                                      - start: 622
-                                        end: 624
-                                      - 1
-                                    local_variable_table:
-                                      - start: 624
-                                        end: 634
-                                      - - - start: 624
-                                            end: 634
-                                          - start_pc:
-                                              - start: 624
-                                                end: 626
-                                              - 0
-                                            length:
-                                              - start: 626
-                                                end: 628
-                                              - 5
-                                            name_index:
-                                              - start: 628
-                                                end: 630
-                                              - 51
-                                            descriptor_index:
-                                              - start: 630
-                                                end: 632
-                                              - 52
-                                            index:
-                                              - start: 632
-                                                end: 634
-                                              - 0
-    - - start: 634
-        end: 703
-      - access_flags:
-          - start: 634
-            end: 636
-          - - Public
-            - Static
-        name_index:
-          - start: 636
-            end: 638
-          - 53
-        descriptor_index:
-          - start: 638
-            end: 640
-          - 54
-        attribute_infos_len:
-          - start: 640
-            end: 642
-          - 1
-        attribute_infos:
-          - start: 642
-            end: 703
-          - - - start: 642
-                end: 703
-              - attribute_name_index:
-                  - start: 642
-                    end: 644
-                  - 48
-                attribute_len:
-                  - start: 644
-                    end: 648
-                  - 55
-                info:
-                  - start: 648
-                    end: 703
-                  - - 0
-                    - 2
-                    - 0
-                    - 1
-                    - 0
-                    - 0
-                    - 0
-                    - 9
-                    - 178
-                    - 0
-                    - 7
-                    - 18
-                    - 13
-                    - 182
-                    - 0
-                    - 15
-                    - 177
-                    - 0
-                    - 0
-                    - 0
-                    - 2
-                    - 0
-                    - 49
-                    - 0
-                    - 0
-                    - 0
-                    - 10
-                    - 0
-                    - 2
-                    - 0
-                    - 0
-                    - 0
-                    - 7
-                    - 0
-                    - 8
-                    - 0
-                    - 8
-                    - 0
-                    - 50
-                    - 0
-                    - 0
-                    - 0
-                    - 12
-                    - 0
-                    - 1
-                    - 0
-                    - 0
-                    - 0
-                    - 9
-                    - 0
-                    - 55
-                    - 0
-                    - 56
-                    - 0
-                    - 0
-                attribute:
-                  - start: 648
-                    end: 703
-                  - Code:
-                      max_stack:
-                        - start: 648
-                          end: 650
-                        - 2
-                      max_locals:
-                        - start: 650
-                          end: 652
-                        - 1
-                      code_length:
-                        - start: 652
-                          end: 656
-                        - 9
-                      code:
-                        - start: 656
-                          end: 665
-                        - - 178
-                          - 0
-                          - 7
-                          - 18
-                          - 13
-                          - 182
-                          - 0
-                          - 15
-                          - 177
-                      instructions:
-                        - start: 656
-                          end: 665
-                        - - - start: 656
-                              end: 659
-                            - GETSTATIC:
-                                index:
-                                  - start: 657
-                                    end: 659
-                                  - 7
-                          - - start: 659
-                              end: 661
-                            - LDC:
-                                index:
-                                  - start: 660
-                                    end: 661
-                                  - 13
-                          - - start: 661
-                              end: 664
-                            - INVOKEVIRTUAL:
-                                index:
-                                  - start: 662
-                                    end: 664
-                                  - 15
-                          - - start: 664
-                              end: 665
-                            - RETURN
-                      exception_table_length:
-                        - start: 665
-                          end: 667
-                        - 0
-                      exception_table:
-                        - start: 667
-                          end: 667
-                        - []
-                      attributes_length:
-                        - start: 667
-                          end: 669
-                        - 2
-                      attributes:
-                        - start: 669
-                          end: 703
-                        - - - start: 669
-                              end: 685
-                            - attribute_name_index:
-                                - start: 669
-                                  end: 671
-                                - 49
-                              attribute_len:
-                                - start: 671
-                                  end: 675
-                                - 10
-                              info:
-                                - start: 675
-                                  end: 685
-                                - - 0
-                                  - 2
-                                  - 0
-                                  - 0
-                                  - 0
-                                  - 7
-                                  - 0
-                                  - 8
-                                  - 0
-                                  - 8
-                              attribute:
-                                - start: 675
-                                  end: 685
-                                - LineNumberTable:
-                                    line_number_table_length:
-                                      - start: 675
-                                        end: 677
-                                      - 2
-                                    line_number_table:
-                                      - start: 677
-                                        end: 685
-                                      - - - start: 677
-                                            end: 681
-                                          - start_pc:
-                                              - start: 677
-                                                end: 679
-                                              - 0
-                                            line_number:
-                                              - start: 679
-                                                end: 681
-                                              - 7
-                                        - - start: 681
-                                            end: 685
-                                          - start_pc:
-                                              - start: 681
-                                                end: 683
-                                              - 8
-                                            line_number:
-                                              - start: 683
-                                                end: 685
-                                              - 8
-                          - - start: 685
-                              end: 703
-                            - attribute_name_index:
-                                - start: 685
-                                  end: 687
-                                - 50
-                              attribute_len:
-                                - start: 687
-                                  end: 691
-                                - 12
-                              info:
-                                - start: 691
-                                  end: 703
-                                - - 0
-                                  - 1
-                                  - 0
-                                  - 0
-                                  - 0
-                                  - 9
-                                  - 0
-                                  - 55
-                                  - 0
-                                  - 56
-                                  - 0
-                                  - 0
-                              attribute:
-                                - start: 691
-                                  end: 703
-                                - LocalVariableTable:
-                                    local_variable_table_length:
-                                      - start: 691
-                                        end: 693
-                                      - 1
-                                    local_variable_table:
-                                      - start: 693
-                                        end: 703
-                                      - - - start: 693
-                                            end: 703
-                                          - start_pc:
-                                              - start: 693
-                                                end: 695
-                                              - 0
-                                            length:
-                                              - start: 695
-                                                end: 697
-                                              - 9
-                                            name_index:
-                                              - start: 697
-                                                end: 699
-                                              - 55
-                                            descriptor_index:
-                                              - start: 699
-                                                end: 701
-                                              - 56
-                                            index:
-                                              - start: 701
-                                                end: 703
-                                              - 0
-    - - start: 703
-        end: 784
-      - access_flags:
-          - start: 703
-            end: 705
-          - - Static
-        name_index:
-          - start: 705
-            end: 707
-          - 57
-        descriptor_index:
-          - start: 707
-            end: 709
-          - 6
-        attribute_infos_len:
-          - start: 709
-            end: 711
-          - 1
-        attribute_infos:
-          - start: 711
-            end: 784
-          - - - start: 711
-                end: 784
-              - attribute_name_index:
-                  - start: 711
-                    end: 713
-                  - 48
-                attribute_len:
-                  - start: 713
-                    end: 717
-                  - 67
-                info:
-                  - start: 717
-                    end: 784
-                  - - 0
-                    - 12
-                    - 0
-                    - 0
-                    - 0
-                    - 0
-                    - 0
-                    - 35
-                    - 187
-                    - 0
-                    - 21
-                    - 89
-                    - 183
-                    - 0
-                    - 23
-                    - 179
-                    - 0
-                    - 24
-                    - 178
-                    - 0
-                    - 30
-                    - 179
-                    - 0
-                    - 36
-                    - 187
-                    - 0
-                    - 39
-                    - 89
-                    - 4
-                    - 4
-                    - 4
-                    - 12
-                    - 10
-                    - 15
-                    - 4
-                    - 1
-                    - 183
-                    - 0
-                    - 41
-                    - 179
-                    - 0
-                    - 44
-                    - 177
-                    - 0
-                    - 0
-                    - 0
-                    - 1
-                    - 0
-                    - 49
-                    - 0
-                    - 0
-                    - 0
-                    - 14
-                    - 0
-                    - 3
-                    - 0
-                    - 0
-                    - 0
-                    - 2
-                    - 0
-                    - 10
-                    - 0
-                    - 3
-                    - 0
-                    - 16
-                    - 0
-                    - 4
-                attribute:
-                  - start: 717
-                    end: 784
-                  - Code:
-                      max_stack:
-                        - start: 717
-                          end: 719
-                        - 12
-                      max_locals:
-                        - start: 719
-                          end: 721
-                        - 0
-                      code_length:
-                        - start: 721
-                          end: 725
-                        - 35
-                      code:
-                        - start: 725
-                          end: 760
-                        - - 187
-                          - 0
-                          - 21
-                          - 89
-                          - 183
-                          - 0
-                          - 23
-                          - 179
-                          - 0
-                          - 24
-                          - 178
-                          - 0
-                          - 30
-                          - 179
-                          - 0
-                          - 36
-                          - 187
-                          - 0
-                          - 39
-                          - 89
-                          - 4
-                          - 4
-                          - 4
-                          - 12
-                          - 10
-                          - 15
-                          - 4
-                          - 1
-                          - 183
-                          - 0
-                          - 41
-                          - 179
-                          - 0
-                          - 44
-                          - 177
-                      instructions:
-                        - start: 725
-                          end: 760
-                        - - - start: 725
-                              end: 728
-                            - NEW:
-                                index:
-                                  - start: 726
-                                    end: 728
-                                  - 21
-                          - - start: 728
-                              end: 729
-                            - DUP
-                          - - start: 729
-                              end: 732
-                            - INVOKESPECIAL:
-                                index:
-                                  - start: 730
-                                    end: 732
-                                  - 23
-                          - - start: 732
-                              end: 735
-                            - PUTSTATIC:
-                                index:
-                                  - start: 733
-                                    end: 735
-                                  - 24
-                          - - start: 735
-                              end: 738
-                            - GETSTATIC:
-                                index:
-                                  - start: 736
-                                    end: 738
-                                  - 30
-                          - - start: 738
-                              end: 741
-                            - PUTSTATIC:
-                                index:
-                                  - start: 739
-                                    end: 741
-                                  - 36
-                          - - start: 741
-                              end: 744
-                            - NEW:
-                                index:
-                                  - start: 742
-                                    end: 744
-                                  - 39
-                          - - start: 744
-                              end: 745
-                            - DUP
-                          - - start: 745
-                              end: 746
-                            - ICONST_1
-                          - - start: 746
-                              end: 747
-                            - ICONST_1
-                          - - start: 747
-                              end: 748
-                            - ICONST_1
-                          - - start: 748
-                              end: 749
-                            - FCONST_1
-                          - - start: 749
-                              end: 750
-                            - LCONST_1
-                          - - start: 750
-                              end: 751
-                            - DCONST_1
-                          - - start: 751
-                              end: 752
-                            - ICONST_1
-                          - - start: 752
-                              end: 753
-                            - ACONST_NULL
-                          - - start: 753
-                              end: 756
-                            - INVOKESPECIAL:
-                                index:
-                                  - start: 754
-                                    end: 756
-                                  - 41
-                          - - start: 756
-                              end: 759
-                            - PUTSTATIC:
-                                index:
-                                  - start: 757
-                                    end: 759
-                                  - 44
-                          - - start: 759
-                              end: 760
-                            - RETURN
-                      exception_table_length:
-                        - start: 760
-                          end: 762
-                        - 0
-                      exception_table:
-                        - start: 762
-                          end: 762
-                        - []
-                      attributes_length:
-                        - start: 762
-                          end: 764
-                        - 1
-                      attributes:
-                        - start: 764
-                          end: 784
-                        - - - start: 764
-                              end: 784
-                            - attribute_name_index:
-                                - start: 764
-                                  end: 766
-                                - 49
-                              attribute_len:
-                                - start: 766
-                                  end: 770
-                                - 14
-                              info:
-                                - start: 770
-                                  end: 784
-                                - - 0
-                                  - 3
-                                  - 0
-                                  - 0
-                                  - 0
-                                  - 2
-                                  - 0
-                                  - 10
-                                  - 0
-                                  - 3
-                                  - 0
-                                  - 16
-                                  - 0
-                                  - 4
-                              attribute:
-                                - start: 770
-                                  end: 784
-                                - LineNumberTable:
-                                    line_number_table_length:
-                                      - start: 770
-                                        end: 772
-                                      - 3
-                                    line_number_table:
-                                      - start: 772
-                                        end: 784
-                                      - - - start: 772
-                                            end: 776
-                                          - start_pc:
-                                              - start: 772
-                                                end: 774
-                                              - 0
-                                            line_number:
-                                              - start: 774
-                                                end: 776
-                                              - 2
-                                        - - start: 776
-                                            end: 780
-                                          - start_pc:
-                                              - start: 776
-                                                end: 778
-                                              - 10
-                                            line_number:
-                                              - start: 778
-                                                end: 780
-                                              - 3
-                                        - - start: 780
-                                            end: 784
-                                          - start_pc:
-                                              - start: 780
-                                                end: 782
-                                              - 16
-                                            line_number:
-                                              - start: 782
-                                                end: 784
-                                              - 4
-attributes_count:
-  - start: 784
-    end: 786
-  - 1
-attributes:
-  - start: 786
-    end: 794
-  - - - start: 786
-        end: 794
-      - attribute_name_index:
-          - start: 786
-            end: 788
-          - 58
-        attribute_len:
-          - start: 788
-            end: 792
-          - 2
+  - access_flags:
+      - Public
+    name_index: 5
+    descriptor_index: 6
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 48
+        attribute_len: 47
         info:
-          - start: 792
-            end: 794
-          - - 0
-            - 59
+          - 0
+          - 1
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 5
+          - 42
+          - 183
+          - 0
+          - 1
+          - 177
+          - 0
+          - 0
+          - 0
+          - 2
+          - 0
+          - 49
+          - 0
+          - 0
+          - 0
+          - 6
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 1
+          - 0
+          - 50
+          - 0
+          - 0
+          - 0
+          - 12
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 5
+          - 0
+          - 51
+          - 0
+          - 52
+          - 0
+          - 0
         attribute:
-          - start: 792
-            end: 794
-          - SourceFile:
-              source_file_index:
-                - start: 792
-                  end: 794
-                - 59
+          Code:
+            max_stack: 1
+            max_locals: 1
+            code_length: 5
+            code:
+              - 42
+              - 183
+              - 0
+              - 1
+              - 177
+            instructions:
+              - ALOAD_0
+              - INVOKESPECIAL:
+                  index: 1
+              - RETURN
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 2
+            attributes:
+              - attribute_name_index: 49
+                attribute_len: 6
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 1
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 1
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 1
+              - attribute_name_index: 50
+                attribute_len: 12
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 5
+                  - 0
+                  - 51
+                  - 0
+                  - 52
+                  - 0
+                  - 0
+                attribute:
+                  LocalVariableTable:
+                    local_variable_table_length: 1
+                    local_variable_table:
+                      - start_pc: 0
+                        length: 5
+                        name_index: 51
+                        descriptor_index: 52
+                        index: 0
+  - access_flags:
+      - Public
+      - Static
+    name_index: 53
+    descriptor_index: 54
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 48
+        attribute_len: 55
+        info:
+          - 0
+          - 2
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 9
+          - 178
+          - 0
+          - 7
+          - 18
+          - 13
+          - 182
+          - 0
+          - 15
+          - 177
+          - 0
+          - 0
+          - 0
+          - 2
+          - 0
+          - 49
+          - 0
+          - 0
+          - 0
+          - 10
+          - 0
+          - 2
+          - 0
+          - 0
+          - 0
+          - 7
+          - 0
+          - 8
+          - 0
+          - 8
+          - 0
+          - 50
+          - 0
+          - 0
+          - 0
+          - 12
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 9
+          - 0
+          - 55
+          - 0
+          - 56
+          - 0
+          - 0
+        attribute:
+          Code:
+            max_stack: 2
+            max_locals: 1
+            code_length: 9
+            code:
+              - 178
+              - 0
+              - 7
+              - 18
+              - 13
+              - 182
+              - 0
+              - 15
+              - 177
+            instructions:
+              - GETSTATIC:
+                  index: 7
+              - LDC:
+                  index: 13
+              - INVOKEVIRTUAL:
+                  index: 15
+              - RETURN
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 2
+            attributes:
+              - attribute_name_index: 49
+                attribute_len: 10
+                info:
+                  - 0
+                  - 2
+                  - 0
+                  - 0
+                  - 0
+                  - 7
+                  - 0
+                  - 8
+                  - 0
+                  - 8
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 2
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 7
+                      - start_pc: 8
+                        line_number: 8
+              - attribute_name_index: 50
+                attribute_len: 12
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 9
+                  - 0
+                  - 55
+                  - 0
+                  - 56
+                  - 0
+                  - 0
+                attribute:
+                  LocalVariableTable:
+                    local_variable_table_length: 1
+                    local_variable_table:
+                      - start_pc: 0
+                        length: 9
+                        name_index: 55
+                        descriptor_index: 56
+                        index: 0
+  - access_flags:
+      - Static
+    name_index: 57
+    descriptor_index: 6
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 48
+        attribute_len: 67
+        info:
+          - 0
+          - 12
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 35
+          - 187
+          - 0
+          - 21
+          - 89
+          - 183
+          - 0
+          - 23
+          - 179
+          - 0
+          - 24
+          - 178
+          - 0
+          - 30
+          - 179
+          - 0
+          - 36
+          - 187
+          - 0
+          - 39
+          - 89
+          - 4
+          - 4
+          - 4
+          - 12
+          - 10
+          - 15
+          - 4
+          - 1
+          - 183
+          - 0
+          - 41
+          - 179
+          - 0
+          - 44
+          - 177
+          - 0
+          - 0
+          - 0
+          - 1
+          - 0
+          - 49
+          - 0
+          - 0
+          - 0
+          - 14
+          - 0
+          - 3
+          - 0
+          - 0
+          - 0
+          - 2
+          - 0
+          - 10
+          - 0
+          - 3
+          - 0
+          - 16
+          - 0
+          - 4
+        attribute:
+          Code:
+            max_stack: 12
+            max_locals: 0
+            code_length: 35
+            code:
+              - 187
+              - 0
+              - 21
+              - 89
+              - 183
+              - 0
+              - 23
+              - 179
+              - 0
+              - 24
+              - 178
+              - 0
+              - 30
+              - 179
+              - 0
+              - 36
+              - 187
+              - 0
+              - 39
+              - 89
+              - 4
+              - 4
+              - 4
+              - 12
+              - 10
+              - 15
+              - 4
+              - 1
+              - 183
+              - 0
+              - 41
+              - 179
+              - 0
+              - 44
+              - 177
+            instructions:
+              - NEW:
+                  index: 21
+              - DUP
+              - INVOKESPECIAL:
+                  index: 23
+              - PUTSTATIC:
+                  index: 24
+              - GETSTATIC:
+                  index: 30
+              - PUTSTATIC:
+                  index: 36
+              - NEW:
+                  index: 39
+              - DUP
+              - ICONST_1
+              - ICONST_1
+              - ICONST_1
+              - FCONST_1
+              - LCONST_1
+              - DCONST_1
+              - ICONST_1
+              - ACONST_NULL
+              - INVOKESPECIAL:
+                  index: 41
+              - PUTSTATIC:
+                  index: 44
+              - RETURN
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 1
+            attributes:
+              - attribute_name_index: 49
+                attribute_len: 14
+                info:
+                  - 0
+                  - 3
+                  - 0
+                  - 0
+                  - 0
+                  - 2
+                  - 0
+                  - 10
+                  - 0
+                  - 3
+                  - 0
+                  - 16
+                  - 0
+                  - 4
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 3
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 2
+                      - start_pc: 10
+                        line_number: 3
+                      - start_pc: 16
+                        line_number: 4
+attributes_count: 1
+attributes:
+  - attribute_name_index: 58
+    attribute_len: 2
+    info:
+      - 0
+      - 59
+    attribute:
+      SourceFile:
+        source_file_index: 59
 

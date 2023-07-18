@@ -5,9 +5,7 @@ use nom::multi::{count, many0};
 use nom::number::complete::{be_i16, be_i32, be_i64, be_i8, be_u16, be_u32, be_u8};
 use nom::sequence::tuple;
 use nom::Err::Error;
-use nom::Offset;
-
-use byte_span::{offset, BytesSpan};
+use nom::{IResult, Offset};
 
 use crate::node::attribute::{Attribute, Code, Exception};
 use crate::node::constant::ConstantPool;
@@ -17,47 +15,41 @@ use crate::node::opcode::instruction::{
     PutStatic, Wide,
 };
 use crate::node::opcode::{ArrayType, Instruction, Opcode};
-use crate::node::{Node, Nodes};
 use crate::parse::attribute::attribute_info;
-use crate::parse::{collect, collect_with_constant_pool, map_node, node, take_node, ParseResult};
+use crate::parse::{collect, collect_with_constant_pool};
 
-pub(crate) fn code<'fragment: 'constant_pool, 'constant_pool>(
-    input: BytesSpan<'fragment>,
+pub(crate) fn code<'input: 'constant_pool, 'constant_pool>(
+    input: &'input [u8],
     constant_pool: &'constant_pool ConstantPool,
-) -> ParseResult<'fragment, Node<Attribute>> {
-    let (input, code_offset) = offset(input)?;
-    let (input, max_stack) = node(be_u16)(input)?;
-    let (input, max_locals) = node(be_u16)(input)?;
-    let (input, code_length) = node(be_u32)(input)?;
-    let (input, code) = take_node(*code_length as usize)(input)?;
-    let (input, (exception_table_length, exception_table)) =
-        collect(node(be_u16), exception)(input)?;
+) -> IResult<&'input [u8], Option<Attribute>> {
+    let (input, max_stack) = be_u16(input)?;
+    let (input, max_locals) = be_u16(input)?;
+    let (input, code_length) = be_u32(input)?;
+    let (input, code) = take(code_length as usize)(input)?;
+    let (input, (exception_table_length, exception_table)) = collect(be_u16, exception)(input)?;
     let (input, (attributes_length, attributes)) =
-        collect_with_constant_pool(node(be_u16), attribute_info, constant_pool)(input)?;
-    let (_, instructions) = instructions(code.clone().into())?;
+        collect_with_constant_pool(be_u16, attribute_info, constant_pool)(input)?;
+    let (_, instructions) = instructions(code)?;
 
     Ok((
         input,
-        Node(
-            code_offset..input.offset,
-            Attribute::Code(Code {
-                max_stack,
-                max_locals,
-                code_length,
-                code: code.map(<[u8]>::to_vec),
-                instructions,
-                exception_table_length,
-                exception_table,
-                attributes_length,
-                attributes,
-            }),
-        ),
+        Some(Attribute::Code(Code {
+            max_stack,
+            max_locals,
+            code_length,
+            code: code.to_vec(),
+            instructions,
+            exception_table_length,
+            exception_table,
+            attributes_length,
+            attributes,
+        })),
     ))
 }
 
-fn exception(input: BytesSpan) -> ParseResult<Node<Exception>> {
-    map_node(
-        tuple((node(be_u16), node(be_u16), node(be_u16), node(be_u16))),
+fn exception(input: &[u8]) -> IResult<&[u8], Exception> {
+    map(
+        tuple((be_u16, be_u16, be_u16, be_u16)),
         |(start_pc, end_pc, handler_pc, catch_type)| Exception {
             start_pc,
             end_pc,
@@ -67,20 +59,17 @@ fn exception(input: BytesSpan) -> ParseResult<Node<Exception>> {
     )(input)
 }
 
-fn instructions<'fragment>(
-    code: BytesSpan<'fragment>,
-) -> ParseResult<'fragment, Nodes<Instruction>> {
-    node(many0(complete(move |input: BytesSpan<'fragment>| {
-        let (input, address) = opcode_offset(code, input)?;
+fn instructions(code: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
+    many0(complete(move |input| {
+        let (input, address) = offset(code, input)?;
 
         instruction(input, address)
-    })))(code)
+    }))(code)
 }
 
-fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction>> {
-    let (input, opcode_offset) = offset(input)?;
-    let (input, opcode) = node(be_u8)(input)?;
-    let (input, instruction) = if let Ok(opcode) = Opcode::try_from(*opcode) {
+fn instruction(input: &[u8], address: usize) -> IResult<&[u8], Instruction> {
+    let (input, opcode) = be_u8(input)?;
+    let (input, instruction) = if let Ok(opcode) = Opcode::try_from(opcode) {
         match opcode {
             Opcode::NOP => (input, Instruction::NOP),
             Opcode::ACONST_NULL => (input, Instruction::ACONST_NULL),
@@ -98,24 +87,56 @@ fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction
             Opcode::FCONST_2 => (input, Instruction::FCONST_2),
             Opcode::DCONST_0 => (input, Instruction::DCONST_0),
             Opcode::DCONST_1 => (input, Instruction::DCONST_1),
-            Opcode::BIPUSH => map(node(be_i8), |byte: Node<i8>| Instruction::BIPUSH(byte))(input)?,
-            Opcode::SIPUSH => {
-                map(node(be_i16), |byte: Node<i16>| Instruction::SIPUSH(byte))(input)?
+            Opcode::BIPUSH => {
+                let (input, byte) = be_i8(input)?;
+
+                (input, Instruction::BIPUSH(byte))
             }
-            Opcode::LDC => map(node(be_u8), |index: Node<u8>| {
-                Instruction::LDC(Ldc { index })
-            })(input)?,
-            Opcode::LDC_W => map(node(be_u16), |index: Node<u16>| {
-                Instruction::LDC_W(Ldc_W { index })
-            })(input)?,
-            Opcode::LDC2_W => map(node(be_u16), |index: Node<u16>| {
-                Instruction::LDC2_W(Ldc2_W { index })
-            })(input)?,
-            Opcode::ILOAD => map(node(be_u8), |index: Node<u8>| Instruction::ILOAD(index))(input)?,
-            Opcode::LLOAD => map(node(be_u8), |index: Node<u8>| Instruction::LLOAD(index))(input)?,
-            Opcode::FLOAD => map(node(be_u8), |index: Node<u8>| Instruction::FLOAD(index))(input)?,
-            Opcode::DLOAD => map(node(be_u8), |index: Node<u8>| Instruction::DLOAD(index))(input)?,
-            Opcode::ALOAD => map(node(be_u8), |index: Node<u8>| Instruction::ALOAD(index))(input)?,
+            Opcode::SIPUSH => {
+                let (input, byte) = be_i16(input)?;
+
+                (input, Instruction::SIPUSH(byte))
+            }
+            Opcode::LDC => {
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::LDC(Ldc { index }))
+            }
+            Opcode::LDC_W => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::LDC_W(Ldc_W { index }))
+            }
+            Opcode::LDC2_W => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::LDC2_W(Ldc2_W { index }))
+            }
+            Opcode::ILOAD => {
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::ILOAD(index))
+            }
+            Opcode::LLOAD => {
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::LLOAD(index))
+            }
+            Opcode::FLOAD => {
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::FLOAD(index))
+            }
+            Opcode::DLOAD => {
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::DLOAD(index))
+            }
+            Opcode::ALOAD => {
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::ALOAD(index))
+            }
             Opcode::ILOAD_0 => (input, Instruction::ILOAD_0),
             Opcode::ILOAD_1 => (input, Instruction::ILOAD_1),
             Opcode::ILOAD_2 => (input, Instruction::ILOAD_2),
@@ -145,19 +166,29 @@ fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction
             Opcode::CALOAD => (input, Instruction::CALOAD),
             Opcode::SALOAD => (input, Instruction::SALOAD),
             Opcode::ISTORE => {
-                map(node(be_u8), |index: Node<u8>| Instruction::ISTORE(index))(input)?
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::ISTORE(index))
             }
             Opcode::LSTORE => {
-                map(node(be_u8), |index: Node<u8>| Instruction::LSTORE(index))(input)?
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::LSTORE(index))
             }
             Opcode::FSTORE => {
-                map(node(be_u8), |index: Node<u8>| Instruction::FSTORE(index))(input)?
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::FSTORE(index))
             }
             Opcode::DSTORE => {
-                map(node(be_u8), |index: Node<u8>| Instruction::DSTORE(index))(input)?
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::DSTORE(index))
             }
             Opcode::ASTORE => {
-                map(node(be_u8), |index: Node<u8>| Instruction::ASTORE(index))(input)?
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::ASTORE(index))
             }
             Opcode::ISTORE_0 => (input, Instruction::ISTORE_0),
             Opcode::ISTORE_1 => (input, Instruction::ISTORE_1),
@@ -232,10 +263,12 @@ fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction
             Opcode::LOR => (input, Instruction::LOR),
             Opcode::IXOR => (input, Instruction::IXOR),
             Opcode::LXOR => (input, Instruction::LXOR),
-            Opcode::IINC => map(
-                tuple((node(be_u8), node(be_i8))),
-                |(index, value): (Node<u8>, Node<i8>)| Instruction::IINC { index, value },
-            )(input)?,
+            Opcode::IINC => {
+                let (input, index) = be_u8(input)?;
+                let (input, value) = be_i8(input)?;
+
+                (input, Instruction::IINC { index, value })
+            }
             Opcode::I2L => (input, Instruction::I2L),
             Opcode::I2F => (input, Instruction::I2F),
             Opcode::I2D => (input, Instruction::I2D),
@@ -257,64 +290,100 @@ fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction
             Opcode::DCMPL => (input, Instruction::DCMPL),
             Opcode::DCMPG => (input, Instruction::DCMPG),
             Opcode::IFEQ => {
-                map(node(be_i16), |offset: Node<i16>| Instruction::IFEQ(offset))(input)?
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IFEQ(offset))
             }
             Opcode::IFNE => {
-                map(node(be_i16), |offset: Node<i16>| Instruction::IFNE(offset))(input)?
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IFNE(offset))
             }
             Opcode::IFLT => {
-                map(node(be_i16), |offset: Node<i16>| Instruction::IFLT(offset))(input)?
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IFLT(offset))
             }
             Opcode::IFGE => {
-                map(node(be_i16), |offset: Node<i16>| Instruction::IFGE(offset))(input)?
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IFGE(offset))
             }
             Opcode::IFGT => {
-                map(node(be_i16), |offset: Node<i16>| Instruction::IFGT(offset))(input)?
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IFGT(offset))
             }
             Opcode::IFLE => {
-                map(node(be_i16), |offset: Node<i16>| Instruction::IFLE(offset))(input)?
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IFLE(offset))
             }
-            Opcode::IF_ICMPEQ => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IF_ICMPEQ(offset)
-            })(input)?,
-            Opcode::IF_ICMPNE => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IF_ICMPNE(offset)
-            })(input)?,
-            Opcode::IF_ICMPLT => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IF_ICMPLT(offset)
-            })(input)?,
-            Opcode::IF_ICMPGE => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IF_ICMPGE(offset)
-            })(input)?,
-            Opcode::IF_ICMPGT => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IF_ICMPGT(offset)
-            })(input)?,
-            Opcode::IF_ICMPLE => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IF_ICMPLE(offset)
-            })(input)?,
-            Opcode::IF_ACMPEQ => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IF_ACMPEQ(offset)
-            })(input)?,
-            Opcode::IF_ACMPNE => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IF_ACMPNE(offset)
-            })(input)?,
+            Opcode::IF_ICMPEQ => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IF_ICMPEQ(offset))
+            }
+            Opcode::IF_ICMPNE => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IF_ICMPNE(offset))
+            }
+            Opcode::IF_ICMPLT => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IF_ICMPLT(offset))
+            }
+            Opcode::IF_ICMPGE => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IF_ICMPGE(offset))
+            }
+            Opcode::IF_ICMPGT => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IF_ICMPGT(offset))
+            }
+            Opcode::IF_ICMPLE => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IF_ICMPLE(offset))
+            }
+            Opcode::IF_ACMPEQ => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IF_ACMPEQ(offset))
+            }
+            Opcode::IF_ACMPNE => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IF_ACMPNE(offset))
+            }
             Opcode::GOTO => {
-                map(node(be_i16), |offset: Node<i16>| Instruction::GOTO(offset))(input)?
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::GOTO(offset))
             }
-            Opcode::JSR => map(node(be_i16), |offset: Node<i16>| Instruction::JSR(offset))(input)?,
-            Opcode::RET => map(node(be_u8), |index: Node<u8>| Instruction::RET(index))(input)?,
+            Opcode::JSR => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::JSR(offset))
+            }
+            Opcode::RET => {
+                let (input, index) = be_u8(input)?;
+
+                (input, Instruction::RET(index))
+            }
             Opcode::TABLESWITCH => {
-                let (input, alignment) = align(input, address + 1)?;
-                let (input, default) = node(be_i32)(input)?;
-                let (input, low) = node(be_i32)(input)?;
-                let (input, high) = node(be_i32)(input)?;
-                let (input, offsets) =
-                    node(count(node(be_i32), (*high - *low + 1) as usize))(input)?;
+                let (input, _) = align(input, address + 1)?;
+                let (input, default) = be_i32(input)?;
+                let (input, low) = be_i32(input)?;
+                let (input, high) = be_i32(input)?;
+                let (input, offsets) = count(be_i32, (high - low + 1) as usize)(input)?;
 
                 (
                     input,
                     Instruction::TABLESWITCH {
-                        alignment: Into::<Node<&[u8]>>::into(alignment).map(<&[u8]>::into),
                         default,
                         low,
                         high,
@@ -323,15 +392,14 @@ fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction
                 )
             }
             Opcode::LOOKUPSWITCH => {
-                let (input, alignment) = align(input, address + 1)?;
-                let (input, default) = node(be_i32)(input)?;
-                let (input, npairs) = node(be_u32)(input)?;
-                let (input, pairs) = node(count(lookup_table_pair, *npairs as usize))(input)?;
+                let (input, _) = align(input, address + 1)?;
+                let (input, default) = be_i32(input)?;
+                let (input, npairs) = be_u32(input)?;
+                let (input, pairs) = count(lookup_table_pair, npairs as usize)(input)?;
 
                 (
                     input,
                     Instruction::LOOKUPSWITCH {
-                        alignment: Into::<Node<&[u8]>>::into(alignment).map(<&[u8]>::into),
                         default,
                         npairs,
                         pairs,
@@ -344,43 +412,64 @@ fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction
             Opcode::DRETURN => (input, Instruction::DRETURN),
             Opcode::ARETURN => (input, Instruction::ARETURN),
             Opcode::RETURN => (input, Instruction::RETURN),
-            Opcode::GETSTATIC => map(node(be_u16), |index: Node<u16>| {
-                Instruction::GETSTATIC(GetStatic { index })
-            })(input)?,
-            Opcode::PUTSTATIC => map(node(be_u16), |index: Node<u16>| {
-                Instruction::PUTSTATIC(PutStatic { index })
-            })(input)?,
-            Opcode::GETFIELD => map(node(be_u16), |index: Node<u16>| {
-                Instruction::GETFIELD(GetField { index })
-            })(input)?,
-            Opcode::PUTFIELD => map(node(be_u16), |index: Node<u16>| {
-                Instruction::PUTFIELD(PutField { index })
-            })(input)?,
-            Opcode::INVOKEVIRTUAL => map(node(be_u16), |index: Node<u16>| {
-                Instruction::INVOKEVIRTUAL(InvokeVirtual { index })
-            })(input)?,
-            Opcode::INVOKESPECIAL => map(node(be_u16), |index: Node<u16>| {
-                Instruction::INVOKESPECIAL(InvokeSpecial { index })
-            })(input)?,
-            Opcode::INVOKESTATIC => map(node(be_u16), |index: Node<u16>| {
-                Instruction::INVOKESTATIC(InvokeStatic { index })
-            })(input)?,
-            Opcode::INVOKEINTERFACE => map(
-                tuple((node(be_u16), node(be_u8))),
-                |(index, count): (Node<u16>, Node<u8>)| {
-                    Instruction::INVOKEINTERFACE(InvokeInterface { index, count })
-                },
-            )(input)?,
-            Opcode::INVOKEDYNAMIC => map(node(be_u16), |index: Node<u16>| {
-                Instruction::INVOKEDYNAMIC(InvokeDynamic { index })
-            })(input)?,
-            Opcode::NEW => map(node(be_u16), |index: Node<u16>| {
-                Instruction::NEW(New { index })
-            })(input)?,
-            Opcode::NEWARRAY => {
-                let (input, array_type) = node(be_u8)(input)?;
+            Opcode::GETSTATIC => {
+                let (input, index) = be_u16(input)?;
 
-                if let Ok(array_type) = ArrayType::try_from(*array_type) {
+                (input, Instruction::GETSTATIC(GetStatic { index }))
+            }
+            Opcode::PUTSTATIC => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::PUTSTATIC(PutStatic { index }))
+            }
+            Opcode::GETFIELD => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::GETFIELD(GetField { index }))
+            }
+            Opcode::PUTFIELD => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::PUTFIELD(PutField { index }))
+            }
+            Opcode::INVOKEVIRTUAL => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::INVOKEVIRTUAL(InvokeVirtual { index }))
+            }
+            Opcode::INVOKESPECIAL => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::INVOKESPECIAL(InvokeSpecial { index }))
+            }
+            Opcode::INVOKESTATIC => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::INVOKESTATIC(InvokeStatic { index }))
+            }
+            Opcode::INVOKEINTERFACE => {
+                let (input, index) = be_u16(input)?;
+                let (input, count) = be_u8(input)?;
+
+                (
+                    input,
+                    Instruction::INVOKEINTERFACE(InvokeInterface { index, count }),
+                )
+            }
+            Opcode::INVOKEDYNAMIC => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::INVOKEDYNAMIC(InvokeDynamic { index }))
+            }
+            Opcode::NEW => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::NEW(New { index }))
+            }
+            Opcode::NEWARRAY => {
+                let (input, array_type) = be_u8(input)?;
+
+                if let Ok(array_type) = ArrayType::try_from(array_type) {
                     (input, Instruction::NEWARRAY(array_type))
                 } else {
                     return Err(Error(nom::error::Error {
@@ -389,37 +478,58 @@ fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction
                     }));
                 }
             }
-            Opcode::ANEWARRAY => map(node(be_u16), |index: Node<u16>| {
-                Instruction::ANEWARRAY(ANewArray { index })
-            })(input)?,
+            Opcode::ANEWARRAY => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::ANEWARRAY(ANewArray { index }))
+            }
             Opcode::ARRAYLENGTH => (input, Instruction::ARRAYLENGTH),
             Opcode::ATHROW => (input, Instruction::ATHROW),
-            Opcode::CHECKCAST => map(node(be_u16), |index: Node<u16>| {
-                Instruction::CHECKCAST(CheckCast { index })
-            })(input)?,
-            Opcode::INSTANCEOF => map(node(be_u16), |index: Node<u16>| {
-                Instruction::INSTANCEOF(InstanceOf { index })
-            })(input)?,
+            Opcode::CHECKCAST => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::CHECKCAST(CheckCast { index }))
+            }
+            Opcode::INSTANCEOF => {
+                let (input, index) = be_u16(input)?;
+
+                (input, Instruction::INSTANCEOF(InstanceOf { index }))
+            }
             Opcode::MONITORENTER => (input, Instruction::MONITORENTER),
             Opcode::MONITOREXIT => (input, Instruction::MONITOREXIT),
-            Opcode::WIDE => map(wide, |wide: Wide| Instruction::WIDE(wide))(input)?,
-            Opcode::MULTIANEWARRAY => map(
-                tuple((node(be_u16), node(be_u8))),
-                |(index, dimensions): (Node<u16>, Node<u8>)| {
-                    Instruction::MULTIANEWARRAY(MultiANewArray { index, dimensions })
-                },
-            )(input)?,
-            Opcode::IFNULL => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IFNULL(offset)
-            })(input)?,
-            Opcode::IFNONNULL => map(node(be_i16), |offset: Node<i16>| {
-                Instruction::IFNONNULL(offset)
-            })(input)?,
-            Opcode::GOTO_W => map(node(be_i64), |offset: Node<i64>| {
-                Instruction::GOTO_W(offset)
-            })(input)?,
+            Opcode::WIDE => {
+                let (input, wide) = wide(input)?;
+
+                (input, Instruction::WIDE(wide))
+            }
+            Opcode::MULTIANEWARRAY => {
+                let (input, index) = be_u16(input)?;
+                let (input, dimensions) = be_u8(input)?;
+
+                (
+                    input,
+                    Instruction::MULTIANEWARRAY(MultiANewArray { index, dimensions }),
+                )
+            }
+            Opcode::IFNULL => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IFNULL(offset))
+            }
+            Opcode::IFNONNULL => {
+                let (input, offset) = be_i16(input)?;
+
+                (input, Instruction::IFNONNULL(offset))
+            }
+            Opcode::GOTO_W => {
+                let (input, offset) = be_i64(input)?;
+
+                (input, Instruction::GOTO_W(offset))
+            }
             Opcode::JSR_W => {
-                map(node(be_i64), |offset: Node<i64>| Instruction::JSR_W(offset))(input)?
+                let (input, offset) = be_i64(input)?;
+
+                (input, Instruction::JSR_W(offset))
             }
         }
     } else {
@@ -427,33 +537,79 @@ fn instruction(input: BytesSpan, address: usize) -> ParseResult<Node<Instruction
         return Err(Error(make_error(input, ErrorKind::NoneOf)));
     };
 
-    Ok((input, Node(opcode_offset..input.offset, instruction)))
+    Ok((input, instruction))
 }
 
-fn lookup_table_pair(input: BytesSpan) -> ParseResult<Node<(Node<i32>, Node<i32>)>> {
-    node(tuple((node(be_i32), node(be_i32))))(input)
+fn lookup_table_pair(input: &[u8]) -> IResult<&[u8], (i32, i32)> {
+    tuple((be_i32, be_i32))(input)
 }
 
-fn wide(input: BytesSpan) -> ParseResult<Wide> {
+fn wide(input: &[u8]) -> IResult<&[u8], Wide> {
     let (input, widened_opcode) = be_u8(input)?;
 
     return if let Ok(widened_opcode) = Opcode::try_from(widened_opcode) {
         match widened_opcode {
-            Opcode::ILOAD => map(node(be_u16), |index: Node<u16>| Wide::ILOAD(index))(input),
-            Opcode::FLOAD => map(node(be_u16), |index: Node<u16>| Wide::FLOAD(index))(input),
-            Opcode::ALOAD => map(node(be_u16), |index: Node<u16>| Wide::ALOAD(index))(input),
-            Opcode::LLOAD => map(node(be_u16), |index: Node<u16>| Wide::LLOAD(index))(input),
-            Opcode::DLOAD => map(node(be_u16), |index: Node<u16>| Wide::DLOAD(index))(input),
-            Opcode::ISTORE => map(node(be_u16), |index: Node<u16>| Wide::ISTORE(index))(input),
-            Opcode::FSTORE => map(node(be_u16), |index: Node<u16>| Wide::FSTORE(index))(input),
-            Opcode::ASTORE => map(node(be_u16), |index: Node<u16>| Wide::ASTORE(index))(input),
-            Opcode::LSTORE => map(node(be_u16), |index: Node<u16>| Wide::LSTORE(index))(input),
-            Opcode::DSTORE => map(node(be_u16), |index: Node<u16>| Wide::DSTORE(index))(input),
-            Opcode::RET => map(node(be_u16), |index: Node<u16>| Wide::RET(index))(input),
-            Opcode::IINC => map(
-                tuple((node(be_u16), node(be_i16))),
-                |(index, value): (Node<u16>, Node<i16>)| Wide::IINC(index, value),
-            )(input),
+            Opcode::ILOAD => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::ILOAD(index)))
+            }
+            Opcode::FLOAD => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::FLOAD(index)))
+            }
+            Opcode::ALOAD => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::ALOAD(index)))
+            }
+            Opcode::LLOAD => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::LLOAD(index)))
+            }
+            Opcode::DLOAD => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::DLOAD(index)))
+            }
+            Opcode::ISTORE => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::ISTORE(index)))
+            }
+            Opcode::FSTORE => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::FSTORE(index)))
+            }
+            Opcode::ASTORE => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::ASTORE(index)))
+            }
+            Opcode::LSTORE => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::LSTORE(index)))
+            }
+            Opcode::DSTORE => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::DSTORE(index)))
+            }
+            Opcode::RET => {
+                let (input, index) = be_u16(input)?;
+
+                Ok((input, Wide::RET(index)))
+            }
+            Opcode::IINC => {
+                let (input, index) = be_u16(input)?;
+                let (input, value) = be_i16(input)?;
+
+                Ok((input, Wide::IINC(index, value)))
+            }
             _ => Err(Error(make_error(input, ErrorKind::NoneOf))),
         }
     } else {
@@ -461,14 +617,11 @@ fn wide(input: BytesSpan) -> ParseResult<Wide> {
     };
 }
 
-fn opcode_offset<'remain>(
-    input: BytesSpan,
-    remain: BytesSpan<'remain>,
-) -> ParseResult<'remain, usize> {
-    Ok((remain, input.offset(&remain)))
+fn offset<'remain>(input: &[u8], remain: &'remain [u8]) -> IResult<&'remain [u8], usize> {
+    Ok((remain, input.offset(remain)))
 }
 
-fn align(input: BytesSpan, address: usize) -> ParseResult<BytesSpan> {
+fn align(input: &[u8], address: usize) -> IResult<&[u8], &[u8]> {
     take((4 - address % 4) % 4)(input)
 }
 
@@ -476,81 +629,48 @@ fn align(input: BytesSpan, address: usize) -> ParseResult<BytesSpan> {
 mod test {
     use itertools::Itertools;
 
-    use byte_span::BytesSpan;
-
     use crate::node::opcode::instruction::Wide;
     use crate::node::opcode::{Instruction, Opcode};
-    use crate::node::Node;
     use crate::parse::attribute::code::instruction;
 
     #[test]
     fn test_alignment() {
         #[rustfmt::skip]
         let test_cases = vec![
-            vec![Opcode::TABLESWITCH as u8, 0, 0, 0, 10, 0, 0, 0, 20, 0, 0, 0, 21, 0, 0, 0, 30, 0, 0, 0, 31],
-            vec![Opcode::TABLESWITCH as u8, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 20, 0, 0, 0, 21, 0, 0, 0, 30, 0, 0, 0, 31],
+            (3, vec![Opcode::TABLESWITCH as u8, 0, 0, 0, 10, 0, 0, 0, 20, 0, 0, 0, 21, 0, 0, 0, 30, 0, 0, 0, 31]),
+            (0, vec![Opcode::TABLESWITCH as u8, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 20, 0, 0, 0, 21, 0, 0, 0, 30, 0, 0, 0, 31])
         ];
-        let test_result1 = Ok((
-            BytesSpan::with_offset(21, &[][..]),
-            Node(
-                0..21,
-                Instruction::TABLESWITCH {
-                    alignment: Node(1..1, vec![].into_boxed_slice()),
-                    default: Node(1..5, 10),
-                    low: Node(5..9, 20),
-                    high: Node(9..13, 21),
-                    offsets: Node(13..21, vec![Node(13..17, 30), Node(17..21, 31)]),
-                },
-            ),
-        ));
-        let test_result2 = Ok((
-            BytesSpan::with_offset(24, &[][..]),
-            Node(
-                0..24,
-                Instruction::TABLESWITCH {
-                    alignment: Node(1..4, vec![0, 0, 0].into_boxed_slice()),
-                    default: Node(4..8, 10),
-                    low: Node(8..12, 20),
-                    high: Node(12..16, 21),
-                    offsets: Node(16..24, vec![Node(16..20, 30), Node(20..24, 31)]),
-                },
-            ),
+        let test_result = Ok((
+            &[][..],
+            Instruction::TABLESWITCH {
+                default: 10,
+                low: 20,
+                high: 21,
+                offsets: vec![30, 31],
+            },
         ));
 
-        assert_eq!(
-            test_result1,
-            instruction(BytesSpan::new(&test_cases[0][..]), 3)
-        );
-        assert_eq!(
-            test_result2,
-            instruction(BytesSpan::new(&test_cases[1][..]), 0)
-        );
+        for (address, input) in test_cases {
+            assert_eq!(test_result, instruction(&input, address));
+        }
     }
 
     #[test]
     fn test_wide_opcodes() {
         let test_cases = vec![
-            vec![Opcode::WIDE as u8, Opcode::ILOAD as u8, 0, 10],
-            vec![Opcode::WIDE as u8, Opcode::IINC as u8, 0, 10, 0, 20],
+            (
+                Instruction::WIDE(Wide::ILOAD(10)),
+                vec![Opcode::WIDE as u8, Opcode::ILOAD as u8, 0, 10],
+            ),
+            (
+                Instruction::WIDE(Wide::IINC(10, 20)),
+                vec![Opcode::WIDE as u8, Opcode::IINC as u8, 0, 10, 0, 20],
+            ),
         ];
 
-        assert_eq!(
-            Ok((
-                BytesSpan::with_offset(4, &[][..]),
-                Node(0..4, Instruction::WIDE(Wide::ILOAD(Node(2..4, 10))))
-            )),
-            instruction(BytesSpan::new(&test_cases[0][..]), 0)
-        );
-        assert_eq!(
-            Ok((
-                BytesSpan::with_offset(6, &[][..]),
-                Node(
-                    0..6,
-                    Instruction::WIDE(Wide::IINC(Node(2..4, 10), Node(4..6, 20)))
-                )
-            )),
-            instruction(BytesSpan::new(&test_cases[1][..]), 0)
-        );
+        for (result_instruction, input) in test_cases {
+            assert_eq!(Ok((&[][..], result_instruction)), instruction(&input, 0));
+        }
     }
 
     #[test]
@@ -558,7 +678,7 @@ mod test {
         let test_cases = (0xCAu8..0xFFu8).map(|opcode| [opcode]).collect_vec();
 
         for test_case in test_cases {
-            assert!(instruction(BytesSpan::new(&test_case[..]), 0).is_err());
+            assert!(instruction(&test_case, 0).is_err());
         }
     }
 }

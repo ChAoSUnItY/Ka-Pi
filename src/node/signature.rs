@@ -4,8 +4,6 @@ use crate::error::{KapiError, KapiResult};
 use crate::visitor::signature::{FormalTypeParameterVisitor, SignatureVisitor, TypeVisitor};
 use crate::visitor::Visitable;
 
-// TODO(ChAoSUnItY): Implement Node on every field
-
 /// Data representation of signatures, including [`Class`](Signature::Class), [`Field`](Signature::Field),
 /// and [`Method`](Signature::Method).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]

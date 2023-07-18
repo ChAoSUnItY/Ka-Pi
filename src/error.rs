@@ -1,5 +1,3 @@
-use byte_span::BytesSpan;
-use nom::error::{ErrorKind, ParseError};
 use std::{
     error::Error,
     fmt::{Debug, Display},
