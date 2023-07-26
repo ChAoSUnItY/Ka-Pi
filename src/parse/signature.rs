@@ -67,6 +67,8 @@ pub fn method_signature(input: &str) -> ParseResult<Signature> {
         }
     }
 
+    assert_char(input.next(), ')')?;
+
     let return_type = result(&mut input)?;
     let mut exception_types = Vec::new();
 
@@ -177,10 +179,25 @@ fn java_type_signature(input: &mut Peekable<Chars>) -> ParseResult<SignatureType
 }
 
 fn base_type(input: &mut Peekable<Chars>) -> ParseResult<BaseType> {
-    let char = assert_char_alt(input.next(), "ZBSIJFD")?;
+    let Some(char) = input.peek()
+    else {
+        return Err(ParseError::OutOfBound("base type"));
+    };
 
-    BaseType::try_from(char)
-        .map_err(|_| ParseError::MismatchedCharacter(char, vec!['Z', 'B', 'S', 'I', 'J', 'F', 'D']))
+    for base_type_char in "ZBSIJFD".chars() {
+        if *char == base_type_char {
+            let char = input.next().unwrap();
+
+            return BaseType::try_from(char).map_err(|_| {
+                ParseError::MismatchedCharacter(char, vec!['Z', 'B', 'S', 'I', 'J', 'F', 'D'])
+            });
+        }
+    }
+
+    Err(ParseError::MismatchedCharacter(
+        *char,
+        vec!['Z', 'B', 'S', 'I', 'J', 'F', 'D'],
+    ))
 }
 
 fn void_descriptor(input: &mut Peekable<Chars>) -> ParseResult<BaseType> {
@@ -247,7 +264,7 @@ fn package_specifier_and_class_type(input: &mut Peekable<Chars>) -> ParseResult<
         class_path_builder
             .split_last()
             .map(|(class_type, package_specifier)| {
-                (class_type.to_string(), package_specifier.join("/"))
+                (class_type.to_string(), package_specifier.join(""))
             })
             .unwrap()
     };
@@ -309,6 +326,8 @@ fn type_argument(input: &mut Peekable<Chars>) -> ParseResult<TypeArgument> {
 fn type_variable(input: &mut Peekable<Chars>) -> ParseResult<TypeVariable> {
     assert_char(input.next(), 'T')?;
 
+    println!("{:?}", input.peek());
+
     let identifier = identifier(input)?;
 
     assert_char(input.next(), ';')?;
@@ -328,7 +347,7 @@ fn identifier(input: &mut Peekable<Chars>) -> ParseResult<String> {
     let mut identifier_builder = String::with_capacity(8);
 
     while let Some(char) = input.peek() {
-        if EXCLUDED_IDENTIFIER_CHARACTERS.contains(*char) {
+        if !EXCLUDED_IDENTIFIER_CHARACTERS.contains(*char) {
             identifier_builder.push(input.next().unwrap());
         } else {
             break;

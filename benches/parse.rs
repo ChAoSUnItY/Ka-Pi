@@ -1,8 +1,7 @@
 use std::fs;
 use std::io::Cursor;
 
-use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput,
-};
+use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput};
 
 use ka_pi::parse::{to_class, ParsingOption};
 
@@ -25,11 +24,8 @@ fn parsing_classes(c: &mut Criterion) {
                 b.iter_batched(
                     || Cursor::new(bytes),
                     |mut cursor| {
-                        to_class(
-                            &mut cursor,
-                            ParsingOption::default().parse_attribute(),
-                        )
-                        .expect("Parsing fails on benchmarking");
+                        to_class(&mut cursor, ParsingOption::default().parse_attribute())
+                            .expect("Parsing fails on benchmarking");
                     },
                     BatchSize::SmallInput,
                 );

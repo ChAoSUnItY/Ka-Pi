@@ -22,16 +22,17 @@ Ka-Pi offers several essential modules relates to JVM ecosystem:
 #### Parse class file
 
 ```rust
-use ka_pi::parse::read_class;
-use ka_pi::error::KapiResult;
+use std::fs;
+use ka_pi::parse::{to_class, ParseResult};
 
-fn main() -> KapiResult<()> {
-    let class_path = "compiled_source/out/production/compiled_source/Main.class";
-    let class_tree = read_class(class_path)?;
-    
-    println!("{:#?}", class_tree);
-    
-    Ok(())
+fn main() -> ParseResult<()> {
+  let class_path = "compiled_source/out/production/compiled_source/Main.class";
+  let mut bytes = fs::read(class_path)?;
+  let class_tree = read_class(Cursor::new(&mut bytes))?;
+
+  println!("{:#?}", class_tree);
+
+  Ok(())
 }
 ```
 
