@@ -2,7 +2,7 @@ use insta::assert_yaml_snapshot;
 use ka_pi::parse::{to_class, ParsingOption};
 use std::io::Cursor;
 
-use ka_pi::parse::error::ParseResult;
+use ka_pi::parse::ParseResult;
 
 #[test]
 fn test_main() -> ParseResult<()> {

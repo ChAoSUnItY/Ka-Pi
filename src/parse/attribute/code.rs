@@ -798,7 +798,7 @@ fn wide<R: Read>(input: &mut R, pc: &mut u32) -> ParseResult<Wide> {
 
 #[inline]
 fn align<R: Read + Seek>(input: &mut R, pc: u32) -> ParseResult<u32> {
-    let pad = 3 - pc % 4;
+    let pad = (4 - pc % 4) % 4;
 
     match input.seek(SeekFrom::Current(pad as i64)) {
         Ok(_) => Ok(pad),

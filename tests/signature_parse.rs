@@ -1,6 +1,6 @@
 use insta::assert_yaml_snapshot;
 
-use ka_pi::parse::error::ParseResult;
+use ka_pi::parse::ParseResult;
 use ka_pi::parse::{class_signature, field_signature, method_signature};
 
 #[test]

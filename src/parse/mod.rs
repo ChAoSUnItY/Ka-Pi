@@ -1,12 +1,14 @@
 use std::io::Read;
 
+pub use error::{ParseError, ParseResult};
+pub use signature::{class_signature, field_signature, method_signature};
+
 use crate::node::class::Class;
-use crate::parse::error::{ParseError, ParseResult};
 
 pub(crate) mod attribute;
 pub(crate) mod class;
 pub(crate) mod constant;
-pub mod error;
+pub(crate) mod error;
 pub(crate) mod field;
 pub(crate) mod method;
 pub(crate) mod signature;
@@ -40,5 +42,3 @@ impl ParsingOption {
         self
     }
 }
-
-pub use signature::{class_signature, field_signature, method_signature};
