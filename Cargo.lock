@@ -59,12 +59,21 @@ name = "bitflags"
 version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "630be753d4e58660abd17930c71b647fe46c27ea6b63cc59e1e3851406972e42"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "bumpalo"
 version = "3.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3e2c3daef883ecc1b5d58c15adae93470a91d425f3532ba1695849656af3fc1"
+
+[[package]]
+name = "byteorder"
+version = "1.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
 name = "cast"
@@ -436,6 +445,7 @@ version = "0.1.0"
 dependencies = [
  "aquamarine",
  "bitflags 2.3.3",
+ "byteorder",
  "cesu8",
  "criterion",
  "either",

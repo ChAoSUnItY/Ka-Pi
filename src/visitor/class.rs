@@ -35,7 +35,7 @@ pub trait ClassVisitor {
     fn visit_constant(&mut self, index: &u16, constant: &Constant) -> Self::CPV;
 
     /// Visits [ClassAccessFlag]s.
-    fn visit_access_flags(&mut self, access_flags: &[ClassAccessFlag]) {}
+    fn visit_access_flag(&mut self, access_flags: &ClassAccessFlag) {}
 
     /// Visits this class [constant](Constant), it is guaranteed only function
     /// [visit_utf8](ConstantVisitor::visit_utf8) will be invoked on [Self::TCCV].
@@ -58,7 +58,7 @@ pub trait ClassVisitor {
     /// Visits [Field].
     fn visit_field(
         &mut self,
-        access_flags: &[FieldAccessFlag],
+        access_flag: &FieldAccessFlag,
         name: &str,
         descriptor: &str,
     ) -> Self::FV;
@@ -69,7 +69,7 @@ pub trait ClassVisitor {
     /// Visits [Method].
     fn visit_method(
         &mut self,
-        access_flags: &[MethodAccessFlag],
+        access_flag: &MethodAccessFlag,
         name: &str,
         descriptor: &str,
     ) -> Self::MV;

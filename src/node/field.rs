@@ -11,7 +11,7 @@ use crate::visitor::Visitable;
 /// See [4.5 Fields](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=109).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Field {
-    pub access_flags: Vec<FieldAccessFlag>,
+    pub access_flag: FieldAccessFlag,
     pub name_index: u16,
     pub descriptor_index: u16,
     pub attribute_infos_len: u16,

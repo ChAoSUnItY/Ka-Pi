@@ -1,39 +1,46 @@
-use nom::combinator::map;
-use nom::number::complete::be_u16;
-use nom::sequence::tuple;
-use nom::IResult;
+use crate::node::access_flag::MethodAccessFlag;
+use bitflags::Flags;
+use byteorder::{BigEndian, ReadBytesExt};
+use std::io::Read;
 
 use crate::node::constant::ConstantPool;
 use crate::node::method::Method;
 use crate::parse::attribute::attribute_info;
-use crate::parse::{access_flag, collect_with_constant_pool};
+use crate::parse::error::ParseResult;
 
-pub(crate) fn methods<'input: 'constant_pool, 'constant_pool>(
-    input: &'input [u8],
+pub(crate) fn methods<'input: 'constant_pool, 'constant_pool, R: Read>(
+    input: &'input mut R,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<&'input [u8], (u16, Vec<Method>)> {
-    collect_with_constant_pool(be_u16, method, constant_pool)(input)
+) -> ParseResult<(u16, Vec<Method>)> {
+    let methods_length = input.read_u16::<BigEndian>()?;
+    let mut methods = Vec::with_capacity(methods_length as usize);
+
+    for _ in 0..methods_length {
+        methods.push(method(input, constant_pool)?);
+    }
+
+    Ok((methods_length, methods))
 }
 
-fn method<'input: 'constant_pool, 'constant_pool>(
-    input: &'input [u8],
+fn method<'input: 'constant_pool, 'constant_pool, R: Read>(
+    input: &'input mut R,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<&'input [u8], Method> {
-    map(
-        tuple((
-            access_flag,
-            be_u16,
-            be_u16,
-            collect_with_constant_pool(be_u16, attribute_info, constant_pool),
-        )),
-        |(access_flags, name_index, descriptor_index, (attribute_infos_len, attribute_infos))| {
-            Method {
-                access_flags,
-                name_index,
-                descriptor_index,
-                attribute_infos_len,
-                attribute_infos,
-            }
-        },
-    )(input)
+) -> ParseResult<Method> {
+    let access_flags = MethodAccessFlag::from_bits_truncate(input.read_u16::<BigEndian>()?);
+    let name_index = input.read_u16::<BigEndian>()?;
+    let descriptor_index = input.read_u16::<BigEndian>()?;
+    let attribute_infos_len = input.read_u16::<BigEndian>()?;
+    let mut attribute_infos = Vec::with_capacity(attribute_infos_len as usize);
+
+    for _ in 0..attribute_infos_len {
+        attribute_infos.push(attribute_info(input, constant_pool)?);
+    }
+
+    Ok(Method {
+        access_flag: access_flags,
+        name_index,
+        descriptor_index,
+        attribute_infos_len,
+        attribute_infos,
+    })
 }

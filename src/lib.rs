@@ -2,7 +2,6 @@
 
 // no_std placeholder here
 
-pub mod error;
 pub mod node;
 #[cfg(feature = "parse")]
 pub mod parse;

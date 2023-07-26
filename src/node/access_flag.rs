@@ -1,4 +1,3 @@
-use std::fmt::LowerHex;
 use bitflags::bitflags;
 
 use serde::{Deserialize, Serialize};
@@ -19,7 +18,7 @@ bitflags! {
         const Enum = 0x4000;
         const Module = 0x8000;
     }
-    
+
     /// Access flag for [node::field::Field].
     ///
     /// See [Table 4.5-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=110).
@@ -35,7 +34,7 @@ bitflags! {
         const Synthetic = 0x1000;
         const Enum = 0x4000;
     }
-    
+
     /// Access flag for [node::method::Method].
     ///
     /// See [Table 4.6-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=112).
@@ -54,7 +53,7 @@ bitflags! {
         const Strict = 0x0800;
         const Synthetic = 0x1000;
     }
-    
+
     /// Access flag for [node::attribute::InnerClass].
     ///
     /// See [Table 4.7.6-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=138).
@@ -71,7 +70,7 @@ bitflags! {
         const Annotation = 0x2000;
         const Enum = 0x4000;
     }
-    
+
     /// Access flag for [node::attribute::MethodParameter].
     ///
     /// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=183).
@@ -81,7 +80,7 @@ bitflags! {
         const Synthetic = 0x1000;
         const Mandated = 0x8000;
     }
-    
+
     /// Access flag for [node::attribute::Module].
     ///
     /// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=186).
@@ -91,7 +90,7 @@ bitflags! {
         const Synthetic = 0x1000;
         const Mandated = 0x8000;
     }
-    
+
     /// Access flag for [node::attribute::module::Requires].
     ///
     /// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=187).
@@ -102,7 +101,7 @@ bitflags! {
         const Synthetic = 0x1000;
         const Mandated = 0x8000;
     }
-    
+
     /// Access flag for [node::attribute::module::Exports].
     ///
     /// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=188).
@@ -111,7 +110,7 @@ bitflags! {
         const Synthetic = 0x1000;
         const Mandated = 0x8000;
     }
-    
+
     /// Access flag for [node::attribute::module::Opens].
     ///
     /// See [here](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=189).

@@ -1,5 +1,6 @@
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 
 use crate::node::opcode::instruction::{
     ANewArray, CheckCast, GetField, GetStatic, InstanceOf, InvokeDynamic, InvokeInterface,
@@ -52,6 +53,7 @@ pub enum ArrayType {
     Serialize,
     Deserialize,
     TryFromPrimitive,
+    EnumIter,
 )]
 #[allow(non_camel_case_types)]
 pub enum Opcode {

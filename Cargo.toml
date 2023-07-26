@@ -25,8 +25,9 @@ cesu8 = "1.1.0"
 strum = { version = "0.24.1", features = ["derive"] }
 aquamarine = "0.3.2"
 paste = "1.0.13"
-bitflags = "2.3.3"
+bitflags = { version = "2.3.3", features = ["serde"] }
 thiserror = "1.0.43"
+byteorder = "1.4.3"
 
 [dev-dependencies]
 insta = { version = "1.28.0", features = ["yaml"] }

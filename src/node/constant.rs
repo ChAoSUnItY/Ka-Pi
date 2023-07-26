@@ -6,8 +6,8 @@ use paste::paste;
 use serde::{Deserialize, Serialize};
 use strum::IntoStaticStr;
 
-use crate::error::{KapiError, KapiResult};
 use crate::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods};
+use crate::node::error::{NodeResError, NodeResResult};
 use crate::visitor::constant::ConstantVisitor;
 use crate::visitor::Visitable;
 
@@ -295,14 +295,9 @@ pub struct Utf8 {
 
 impl Utf8 {
     /// Converts bytes into string.
-    pub fn string(&self) -> KapiResult<std::string::String> {
+    pub fn string(&self) -> NodeResResult<std::string::String> {
         cesu8::from_java_cesu8(&self.bytes[..])
-            .map_err(|err| {
-                KapiError::ClassParseError(format!(
-                    "Unable to convert bytes to string, reason: {}",
-                    err.to_string()
-                ))
-            })
+            .map_err(|_| NodeResError::StringParseFail(self.bytes.clone().into_boxed_slice()))
             .map(|string| string.to_string())
     }
 }
@@ -636,13 +631,13 @@ pub struct MethodHandle {
 
 impl MethodHandle {
     /// Gets [RefKind] of MethodHandle.
-    pub fn reference_kind(&self) -> KapiResult<RefKind> {
-        RefKind::try_from(self.reference_kind).map_err(|err| {
-            KapiError::ClassParseError(format!(
-                "Reference kind {} does not match any kinds described in specification, reason: {}",
-                err.number,
-                err.to_string()
-            ))
+    pub fn reference_kind(&self) -> NodeResResult<RefKind> {
+        RefKind::try_from(self.reference_kind).map_err(|_| {
+            NodeResError::MatchOutOfBound(
+                "reference kind",
+                vec!["1..=9"],
+                self.reference_kind as usize,
+            )
         })
     }
 
@@ -650,29 +645,29 @@ impl MethodHandle {
     pub fn reference_constant<'constant, 'constant_pool: 'constant>(
         &'constant self,
         constant_pool: &'constant_pool ConstantPool,
-    ) -> KapiResult<Option<&'constant_pool Constant>> {
+    ) -> NodeResResult<Option<&'constant_pool Constant>> {
         if let Some(constant) = constant_pool.get_constant(self.reference_index) {
             match self.reference_kind()? {
                 RefKind::GetField | RefKind::GetStatic | RefKind::PutField | RefKind::PutStatic => {
                     if let Constant::FieldRef(_) = constant {
                         Ok(Some(constant))
                     } else {
-                        Err(KapiError::ClassParseError(format!(
-                            "Expected referenced constant FieldRef at #{} but got {}",
+                        Err(NodeResError::MismatchReferenceConstant(
+                            "FieldRef",
                             self.reference_index,
-                            Into::<&'static str>::into(constant)
-                        )))
+                            Into::<&'static str>::into(constant),
+                        ))
                     }
                 }
                 RefKind::InvokeVirtual | RefKind::NewInvokeSpecial => {
                     if let Constant::MethodRef(_) = constant {
                         Ok(Some(constant))
                     } else {
-                        Err(KapiError::ClassParseError(format!(
-                            "Expected referenced constant MethodRef at #{} but got {}",
+                        Err(NodeResError::MismatchReferenceConstant(
+                            "MethodRef",
                             self.reference_index,
-                            Into::<&'static str>::into(constant)
-                        )))
+                            Into::<&'static str>::into(constant),
+                        ))
                     }
                 }
                 RefKind::InvokeStatic | RefKind::InvokeSpecial => {
@@ -682,22 +677,22 @@ impl MethodHandle {
                     ) {
                         Ok(Some(constant))
                     } else {
-                        Err(KapiError::ClassParseError(format!(
-                            "Expected referenced either constant MethodRef or constant InterfaceMethodRef at #{} but got {}",
+                        Err(NodeResError::MismatchReferenceConstant(
+                            "MethodRef or constant InterfaceMethodRef",
                             self.reference_index,
-                            Into::<&'static str>::into(constant)
-                        )))
+                            Into::<&'static str>::into(constant),
+                        ))
                     }
                 }
                 RefKind::InvokeInterface => {
                     if let Constant::InterfaceMethodRef(_) = constant {
                         Ok(Some(constant))
                     } else {
-                        Err(KapiError::ClassParseError(format!(
-                            "Expected referenced constant InterfaceMethodRef at #{} but got {}",
+                        Err(NodeResError::MismatchReferenceConstant(
+                            "InterfaceMethodRef",
                             self.reference_index,
-                            Into::<&'static str>::into(constant)
-                        )))
+                            Into::<&'static str>::into(constant),
+                        ))
                     }
                 }
             }

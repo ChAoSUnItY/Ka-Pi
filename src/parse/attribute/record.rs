@@ -1,43 +1,47 @@
-use nom::combinator::map;
-use nom::number::complete::be_u16;
-use nom::sequence::tuple;
-use nom::IResult;
+use byteorder::{BigEndian, ReadBytesExt};
+use std::io::Read;
 
 use crate::node::attribute::{Attribute, Record, RecordComponent};
 use crate::node::constant::ConstantPool;
 use crate::parse::attribute::attribute_info;
-use crate::parse::collect_with_constant_pool;
+use crate::parse::error::ParseResult;
 
-pub(crate) fn record<'input: 'constant_pool, 'constant_pool>(
-    input: &'input [u8],
+#[inline]
+pub(super) fn record<'input: 'constant_pool, 'constant_pool, R: Read>(
+    input: &'input mut R,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<&'input [u8], Option<Attribute>> {
-    map(
-        collect_with_constant_pool(be_u16, record_component, constant_pool),
-        |(components_count, components)| {
-            Some(Attribute::Record(Record {
-                components_count,
-                components,
-            }))
-        },
-    )(input)
+) -> ParseResult<Option<Attribute>> {
+    let components_count = input.read_u16::<BigEndian>()?;
+    let mut components = Vec::with_capacity(components_count as usize);
+
+    for _ in 0..components_count {
+        components.push(record_component(input, constant_pool)?);
+    }
+
+    Ok(Some(Attribute::Record(Record {
+        components_count,
+        components,
+    })))
 }
 
-fn record_component<'input: 'constant_pool, 'constant_pool>(
-    input: &'input [u8],
+#[inline(always)]
+fn record_component<'input: 'constant_pool, 'constant_pool, R: Read>(
+    input: &'input mut R,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<&'input [u8], RecordComponent> {
-    map(
-        tuple((
-            be_u16,
-            be_u16,
-            collect_with_constant_pool(be_u16, attribute_info, constant_pool),
-        )),
-        |(name_index, descriptor_index, (attributes_count, attributes))| RecordComponent {
-            name_index,
-            descriptor_index,
-            attributes_count,
-            attributes,
-        },
-    )(input)
+) -> ParseResult<RecordComponent> {
+    let name_index = input.read_u16::<BigEndian>()?;
+    let descriptor_index = input.read_u16::<BigEndian>()?;
+    let attributes_count = input.read_u16::<BigEndian>()?;
+    let mut attributes = Vec::with_capacity(attributes_count as usize);
+
+    for _ in 0..attributes_count {
+        attributes.push(attribute_info(input, constant_pool)?);
+    }
+
+    Ok(RecordComponent {
+        name_index,
+        descriptor_index,
+        attributes_count,
+        attributes,
+    })
 }

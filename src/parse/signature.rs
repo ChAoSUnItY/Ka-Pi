@@ -1,223 +1,370 @@
-use nom::branch::alt;
-use nom::bytes::complete::take_till;
-use nom::character::complete::{char, one_of};
-use nom::combinator::{map, map_res, opt, peek};
-use nom::error::ErrorKind;
-use nom::multi::{many0, many1};
-use nom::sequence::{delimited, preceded, tuple};
-use nom::Err::Error;
-use nom::{IResult, Offset};
+use std::iter::Peekable;
+use std::str::Chars;
+
+use itertools::Itertools;
 
 use crate::node::signature::{
     ArrayType, BaseType, ClassType, FormalTypeParameter, ReferenceType, Signature, SignatureType,
     ThrowsType, TypeArgument, TypeVariable, WildcardIndicator,
 };
+use crate::parse::error::{ParseError, ParseResult};
 
-pub(crate) const EXCLUDED_IDENTIFIER_CHARACTERS: &'static str = ".;[/<>:";
+const EXCLUDED_IDENTIFIER_CHARACTERS: &'static str = ".;[/<>:";
 
-pub(crate) fn class_signature(input: &str) -> IResult<&str, Signature> {
-    map(
-        tuple((
-            formal_types,
-            class_type_signature,
-            many0(class_type_signature),
-        )),
-        |(formal_type_parameters, super_class, interfaces)| Signature::Class {
-            formal_type_parameters,
-            super_class,
-            interfaces,
-        },
-    )(input)
-}
+pub fn class_signature(input: &str) -> ParseResult<Signature> {
+    let mut input = input.chars().peekable();
+    let formal_type_parameters = formal_types(&mut input)?;
+    let super_class = class_type_signature(&mut input)?;
+    let mut interfaces = Vec::new();
 
-pub(crate) fn field_signature(input: &str) -> IResult<&str, Signature> {
-    map(reference_type, |field_type| Signature::Field { field_type })(input)
-}
-
-pub(crate) fn method_signature(input: &str) -> IResult<&str, Signature> {
-    map(
-        tuple((
-            formal_types,
-            delimited(char('('), many0(java_type_signature), char(')')),
-            result,
-            many0(throws_signature),
-        )),
-        |(formal_type_parameters, parameter_types, return_type, exception_types)| {
-            Signature::Method {
-                formal_type_parameters,
-                parameter_types,
-                return_type,
-                exception_types,
-            }
-        },
-    )(input)
-}
-
-fn formal_types(input: &str) -> IResult<&str, Vec<FormalTypeParameter>> {
-    delimited(char('<'), many1(formal_type), char('>'))(input)
-}
-
-fn formal_type(input: &str) -> IResult<&str, FormalTypeParameter> {
-    map(
-        tuple((identifier, class_bound, many0(interface_bound))),
-        |(parameter_name, class_bound, interface_bounds)| FormalTypeParameter {
-            parameter_name: parameter_name.to_string(),
-            class_bound,
-            interface_bounds,
-        },
-    )(input)
-}
-
-fn result(input: &str) -> IResult<&str, SignatureType> {
-    alt((
-        java_type_signature,
-        map(void_descriptor, |void_type| {
-            SignatureType::BaseType(void_type)
-        }),
-    ))(input)
-}
-
-fn throws_signature(input: &str) -> IResult<&str, ThrowsType> {
-    preceded(
-        char('^'),
-        alt((
-            map(class_type_signature, |class_type| {
-                ThrowsType::Class(class_type)
-            }),
-            map(type_variable, |type_variable| {
-                ThrowsType::TypeVariable(type_variable)
-            }),
-        )),
-    )(input)
-}
-
-fn class_bound(input: &str) -> IResult<&str, Option<ClassType>> {
-    preceded(char(':'), opt(class_type_signature))(input)
-}
-
-fn interface_bound(input: &str) -> IResult<&str, ClassType> {
-    preceded(char(':'), class_type_signature)(input)
-}
-
-fn java_type_signature(input: &str) -> IResult<&str, SignatureType> {
-    alt((
-        map(base_type, |base_type| SignatureType::BaseType(base_type)),
-        map(reference_type, |reference_type| {
-            SignatureType::ReferenceType(reference_type)
-        }),
-    ))(input)
-}
-
-fn base_type(input: &str) -> IResult<&str, BaseType> {
-    map_res(one_of("ZBSIJFD"), |char| BaseType::try_from(char))(input)
-}
-
-fn void_descriptor(input: &str) -> IResult<&str, BaseType> {
-    map_res(char('V'), |char| BaseType::try_from(char))(input)
-}
-
-fn reference_type(input: &str) -> IResult<&str, ReferenceType> {
-    let (input, leading_type_char) = peek(one_of("LT["))(input)?;
-
-    match leading_type_char {
-        'L' => map(class_type_signature, |class_type| {
-            ReferenceType::Class(class_type)
-        })(input),
-        'T' => map(type_variable, |type_variable| {
-            ReferenceType::TypeVariable(type_variable)
-        })(input),
-        '[' => map(array_type, |array_type| ReferenceType::Array(array_type))(input),
-        _ => Err(Error(nom::error::Error::new(input, ErrorKind::OneOf))),
-    }
-}
-
-fn class_type_signature(input: &str) -> IResult<&str, ClassType> {
-    map(
-        delimited(
-            char('L'),
-            tuple((
-                opt(package_specifier),
-                simple_class_type_signature,
-                many0(class_type_signature_suffix),
-            )),
-            char(';'),
-        ),
-        |(package_specifier, (class_name, type_arguments), inner_classes)| ClassType {
-            package_path: package_specifier.unwrap_or("").to_string(),
-            class_name: class_name.to_string(),
-            type_arguments,
-            inner_classes: inner_classes
-                .into_iter()
-                .map(|(class_name, type_arguments)| (class_name.to_string(), type_arguments))
-                .collect(),
-        },
-    )(input)
-}
-
-fn package_specifier(input: &str) -> IResult<&str, &str> {
-    let mut remain = input;
-
-    loop {
-        let (current_remain, _) = tuple((identifier, char('/')))(remain)?;
-        let (current_remain, peek_char) =
-            opt(peek(tuple((identifier, char('/')))))(current_remain)?;
-
-        remain = current_remain;
-
-        if !peek_char.is_some() {
+    while let Some(char) = input.peek() {
+        if *char == 'L' {
+            interfaces.push(class_type_signature(&mut input)?);
+        } else {
             break;
         }
     }
 
-    let offset = input.offset(remain);
+    if input.peek().is_some() {
+        let remain = input.collect_vec();
 
-    Ok((remain, &input[0..offset - 1])) // Remove last `/`
+        Err(ParseError::Remains(remain.len()))
+    } else {
+        Ok(Signature::Class {
+            formal_type_parameters,
+            super_class,
+            interfaces,
+        })
+    }
 }
 
-fn simple_class_type_signature(input: &str) -> IResult<&str, (&str, Vec<TypeArgument>)> {
-    map(
-        tuple((
-            identifier,
-            opt(delimited(char('<'), many1(type_argument), char('>'))),
-        )),
-        |(class_name, type_arguments)| (class_name, type_arguments.unwrap_or_default()),
-    )(input)
+pub fn field_signature(input: &str) -> ParseResult<Signature> {
+    let mut input = input.chars().peekable();
+    let field_type = reference_type(&mut input)?;
+
+    if input.peek().is_some() {
+        let remain = input.collect_vec();
+
+        Err(ParseError::Remains(remain.len()))
+    } else {
+        Ok(Signature::Field { field_type })
+    }
 }
 
-fn class_type_signature_suffix(input: &str) -> IResult<&str, (&str, Vec<TypeArgument>)> {
-    preceded(char('.'), simple_class_type_signature)(input)
+pub fn method_signature(input: &str) -> ParseResult<Signature> {
+    let mut input = input.chars().peekable();
+    let formal_type_parameters = formal_types(&mut input)?;
+
+    assert_char(input.next(), '(')?;
+
+    let mut parameter_types = Vec::new();
+
+    while let Some(char) = input.peek() {
+        if *char != ')' {
+            parameter_types.push(java_type_signature(&mut input)?);
+        } else {
+            break;
+        }
+    }
+
+    let return_type = result(&mut input)?;
+    let mut exception_types = Vec::new();
+
+    while let Some(char) = input.peek() {
+        if *char == '^' {
+            exception_types.push(throws_signature(&mut input)?);
+        } else {
+            break;
+        }
+    }
+
+    if input.peek().is_some() {
+        let remain = input.collect_vec();
+
+        Err(ParseError::Remains(remain.len()))
+    } else {
+        Ok(Signature::Method {
+            formal_type_parameters,
+            parameter_types,
+            return_type,
+            exception_types,
+        })
+    }
 }
 
-fn type_argument(input: &str) -> IResult<&str, TypeArgument> {
-    alt((
-        map(
-            tuple((opt(one_of("+-")), reference_type)),
-            |(wildcard_indicator, bounded_type)| TypeArgument::Bounded {
-                wildcard_indicator: wildcard_indicator
-                    .and_then(|wildcard_indicator| {
-                        WildcardIndicator::try_from(wildcard_indicator).ok()
-                    })
-                    .unwrap_or_default(),
+fn formal_types(input: &mut Peekable<Chars>) -> ParseResult<Vec<FormalTypeParameter>> {
+    assert_char(input.next(), '<')?;
+    let mut formal_types = Vec::new();
+
+    while let Some(char) = input.peek() {
+        if *char != '>' {
+            formal_types.push(formal_type(input)?);
+        } else {
+            break;
+        }
+    }
+
+    assert_char(input.next(), '>')?;
+
+    Ok(formal_types)
+}
+
+fn formal_type(input: &mut Peekable<Chars>) -> ParseResult<FormalTypeParameter> {
+    let parameter_name = identifier(input)?;
+    let class_bound = class_bound(input)?;
+    let mut interface_bounds = Vec::new();
+
+    while let Some(char) = input.peek() {
+        if *char == ':' {
+            interface_bounds.push(interface_bound(input)?);
+        } else {
+            break;
+        }
+    }
+
+    Ok(FormalTypeParameter {
+        parameter_name,
+        class_bound,
+        interface_bounds,
+    })
+}
+
+fn result(input: &mut Peekable<Chars>) -> ParseResult<SignatureType> {
+    if let Ok(java_type_signature) = java_type_signature(input) {
+        Ok(java_type_signature)
+    } else if let Ok(void_descriptor) = void_descriptor(input) {
+        Ok(SignatureType::BaseType(void_descriptor))
+    } else {
+        Err(ParseError::OutOfBound("return type"))
+    }
+}
+
+fn throws_signature(input: &mut Peekable<Chars>) -> ParseResult<ThrowsType> {
+    assert_char(input.next(), '^')?;
+
+    if let Ok(class_type_signature) = class_type_signature(input) {
+        Ok(ThrowsType::Class(class_type_signature))
+    } else if let Ok(type_variable) = type_variable(input) {
+        Ok(ThrowsType::TypeVariable(type_variable))
+    } else {
+        Err(ParseError::OutOfBound("throws signature"))
+    }
+}
+
+fn class_bound(input: &mut Peekable<Chars>) -> ParseResult<Option<ClassType>> {
+    assert_char(input.next(), ':')?;
+
+    match input.peek() {
+        Some(char) if *char == 'L' => Ok(Some(class_type_signature(input)?)),
+        _ => Ok(None),
+    }
+}
+
+fn interface_bound(input: &mut Peekable<Chars>) -> ParseResult<ClassType> {
+    assert_char(input.next(), ':')?;
+
+    class_type_signature(input)
+}
+
+fn java_type_signature(input: &mut Peekable<Chars>) -> ParseResult<SignatureType> {
+    if let Ok(base_type) = base_type(input) {
+        Ok(SignatureType::BaseType(base_type))
+    } else if let Ok(reference_type) = reference_type(input) {
+        Ok(SignatureType::ReferenceType(reference_type))
+    } else {
+        Err(ParseError::OutOfBound("java type signature"))
+    }
+}
+
+fn base_type(input: &mut Peekable<Chars>) -> ParseResult<BaseType> {
+    let char = assert_char_alt(input.next(), "ZBSIJFD")?;
+
+    BaseType::try_from(char)
+        .map_err(|_| ParseError::MismatchedCharacter(char, vec!['Z', 'B', 'S', 'I', 'J', 'F', 'D']))
+}
+
+fn void_descriptor(input: &mut Peekable<Chars>) -> ParseResult<BaseType> {
+    assert_char(input.next(), 'V')?;
+
+    Ok(BaseType::Void)
+}
+
+fn reference_type(input: &mut Peekable<Chars>) -> ParseResult<ReferenceType> {
+    match input.peek() {
+        Some(char) if *char == 'L' => Ok(ReferenceType::Class(class_type_signature(input)?)),
+        Some(char) if *char == 'T' => Ok(ReferenceType::TypeVariable(type_variable(input)?)),
+        Some(char) if *char == '[' => Ok(ReferenceType::Array(array_type(input)?)),
+        Some(char) => Err(ParseError::MismatchedCharacter(*char, vec!['L', 'T', '['])),
+        None => Err(ParseError::OutOfBound("reference type")),
+    }
+}
+
+fn class_type_signature(input: &mut Peekable<Chars>) -> ParseResult<ClassType> {
+    assert_char(input.next(), 'L')?;
+
+    let (package_path, class_name) = package_specifier_and_class_type(input)?;
+    let type_arguments = type_arguments(input)?;
+    let mut inner_classes = Vec::new();
+
+    while let Some(char) = input.peek() {
+        if *char != ';' {
+            inner_classes.push(class_type_signature_suffix(input)?);
+        } else {
+            break;
+        }
+    }
+
+    assert_char(input.next(), ';')?;
+
+    Ok(ClassType {
+        package_path,
+        class_name,
+        type_arguments,
+        inner_classes,
+    })
+}
+
+fn package_specifier_and_class_type(input: &mut Peekable<Chars>) -> ParseResult<(String, String)> {
+    let mut class_path_builder = Vec::with_capacity(3);
+
+    loop {
+        class_path_builder.push(identifier(input)?);
+
+        match input.peek() {
+            Some(builder) if *builder == '/' => {
+                class_path_builder.push(input.next().unwrap().to_string());
+                continue;
+            }
+            _ => break,
+        }
+    }
+
+    let (class_type, package_specifier) = if class_path_builder.len() == 1 {
+        (String::new(), class_path_builder[0].clone())
+    } else if class_path_builder.len() == 0 {
+        return Err(ParseError::OutOfBound("package specifier and class type"));
+    } else {
+        class_path_builder
+            .split_last()
+            .map(|(class_type, package_specifier)| {
+                (class_type.to_string(), package_specifier.join("/"))
+            })
+            .unwrap()
+    };
+
+    Ok((package_specifier, class_type))
+}
+
+fn class_type_signature_suffix(
+    input: &mut Peekable<Chars>,
+) -> ParseResult<(String, Vec<TypeArgument>)> {
+    assert_char(input.next(), '.')?;
+
+    let class_type = identifier(input)?;
+    let type_arguments = type_arguments(input)?;
+
+    Ok((class_type, type_arguments))
+}
+
+fn type_arguments(input: &mut Peekable<Chars>) -> ParseResult<Vec<TypeArgument>> {
+    match input.peek() {
+        Some(char) if *char == '<' => {
+            assert_char(input.next(), '<')?;
+
+            let mut type_arguments = Vec::new();
+
+            while let Some(char) = input.peek() {
+                if *char != '>' {
+                    type_arguments.push(type_argument(input)?);
+                } else {
+                    break;
+                }
+            }
+
+            assert_char(input.next(), '>')?;
+
+            Ok(type_arguments)
+        }
+        _ => Ok(Vec::new()),
+    }
+}
+
+fn type_argument(input: &mut Peekable<Chars>) -> ParseResult<TypeArgument> {
+    match input.peek() {
+        Some(char) if *char == '+' || *char == '-' => {
+            let wildcard_indicator = WildcardIndicator::try_from(char).unwrap();
+            let bounded_type = reference_type(input)?;
+
+            Ok(TypeArgument::Bounded {
+                wildcard_indicator,
                 bounded_type,
-            },
-        ),
-        map(char('*'), |_| TypeArgument::Wildcard),
-    ))(input)
+            })
+        }
+        Some(char) if *char == '*' => Ok(TypeArgument::Wildcard),
+        Some(char) => Err(ParseError::MismatchedCharacter(*char, vec!['+', '-', '*'])),
+        None => Err(ParseError::OutOfBound("type_argument")),
+    }
 }
 
-fn type_variable(input: &str) -> IResult<&str, TypeVariable> {
-    map(
-        delimited(char('T'), identifier, char(';')),
-        |type_variable| TypeVariable(type_variable.to_string()),
-    )(input)
+fn type_variable(input: &mut Peekable<Chars>) -> ParseResult<TypeVariable> {
+    assert_char(input.next(), 'T')?;
+
+    let identifier = identifier(input)?;
+
+    assert_char(input.next(), ';')?;
+
+    Ok(TypeVariable(identifier))
 }
 
-fn array_type(input: &str) -> IResult<&str, ArrayType> {
-    map(preceded(char('['), java_type_signature), |inner_type| {
-        ArrayType(Box::new(inner_type))
-    })(input)
+fn array_type(input: &mut Peekable<Chars>) -> ParseResult<ArrayType> {
+    assert_char(input.next(), '[')?;
+
+    let inner_type = java_type_signature(input)?;
+
+    Ok(ArrayType(Box::new(inner_type)))
 }
 
-fn identifier(input: &str) -> IResult<&str, &str> {
-    take_till(|c| EXCLUDED_IDENTIFIER_CHARACTERS.contains(c))(input)
+fn identifier(input: &mut Peekable<Chars>) -> ParseResult<String> {
+    let mut identifier_builder = String::with_capacity(8);
+
+    while let Some(char) = input.peek() {
+        if EXCLUDED_IDENTIFIER_CHARACTERS.contains(*char) {
+            identifier_builder.push(input.next().unwrap());
+        } else {
+            break;
+        }
+    }
+
+    Ok(identifier_builder)
+}
+
+#[inline]
+fn assert_char(char: Option<char>, expected: char) -> ParseResult<char> {
+    match char {
+        Some(char) => {
+            if char == expected {
+                Ok(char)
+            } else {
+                Err(ParseError::MismatchedCharacter(char, vec![expected]))
+            }
+        }
+        None => Err(ParseError::OutOfBound("signature")),
+    }
+}
+
+#[inline]
+fn assert_char_alt(char: Option<char>, pat: &str) -> ParseResult<char> {
+    match char {
+        Some(char) => {
+            if pat.contains(char) {
+                Ok(char)
+            } else {
+                Err(ParseError::MismatchedCharacter(
+                    char,
+                    pat.chars().collect_vec(),
+                ))
+            }
+        }
+        None => Err(ParseError::OutOfBound("signature")),
+    }
 }
