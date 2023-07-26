@@ -25,4 +25,4 @@ pub fn to_class<R: Read>(class_bytes: &mut R) -> ParseResult<Class> {
     }
 }
 
-pub use signature::{ class_signature, field_signature, method_signature };
+pub use signature::{class_signature, field_signature, method_signature};

@@ -1,6 +1,6 @@
-use std::io::Cursor;
 use insta::assert_yaml_snapshot;
 use ka_pi::parse::to_class;
+use std::io::Cursor;
 
 use ka_pi::parse::error::ParseResult;
 
@@ -9,7 +9,7 @@ fn test_main() -> ParseResult<()> {
     let mut cursor = Cursor::new(include_bytes!(
         "../compiled_source/out/production/compiled_source/Main.class"
     ));
-    
+
     assert_yaml_snapshot!(to_class(&mut cursor)?);
 
     Ok(())

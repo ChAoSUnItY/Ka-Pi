@@ -1,5 +1,5 @@
-use std::io::Read;
 use bitflags::Flags;
+use std::io::Read;
 
 use byteorder::{BigEndian, ReadBytesExt};
 
