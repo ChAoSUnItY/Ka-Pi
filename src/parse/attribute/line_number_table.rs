@@ -1,27 +1,30 @@
 use crate::node::attribute::{Attribute, LineNumber, LineNumberTable};
-use crate::parse::collect;
-use nom::combinator::map;
-use nom::number::complete::be_u16;
-use nom::sequence::tuple;
-use nom::IResult;
+use crate::parse::error::ParseResult;
+use byteorder::{BigEndian, ReadBytesExt};
+use std::io::Read;
 
-pub(crate) fn line_number_table(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
-    map(
-        collect(be_u16, line_number),
-        |(line_number_table_length, line_number_table)| {
-            Some(Attribute::LineNumberTable(LineNumberTable {
-                line_number_table_length,
-                line_number_table,
-            }))
-        },
-    )(input)
+#[inline]
+pub(super) fn line_number_table<R: Read>(input: &mut R) -> ParseResult<Option<Attribute>> {
+    let line_number_table_length = input.read_u16::<BigEndian>()?;
+    let mut line_number_table = Vec::with_capacity(line_number_table_length as usize);
+
+    for _ in 0..line_number_table_length {
+        line_number_table.push(line_number(input)?);
+    }
+
+    Ok(Some(Attribute::LineNumberTable(LineNumberTable {
+        line_number_table_length,
+        line_number_table,
+    })))
 }
 
-fn line_number(input: &[u8]) -> IResult<&[u8], LineNumber> {
-    map(tuple((be_u16, be_u16)), |(start_pc, line_number)| {
-        LineNumber {
-            start_pc,
-            line_number,
-        }
-    })(input)
+#[inline(always)]
+fn line_number<R: Read>(input: &mut R) -> ParseResult<LineNumber> {
+    let start_pc = input.read_u16::<BigEndian>()?;
+    let line_number = input.read_u16::<BigEndian>()?;
+
+    Ok(LineNumber {
+        start_pc,
+        line_number,
+    })
 }

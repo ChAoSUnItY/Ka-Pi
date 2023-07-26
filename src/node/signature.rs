@@ -1,6 +1,6 @@
+use crate::node::error::{NodeResError, NodeResResult};
 use serde::{Deserialize, Serialize};
 
-use crate::error::{KapiError, KapiResult};
 use crate::visitor::signature::{FormalTypeParameterVisitor, SignatureVisitor, TypeVisitor};
 use crate::visitor::Visitable;
 
@@ -211,23 +211,21 @@ impl From<WildcardIndicator> for char {
 }
 
 impl TryFrom<char> for WildcardIndicator {
-    type Error = KapiError;
+    type Error = NodeResError;
 
-    fn try_from(value: char) -> KapiResult<Self> {
+    fn try_from(value: char) -> NodeResResult<Self> {
         match value {
             EXTENDS => Ok(WildcardIndicator::EXTENDS),
             SUPER => Ok(WildcardIndicator::SUPER),
-            _ => Err(KapiError::ArgError(format!(
-                "Character {value} cannot be converted into Wildcard"
-            ))),
+            _ => Err(NodeResError::InvalidWildcard(value)),
         }
     }
 }
 
 impl TryFrom<&char> for WildcardIndicator {
-    type Error = KapiError;
+    type Error = NodeResError;
 
-    fn try_from(value: &char) -> KapiResult<Self> {
+    fn try_from(value: &char) -> NodeResResult<Self> {
         TryFrom::<char>::try_from(*value)
     }
 }
@@ -394,9 +392,9 @@ where
 }
 
 impl TryFrom<char> for BaseType {
-    type Error = KapiError;
+    type Error = NodeResError;
 
-    fn try_from(value: char) -> KapiResult<Self> {
+    fn try_from(value: char) -> NodeResResult<Self> {
         match value {
             'Z' => Ok(Self::Boolean),
             'B' => Ok(Self::Byte),
@@ -406,17 +404,15 @@ impl TryFrom<char> for BaseType {
             'F' => Ok(Self::Float),
             'D' => Ok(Self::Double),
             'V' => Ok(Self::Void),
-            _ => Err(KapiError::ArgError(format!(
-                "Unexpected char `{value}` for base type"
-            ))),
+            _ => Err(NodeResError::InvalidBaseType(value)),
         }
     }
 }
 
 impl TryFrom<&char> for BaseType {
-    type Error = KapiError;
+    type Error = NodeResError;
 
-    fn try_from(value: &char) -> KapiResult<Self> {
+    fn try_from(value: &char) -> NodeResResult<Self> {
         TryFrom::<char>::try_from(*value)
     }
 }

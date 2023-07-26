@@ -3,10 +3,10 @@ use serde::{Deserialize, Serialize};
 use crate::node::access_flag::{ExportsAccessFlag, OpensAccessFlag, RequiresAccessFlag};
 use crate::node::constant::{ConstantPool, Module, Package, Utf8};
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Requires {
     pub requires_index: u16,
-    pub requires_flags: Vec<RequiresAccessFlag>,
+    pub requires_flags: RequiresAccessFlag,
     pub requires_version_index: u16,
 }
 
@@ -26,10 +26,10 @@ impl Requires {
     }
 }
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Exports {
     pub exports_index: u16,
-    pub exports_flags: Vec<ExportsAccessFlag>,
+    pub exports_flags: ExportsAccessFlag,
     pub exports_to_count: u16,
     pub exports_to_index: Vec<u16>,
 }
@@ -53,10 +53,10 @@ impl Exports {
     }
 }
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Opens {
     pub opens_index: u16,
-    pub opens_flags: Vec<OpensAccessFlag>,
+    pub opens_flags: OpensAccessFlag,
     pub opens_to_count: u16,
     pub opens_to_index: Vec<u16>,
 }

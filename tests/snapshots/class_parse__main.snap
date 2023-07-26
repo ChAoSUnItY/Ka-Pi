@@ -1,6 +1,6 @@
 ---
 source: tests/class_parse.rs
-expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/Main.class\"))?"
+expression: to_class(&mut cursor)?
 ---
 java_version: V17
 constant_pool_count: 60
@@ -551,40 +551,31 @@ constant_pool:
           - 97
           - 118
           - 97
-access_flags:
-  - Public
-  - Super
+access_flag: Public | Super
 this_class: 25
 super_class: 2
 interfaces_count: 0
 interfaces: []
 fields_count: 3
 fields:
-  - access_flags:
-      - Public
-      - Static
+  - access_flag: Public | Static
     name_index: 28
     descriptor_index: 29
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Public
-      - Static
+  - access_flag: Public | Static
     name_index: 38
     descriptor_index: 35
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Public
-      - Static
+  - access_flag: Public | Static
     name_index: 46
     descriptor_index: 47
     attribute_infos_len: 0
     attribute_infos: []
 methods_count: 3
 methods:
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 5
     descriptor_index: 6
     attribute_infos_len: 1
@@ -698,9 +689,7 @@ methods:
                         name_index: 51
                         descriptor_index: 52
                         index: 0
-  - access_flags:
-      - Public
-      - Static
+  - access_flag: Public | Static
     name_index: 53
     descriptor_index: 54
     attribute_infos_len: 1
@@ -835,8 +824,7 @@ methods:
                         name_index: 55
                         descriptor_index: 56
                         index: 0
-  - access_flags:
-      - Static
+  - access_flag: Static
     name_index: 57
     descriptor_index: 6
     attribute_infos_len: 1

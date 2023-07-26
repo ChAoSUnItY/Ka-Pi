@@ -11,7 +11,7 @@ use crate::visitor::Visitable;
 /// See [4.6 Methods](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=111).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Method {
-    pub access_flags: Vec<MethodAccessFlag>,
+    pub access_flag: MethodAccessFlag,
     pub name_index: u16,
     pub descriptor_index: u16,
     pub attribute_infos_len: u16,

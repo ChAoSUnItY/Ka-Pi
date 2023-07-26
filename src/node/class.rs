@@ -19,7 +19,7 @@ pub struct Class {
     pub java_version: JavaVersion,
     pub constant_pool_count: u16,
     pub constant_pool: ConstantPool,
-    pub access_flags: Vec<ClassAccessFlag>,
+    pub access_flag: ClassAccessFlag,
     pub this_class: u16,
     pub super_class: u16,
     pub interfaces_count: u16,
@@ -70,7 +70,7 @@ where
             visitor.visit_constant(index, constant);
         }
 
-        visitor.visit_access_flags(&self.access_flags);
+        visitor.visit_access_flag(&self.access_flag);
 
         let mut this_class_visitor = visitor.visit_this_class();
 
@@ -97,16 +97,15 @@ where
         visitor.visit_fields(&self.fields);
 
         for field in &*self.fields {
-            let name = field
+            let name: Option<String> = field
                 .name(&self.constant_pool)
                 .and_then(|utf8| utf8.string().ok());
-            let descriptor = field
+            let descriptor: Option<String> = field
                 .descriptor(&self.constant_pool)
                 .and_then(|utf8| utf8.string().ok());
 
             if let (Some(name), Some(descriptor)) = (name, descriptor) {
-                let mut field_visitor =
-                    visitor.visit_field(&field.access_flags, &name, &descriptor);
+                let mut field_visitor = visitor.visit_field(&field.access_flag, &name, &descriptor);
 
                 field.visit(&mut field_visitor);
             }
@@ -115,16 +114,16 @@ where
         visitor.visit_methods(&self.methods);
 
         for method in &self.methods {
-            let name = method
+            let name: Option<String> = method
                 .name(&self.constant_pool)
                 .and_then(|utf8| utf8.string().ok());
-            let descriptor = method
+            let descriptor: Option<String> = method
                 .descriptor(&self.constant_pool)
                 .and_then(|utf8| utf8.string().ok());
 
             if let (Some(name), Some(descriptor)) = (name, descriptor) {
                 let mut method_visitor =
-                    visitor.visit_method(&method.access_flags, &name, &descriptor);
+                    visitor.visit_method(&method.access_flag, &name, &descriptor);
 
                 method.visit(&mut method_visitor);
             }

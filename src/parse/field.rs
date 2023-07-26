@@ -1,39 +1,51 @@
-use nom::combinator::map;
-use nom::number::complete::be_u16;
-use nom::sequence::tuple;
-use nom::IResult;
+use crate::node::access_flag::FieldAccessFlag;
+use bitflags::Flags;
+use byteorder::{BigEndian, ReadBytesExt};
+use std::io::Read;
 
 use crate::node::constant::ConstantPool;
 use crate::node::field::Field;
 use crate::parse::attribute::attribute_info;
-use crate::parse::{access_flag, collect_with_constant_pool};
+use crate::parse::error::ParseResult;
+use crate::parse::ParsingOption;
 
-pub(crate) fn fields<'input: 'constant_pool, 'constant_pool>(
-    input: &'input [u8],
+#[inline]
+pub(crate) fn fields<'input: 'constant_pool, 'constant_pool, R: Read>(
+    input: &'input mut R,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<&'input [u8], (u16, Vec<Field>)> {
-    collect_with_constant_pool(be_u16, field, constant_pool)(input)
+    option: &ParsingOption,
+) -> ParseResult<(u16, Vec<Field>)> {
+    let fields_length = input.read_u16::<BigEndian>()?;
+    let mut fields = Vec::with_capacity(fields_length as usize);
+
+    for _ in 0..fields_length {
+        fields.push(field(input, constant_pool, option)?);
+    }
+
+    Ok((fields_length, fields))
 }
 
-fn field<'input: 'constant_pool, 'constant_pool>(
-    input: &'input [u8],
+#[inline(always)]
+fn field<'input: 'constant_pool, 'constant_pool, R: Read>(
+    input: &'input mut R,
     constant_pool: &'constant_pool ConstantPool,
-) -> IResult<&'input [u8], Field> {
-    map(
-        tuple((
-            access_flag,
-            be_u16,
-            be_u16,
-            collect_with_constant_pool(be_u16, attribute_info, constant_pool),
-        )),
-        |(access_flags, name_index, descriptor_index, (attribute_infos_len, attribute_infos))| {
-            Field {
-                access_flags,
-                name_index,
-                descriptor_index,
-                attribute_infos_len,
-                attribute_infos,
-            }
-        },
-    )(input)
+    option: &ParsingOption,
+) -> ParseResult<Field> {
+    let access_flags = FieldAccessFlag::from_bits_truncate(input.read_u16::<BigEndian>()?);
+    let name_index = input.read_u16::<BigEndian>()?;
+    let descriptor_index = input.read_u16::<BigEndian>()?;
+    let attribute_infos_len = input.read_u16::<BigEndian>()?;
+    let mut attribute_infos = Vec::with_capacity(attribute_infos_len as usize);
+
+    for _ in 0..attribute_infos_len {
+        attribute_infos.push(attribute_info(input, constant_pool, option)?);
+    }
+
+    Ok(Field {
+        access_flag: access_flags,
+        name_index,
+        descriptor_index,
+        attribute_infos_len,
+        attribute_infos,
+    })
 }

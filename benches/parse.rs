@@ -1,55 +1,53 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use ka_pi::parse::to_class;
+use std::fs;
+use std::io::Cursor;
 
-fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("parse main", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/Main.class"
-            )))
-        })
-    });
+use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput};
 
-    c.bench_function("parse enum", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/Enum.class"
-            )))
-        })
-    });
+use ka_pi::parse::{to_class, ParsingOption};
 
-    c.bench_function("parse record", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/Record.class"
-            )))
-        })
-    });
+fn parsing_classes(c: &mut Criterion) {
+    let mut g = c.benchmark_group("parse class");
 
-    c.bench_function("parse visible annotation", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/VisibleAnnotation.class"
-            )))
-        })
-    });
+    let compiled_source_folder =
+        fs::read_dir("compiled_source/out/production/compiled_source").unwrap();
 
-    c.bench_function("parse invisible annotation", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/InvisibleAnnotation.class"
-            )))
-        })
-    });
+    for entry in compiled_source_folder {
+        let entry = entry.as_ref().unwrap().path();
+        let class_name = entry.file_name().unwrap().to_str().unwrap();
+        let class_bytes = fs::read(&entry).unwrap();
 
-    c.bench_function("parse annotation target", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/AnnotationTarget.class"
-            )))
-        })
-    });
+        g.throughput(Throughput::Bytes(class_bytes.len() as u64));
+        g.bench_with_input(
+            BenchmarkId::from_parameter(class_name),
+            &class_bytes,
+            |b, bytes| {
+                b.iter_batched(
+                    || Cursor::new(bytes),
+                    |mut cursor| {
+                        to_class(&mut cursor, ParsingOption::default().parse_attribute())
+                            .expect("Parsing fails on benchmarking");
+                    },
+                    BatchSize::SmallInput,
+                );
+            },
+        );
+
+        g.bench_with_input(
+            BenchmarkId::from_parameter(format!("{class_name} (No attribute parsing)")),
+            &class_bytes,
+            |b, bytes| {
+                b.iter_batched(
+                    || Cursor::new(bytes),
+                    |mut cursor| {
+                        to_class(&mut cursor, ParsingOption::default())
+                            .expect("Parsing fails on benchmarking");
+                    },
+                    BatchSize::SmallInput,
+                );
+            },
+        );
+    }
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(benches, parsing_classes);
 criterion_main!(benches);

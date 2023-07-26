@@ -1,12 +1,12 @@
 use insta::assert_yaml_snapshot;
 
-use ka_pi::error::KapiResult;
-use ka_pi::parse::{parse_class_signature, parse_field_signature, parse_method_signature};
+use ka_pi::parse::ParseResult;
+use ka_pi::parse::{class_signature, field_signature, method_signature};
 
 #[test]
-fn test_class_signature_with_generic() -> KapiResult<()> {
+fn test_class_signature_with_generic() -> ParseResult<()> {
     let class_signature =
-        parse_class_signature("<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;")?;
+        class_signature("<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;")?;
 
     assert_yaml_snapshot!(class_signature);
 
@@ -14,8 +14,8 @@ fn test_class_signature_with_generic() -> KapiResult<()> {
 }
 
 #[test]
-fn test_field_signature_object() -> KapiResult<()> {
-    let field_signature = parse_field_signature("Ljava/lang/Object;")?;
+fn test_field_signature_object() -> ParseResult<()> {
+    let field_signature = field_signature("Ljava/lang/Object;")?;
 
     assert_yaml_snapshot!(field_signature);
 
@@ -23,8 +23,8 @@ fn test_field_signature_object() -> KapiResult<()> {
 }
 
 #[test]
-fn test_field_signature_type_variable() -> KapiResult<()> {
-    let field_signature = parse_field_signature("TT;")?;
+fn test_field_signature_type_variable() -> ParseResult<()> {
+    let field_signature = field_signature("TT;")?;
 
     assert_yaml_snapshot!(field_signature);
 
@@ -32,8 +32,8 @@ fn test_field_signature_type_variable() -> KapiResult<()> {
 }
 
 #[test]
-fn test_method_signature_with_generic() -> KapiResult<()> {
-    let method_signature = parse_method_signature(
+fn test_method_signature_with_generic() -> ParseResult<()> {
+    let method_signature = method_signature(
         "<T:Ljava/lang/Object;>(Z[[ZTT;)Ljava/lang/Object;^Ljava/lang/Exception;",
     )?;
 

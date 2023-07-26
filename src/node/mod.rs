@@ -8,6 +8,7 @@ pub mod access_flag;
 pub mod attribute;
 pub mod class;
 pub mod constant;
+mod error;
 pub mod field;
 pub mod method;
 pub mod opcode;

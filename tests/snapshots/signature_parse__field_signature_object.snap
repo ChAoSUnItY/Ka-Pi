@@ -1,11 +1,11 @@
 ---
-source: test/signature_parse.rs
+source: tests/signature_parse.rs
 expression: field_signature
 ---
 Field:
   field_type:
     Class:
-      package_path: java/lang
+      package_path: java/lang/
       class_name: Object
       type_arguments: []
       inner_classes: []

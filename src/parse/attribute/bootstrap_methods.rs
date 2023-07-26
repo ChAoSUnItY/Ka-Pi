@@ -1,30 +1,37 @@
-use nom::combinator::map;
-use nom::number::complete::be_u16;
-use nom::sequence::tuple;
-use nom::IResult;
+use byteorder::{BigEndian, ReadBytesExt};
+use std::io::Read;
 
 use crate::node::attribute::{Attribute, BootstrapMethod, BootstrapMethods};
-use crate::parse::collect;
+use crate::parse::error::ParseResult;
 
-pub fn bootstrap_methods(input: &[u8]) -> IResult<&[u8], Option<Attribute>> {
-    map(
-        collect(be_u16, bootstrap_method),
-        |(num_bootstrap_methods, bootstrap_methods)| {
-            Some(Attribute::BootstrapMethods(BootstrapMethods {
-                num_bootstrap_methods,
-                bootstrap_methods,
-            }))
-        },
-    )(input)
+#[inline]
+pub(super) fn bootstrap_methods<R: Read>(input: &mut R) -> ParseResult<Option<Attribute>> {
+    let num_bootstrap_methods = input.read_u16::<BigEndian>()?;
+    let mut bootstrap_methods = Vec::with_capacity(num_bootstrap_methods as usize);
+
+    for _ in 0..num_bootstrap_methods {
+        bootstrap_methods.push(bootstrap_method(input)?);
+    }
+
+    Ok(Some(Attribute::BootstrapMethods(BootstrapMethods {
+        num_bootstrap_methods,
+        bootstrap_methods,
+    })))
 }
 
-fn bootstrap_method(input: &[u8]) -> IResult<&[u8], BootstrapMethod> {
-    map(
-        tuple((be_u16, collect(be_u16, be_u16))),
-        |(bootstrap_method_ref, (num_bootstrap_arguments, bootstrap_arguments))| BootstrapMethod {
-            bootstrap_method_ref,
-            num_bootstrap_arguments,
-            bootstrap_arguments,
-        },
-    )(input)
+#[inline(always)]
+fn bootstrap_method<R: Read>(input: &mut R) -> ParseResult<BootstrapMethod> {
+    let bootstrap_method_ref = input.read_u16::<BigEndian>()?;
+    let num_bootstrap_arguments = input.read_u16::<BigEndian>()?;
+    let mut bootstrap_arguments = vec![0; num_bootstrap_arguments as usize];
+
+    for i in 0..num_bootstrap_arguments {
+        bootstrap_arguments[i as usize] = input.read_u16::<BigEndian>()?;
+    }
+
+    Ok(BootstrapMethod {
+        bootstrap_method_ref,
+        num_bootstrap_arguments,
+        bootstrap_arguments,
+    })
 }

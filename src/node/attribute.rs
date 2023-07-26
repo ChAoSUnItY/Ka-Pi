@@ -306,7 +306,7 @@ pub struct MethodParameters {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Module {
     pub module_name_index: u16,
-    pub module_flags: Vec<ModuleAccessFlag>,
+    pub module_flags: ModuleAccessFlag,
     pub module_version_index: u16,
     pub requires_count: u16,
     pub requires: Vec<Requires>,
@@ -530,7 +530,7 @@ pub struct InnerClass {
     pub inner_class_info_index: u16,
     pub outer_class_info_index: u16,
     pub inner_name_index: u16,
-    pub inner_class_access_flags: Vec<NestedClassAccessFlag>,
+    pub inner_class_access_flags: NestedClassAccessFlag,
 }
 
 impl InnerClass {
@@ -651,7 +651,7 @@ impl BootstrapMethod {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MethodParameter {
     pub name_index: u16,
-    pub access_flags: Vec<ParameterAccessFlag>,
+    pub access_flags: ParameterAccessFlag,
 }
 
 //noinspection DuplicatedCode
