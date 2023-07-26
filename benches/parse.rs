@@ -1,55 +1,36 @@
+use std::ffi::OsStr;
+use std::fs;
+use std::io::Cursor;
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
 use ka_pi::parse::to_class;
 
-fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("parse main", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/Main.class"
-            )))
-        })
-    });
+fn parsing_classes(c: &mut Criterion) {
+    let compiled_source_folder =
+        fs::read_dir("compiled_source/out/production/compiled_source").unwrap();
 
-    c.bench_function("parse enum", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/Enum.class"
-            )))
-        })
-    });
+    for compiled_source_path in compiled_source_folder {
+        let compiled_source_path = compiled_source_path.as_ref().unwrap().path();
+        let mut class_bytes = fs::read(&compiled_source_path).unwrap();
 
-    c.bench_function("parse record", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/Record.class"
-            )))
-        })
-    });
-
-    c.bench_function("parse visible annotation", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/VisibleAnnotation.class"
-            )))
-        })
-    });
-
-    c.bench_function("parse invisible annotation", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/InvisibleAnnotation.class"
-            )))
-        })
-    });
-
-    c.bench_function("parse annotation target", |b| {
-        b.iter(|| {
-            to_class(black_box(include_bytes!(
-                "../compiled_source/out/production/compiled_source/AnnotationTarget.class"
-            )))
-        })
-    });
+        c.bench_function(
+            &format!(
+                "parse {}",
+                compiled_source_path
+                    .file_name()
+                    .and_then(OsStr::to_str)
+                    .unwrap()
+            ),
+            |b| {
+                b.iter(|| {
+                    let mut cursor = Cursor::new(&mut class_bytes[..]);
+                    let _class = to_class(black_box(&mut cursor)).unwrap();
+                })
+            },
+        );
+    }
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(benches, parsing_classes);
 criterion_main!(benches);

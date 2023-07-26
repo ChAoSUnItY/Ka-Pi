@@ -1,58 +1,71 @@
+use std::io::Cursor;
 use insta::assert_yaml_snapshot;
 use ka_pi::parse::to_class;
 
-use ka_pi::error::KapiResult;
+use ka_pi::parse::error::ParseResult;
 
 #[test]
-fn test_main() -> KapiResult<()> {
-    assert_yaml_snapshot!(to_class(include_bytes!(
+fn test_main() -> ParseResult<()> {
+    let mut cursor = Cursor::new(include_bytes!(
         "../compiled_source/out/production/compiled_source/Main.class"
-    ))?);
+    ));
+    
+    assert_yaml_snapshot!(to_class(&mut cursor)?);
 
     Ok(())
 }
 
 #[test]
-fn test_enum() -> KapiResult<()> {
-    assert_yaml_snapshot!(to_class(include_bytes!(
+fn test_enum() -> ParseResult<()> {
+    let mut cursor = Cursor::new(include_bytes!(
         "../compiled_source/out/production/compiled_source/Enum.class"
-    ))?);
+    ));
+
+    assert_yaml_snapshot!(to_class(&mut cursor)?);
 
     Ok(())
 }
 
 #[test]
-fn test_record() -> KapiResult<()> {
-    assert_yaml_snapshot!(to_class(include_bytes!(
+fn test_record() -> ParseResult<()> {
+    let mut cursor = Cursor::new(include_bytes!(
         "../compiled_source/out/production/compiled_source/Record.class"
-    ))?);
+    ));
+
+    assert_yaml_snapshot!(to_class(&mut cursor)?);
 
     Ok(())
 }
 
 #[test]
-fn test_visible_annotation() -> KapiResult<()> {
-    assert_yaml_snapshot!(to_class(include_bytes!(
+fn test_visible_annotation() -> ParseResult<()> {
+    let mut cursor = Cursor::new(include_bytes!(
         "../compiled_source/out/production/compiled_source/VisibleAnnotation.class"
-    ))?);
+    ));
+
+    assert_yaml_snapshot!(to_class(&mut cursor)?);
 
     Ok(())
 }
 
 #[test]
-fn test_invisible_annotation() -> KapiResult<()> {
-    assert_yaml_snapshot!(to_class(include_bytes!(
+fn test_invisible_annotation() -> ParseResult<()> {
+    let mut cursor = Cursor::new(include_bytes!(
         "../compiled_source/out/production/compiled_source/InvisibleAnnotation.class"
-    ))?);
+    ));
+
+    assert_yaml_snapshot!(to_class(&mut cursor)?);
 
     Ok(())
 }
 
 #[test]
-fn test_annotation_target() -> KapiResult<()> {
-    assert_yaml_snapshot!(to_class(include_bytes!(
+fn test_annotation_target() -> ParseResult<()> {
+    let mut cursor = Cursor::new(include_bytes!(
         "../compiled_source/out/production/compiled_source/AnnotationTarget.class"
-    ))?);
+    ));
+
+    assert_yaml_snapshot!(to_class(&mut cursor)?);
 
     Ok(())
 }

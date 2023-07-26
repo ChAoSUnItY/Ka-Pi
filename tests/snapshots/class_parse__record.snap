@@ -1,6 +1,6 @@
 ---
 source: tests/class_parse.rs
-expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/Record.class\"))?"
+expression: to_class(&mut cursor)?
 ---
 java_version: V17
 constant_pool_count: 97
@@ -1055,76 +1055,56 @@ constant_pool:
           - 107
           - 117
           - 112
-access_flags:
-  - Public
-  - Final
-  - Super
+access_flag: Public | Final | Super
 this_class: 8
 super_class: 2
 interfaces_count: 0
 interfaces: []
 fields_count: 8
 fields:
-  - access_flags:
-      - Private
-      - Final
+  - access_flag: Private | Final
     name_index: 11
     descriptor_index: 12
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Private
-      - Final
+  - access_flag: Private | Final
     name_index: 15
     descriptor_index: 16
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Private
-      - Final
+  - access_flag: Private | Final
     name_index: 19
     descriptor_index: 20
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Private
-      - Final
+  - access_flag: Private | Final
     name_index: 23
     descriptor_index: 24
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Private
-      - Final
+  - access_flag: Private | Final
     name_index: 27
     descriptor_index: 28
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Private
-      - Final
+  - access_flag: Private | Final
     name_index: 31
     descriptor_index: 32
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Private
-      - Final
+  - access_flag: Private | Final
     name_index: 35
     descriptor_index: 36
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Private
-      - Final
+  - access_flag: Private | Final
     name_index: 39
     descriptor_index: 40
     attribute_infos_len: 0
     attribute_infos: []
 methods_count: 12
 methods:
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 5
     descriptor_index: 53
     attribute_infos_len: 2
@@ -1601,24 +1581,22 @@ methods:
             parameters_count: 8
             parameters:
               - name_index: 11
-                access_flags: []
+                access_flags: ""
               - name_index: 15
-                access_flags: []
+                access_flags: ""
               - name_index: 19
-                access_flags: []
+                access_flags: ""
               - name_index: 23
-                access_flags: []
+                access_flags: ""
               - name_index: 27
-                access_flags: []
+                access_flags: ""
               - name_index: 31
-                access_flags: []
+                access_flags: ""
               - name_index: 35
-                access_flags: []
+                access_flags: ""
               - name_index: 39
-                access_flags: []
-  - access_flags:
-      - Public
-      - Final
+                access_flags: ""
+  - access_flag: Public | Final
     name_index: 43
     descriptor_index: 59
     attribute_infos_len: 1
@@ -1738,9 +1716,7 @@ methods:
                         name_index: 57
                         descriptor_index: 40
                         index: 0
-  - access_flags:
-      - Public
-      - Final
+  - access_flag: Public | Final
     name_index: 47
     descriptor_index: 60
     attribute_infos_len: 1
@@ -1860,9 +1836,7 @@ methods:
                         name_index: 57
                         descriptor_index: 40
                         index: 0
-  - access_flags:
-      - Public
-      - Final
+  - access_flag: Public | Final
     name_index: 51
     descriptor_index: 61
     attribute_infos_len: 1
@@ -2010,8 +1984,7 @@ methods:
                         name_index: 62
                         descriptor_index: 63
                         index: 1
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 11
     descriptor_index: 64
     attribute_infos_len: 1
@@ -2125,8 +2098,7 @@ methods:
                         name_index: 57
                         descriptor_index: 40
                         index: 0
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 15
     descriptor_index: 65
     attribute_infos_len: 1
@@ -2240,8 +2212,7 @@ methods:
                         name_index: 57
                         descriptor_index: 40
                         index: 0
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 19
     descriptor_index: 60
     attribute_infos_len: 1
@@ -2355,8 +2326,7 @@ methods:
                         name_index: 57
                         descriptor_index: 40
                         index: 0
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 23
     descriptor_index: 66
     attribute_infos_len: 1
@@ -2470,8 +2440,7 @@ methods:
                         name_index: 57
                         descriptor_index: 40
                         index: 0
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 27
     descriptor_index: 67
     attribute_infos_len: 1
@@ -2585,8 +2554,7 @@ methods:
                         name_index: 57
                         descriptor_index: 40
                         index: 0
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 31
     descriptor_index: 68
     attribute_infos_len: 1
@@ -2700,8 +2668,7 @@ methods:
                         name_index: 57
                         descriptor_index: 40
                         index: 0
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 35
     descriptor_index: 69
     attribute_infos_len: 1
@@ -2815,8 +2782,7 @@ methods:
                         name_index: 57
                         descriptor_index: 40
                         index: 0
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 39
     descriptor_index: 70
     attribute_infos_len: 1
@@ -3095,8 +3061,5 @@ attributes:
           - inner_class_info_index: 92
             outer_class_info_index: 94
             inner_name_index: 96
-            inner_class_access_flags:
-              - Public
-              - Static
-              - Final
+            inner_class_access_flags: Public | Static | Final
 

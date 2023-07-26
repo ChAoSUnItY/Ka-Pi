@@ -1,6 +1,6 @@
 ---
 source: tests/class_parse.rs
-expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/Enum.class\"))?"
+expression: to_class(&mut cursor)?
 ---
 java_version: V17
 constant_pool_count: 54
@@ -553,58 +553,36 @@ constant_pool:
           - 97
           - 118
           - 97
-access_flags:
-  - Public
-  - Final
-  - Super
-  - Enum
+access_flag: Public | Final | Super | Enum
 this_class: 1
 super_class: 23
 interfaces_count: 0
 interfaces: []
 fields_count: 4
 fields:
-  - access_flags:
-      - Public
-      - Static
-      - Final
-      - Enum
+  - access_flag: Public | Static | Final | Enum
     name_index: 5
     descriptor_index: 6
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Public
-      - Static
-      - Final
-      - Enum
+  - access_flag: Public | Static | Final | Enum
     name_index: 9
     descriptor_index: 6
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Public
-      - Static
-      - Final
-      - Enum
+  - access_flag: Public | Static | Final | Enum
     name_index: 12
     descriptor_index: 6
     attribute_infos_len: 0
     attribute_infos: []
-  - access_flags:
-      - Private
-      - Static
-      - Final
-      - Synthetic
+  - access_flag: Private | Static | Final | Synthetic
     name_index: 15
     descriptor_index: 16
     attribute_infos_len: 0
     attribute_infos: []
 methods_count: 5
 methods:
-  - access_flags:
-      - Public
-      - Static
+  - access_flag: Public | Static
     name_index: 40
     descriptor_index: 39
     attribute_infos_len: 1
@@ -689,9 +667,7 @@ methods:
                     line_number_table:
                       - start_pc: 0
                         line_number: 1
-  - access_flags:
-      - Public
-      - Static
+  - access_flag: Public | Static
     name_index: 26
     descriptor_index: 43
     attribute_infos_len: 1
@@ -819,8 +795,7 @@ methods:
                         name_index: 45
                         descriptor_index: 46
                         index: 0
-  - access_flags:
-      - Private
+  - access_flag: Private
     name_index: 30
     descriptor_index: 31
     attribute_infos_len: 2
@@ -948,10 +923,7 @@ methods:
         attribute:
           Signature:
             signature_index: 49
-  - access_flags:
-      - Private
-      - Static
-      - Synthetic
+  - access_flag: Private | Static | Synthetic
     name_index: 38
     descriptor_index: 39
     attribute_infos_len: 1
@@ -1074,8 +1046,7 @@ methods:
                     line_number_table:
                       - start_pc: 0
                         line_number: 1
-  - access_flags:
-      - Static
+  - access_flag: Static
     name_index: 50
     descriptor_index: 49
     attribute_infos_len: 1

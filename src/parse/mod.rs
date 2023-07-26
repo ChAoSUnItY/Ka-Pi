@@ -6,7 +6,7 @@ use crate::parse::error::{ParseError, ParseResult};
 pub(crate) mod attribute;
 pub(crate) mod class;
 pub(crate) mod constant;
-mod error;
+pub mod error;
 pub(crate) mod field;
 pub(crate) mod method;
 pub(crate) mod signature;
@@ -24,3 +24,5 @@ pub fn to_class<R: Read>(class_bytes: &mut R) -> ParseResult<Class> {
         Ok(class)
     }
 }
+
+pub use signature::{ class_signature, field_signature, method_signature };

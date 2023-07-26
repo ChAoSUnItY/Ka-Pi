@@ -1,6 +1,6 @@
 ---
 source: tests/class_parse.rs
-expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/AnnotationTarget.class\"))?"
+expression: to_class(&mut cursor)?
 ---
 java_version: V17
 constant_pool_count: 19
@@ -275,9 +275,7 @@ constant_pool:
           - 111
           - 110
           - 59
-access_flags:
-  - Public
-  - Super
+access_flag: Public | Super
 this_class: 7
 super_class: 2
 interfaces_count: 0
@@ -286,8 +284,7 @@ fields_count: 0
 fields: []
 methods_count: 1
 methods:
-  - access_flags:
-      - Public
+  - access_flag: Public
     name_index: 5
     descriptor_index: 6
     attribute_infos_len: 1

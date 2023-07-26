@@ -1,6 +1,6 @@
 ---
 source: tests/class_parse.rs
-expression: "to_class(include_bytes!(\"../compiled_source/out/production/compiled_source/VisibleAnnotation.class\"))?"
+expression: to_class(&mut cursor)?
 ---
 java_version: V17
 constant_pool_count: 43
@@ -543,11 +543,7 @@ constant_pool:
           - 65
           - 83
           - 83
-access_flags:
-  - Public
-  - Interface
-  - Abstract
-  - Annotation
+access_flag: Public | Interface | Abstract | Annotation
 this_class: 1
 super_class: 3
 interfaces_count: 1
@@ -557,9 +553,7 @@ fields_count: 0
 fields: []
 methods_count: 8
 methods:
-  - access_flags:
-      - Public
-      - Abstract
+  - access_flag: Public | Abstract
     name_index: 7
     descriptor_index: 8
     attribute_infos_len: 1
@@ -577,9 +571,7 @@ methods:
               value:
                 ConstValue:
                   const_value_index: 10
-  - access_flags:
-      - Public
-      - Abstract
+  - access_flag: Public | Abstract
     name_index: 11
     descriptor_index: 12
     attribute_infos_len: 1
@@ -597,9 +589,7 @@ methods:
               value:
                 ConstValue:
                   const_value_index: 10
-  - access_flags:
-      - Public
-      - Abstract
+  - access_flag: Public | Abstract
     name_index: 13
     descriptor_index: 14
     attribute_infos_len: 1
@@ -617,9 +607,7 @@ methods:
               value:
                 ConstValue:
                   const_value_index: 10
-  - access_flags:
-      - Public
-      - Abstract
+  - access_flag: Public | Abstract
     name_index: 15
     descriptor_index: 16
     attribute_infos_len: 1
@@ -637,9 +625,7 @@ methods:
               value:
                 ConstValue:
                   const_value_index: 17
-  - access_flags:
-      - Public
-      - Abstract
+  - access_flag: Public | Abstract
     name_index: 18
     descriptor_index: 19
     attribute_infos_len: 1
@@ -657,9 +643,7 @@ methods:
               value:
                 ConstValue:
                   const_value_index: 20
-  - access_flags:
-      - Public
-      - Abstract
+  - access_flag: Public | Abstract
     name_index: 22
     descriptor_index: 23
     attribute_infos_len: 1
@@ -677,9 +661,7 @@ methods:
               value:
                 ConstValue:
                   const_value_index: 24
-  - access_flags:
-      - Public
-      - Abstract
+  - access_flag: Public | Abstract
     name_index: 26
     descriptor_index: 27
     attribute_infos_len: 1
@@ -697,9 +679,7 @@ methods:
               value:
                 ConstValue:
                   const_value_index: 28
-  - access_flags:
-      - Public
-      - Abstract
+  - access_flag: Public | Abstract
     name_index: 29
     descriptor_index: 30
     attribute_infos_len: 1

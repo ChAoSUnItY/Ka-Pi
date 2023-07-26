@@ -54,10 +54,11 @@ pub(super) fn attribute_info<'input: 'constant_pool, 'constant_pool, R: Read>(
             let mut info = Cursor::new(&mut info[..]);
             let attribute = attribute(&mut info, constant_pool, attribute_len, &attribute_name)?;
 
-            let remain_len = info.get_ref().len();
+            let mut remain = vec![];
+            info.read_to_end(&mut remain)?;
 
-            if remain_len != 0 {
-                return Err(ParseError::Remains(remain_len));
+            if !remain.is_empty() {
+                return Err(ParseError::Remains(remain.len()));
             }
 
             attribute
