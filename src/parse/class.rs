@@ -10,8 +10,9 @@ use crate::parse::constant::constant_pool;
 use crate::parse::error::{ParseError, ParseResult};
 use crate::parse::field::fields;
 use crate::parse::method::methods;
+use crate::parse::ParsingOption;
 
-pub(crate) fn class<R: Read>(input: &mut R) -> ParseResult<Class> {
+pub(crate) fn class<R: Read>(input: &mut R, option: ParsingOption) -> ParseResult<Class> {
     let mut magic_number = [0; 4];
 
     input.read_exact(&mut magic_number)?;
@@ -27,13 +28,13 @@ pub(crate) fn class<R: Read>(input: &mut R) -> ParseResult<Class> {
     let this_class = input.read_u16::<BigEndian>()?;
     let super_class = input.read_u16::<BigEndian>()?;
     let (interfaces_count, interfaces) = interfaces(input)?;
-    let (fields_count, fields) = fields(input, &constant_pool)?;
-    let (methods_count, methods) = methods(input, &constant_pool)?;
+    let (fields_count, fields) = fields(input, &constant_pool, &option)?;
+    let (methods_count, methods) = methods(input, &constant_pool, &option)?;
     let attributes_count = input.read_u16::<BigEndian>()?;
     let mut attributes = Vec::with_capacity(attributes_count as usize);
 
     for _ in 0..attributes_count {
-        attributes.push(attribute_info(input, &constant_pool)?);
+        attributes.push(attribute_info(input, &constant_pool, &option)?);
     }
 
     Ok(Class {

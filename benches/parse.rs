@@ -1,32 +1,54 @@
-use std::ffi::OsStr;
 use std::fs;
 use std::io::Cursor;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{
+    black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput,
+};
 
-use ka_pi::parse::to_class;
+use ka_pi::parse::{to_class, ParsingOption};
 
 fn parsing_classes(c: &mut Criterion) {
+    let mut g = c.benchmark_group("parse class");
+
     let compiled_source_folder =
         fs::read_dir("compiled_source/out/production/compiled_source").unwrap();
 
-    for compiled_source_path in compiled_source_folder {
-        let compiled_source_path = compiled_source_path.as_ref().unwrap().path();
-        let mut class_bytes = fs::read(&compiled_source_path).unwrap();
+    for entry in compiled_source_folder {
+        let entry = entry.as_ref().unwrap().path();
+        let class_name = entry.file_name().unwrap().to_str().unwrap();
+        let class_bytes = fs::read(&entry).unwrap();
 
-        c.bench_function(
-            &format!(
-                "parse {}",
-                compiled_source_path
-                    .file_name()
-                    .and_then(OsStr::to_str)
-                    .unwrap()
-            ),
-            |b| {
-                b.iter(|| {
-                    let mut cursor = Cursor::new(&mut class_bytes[..]);
-                    let _class = to_class(black_box(&mut cursor)).unwrap();
-                })
+        g.throughput(Throughput::Bytes(class_bytes.len() as u64));
+        g.bench_with_input(
+            BenchmarkId::from_parameter(class_name),
+            &class_bytes,
+            |b, bytes| {
+                b.iter_batched(
+                    || Cursor::new(bytes),
+                    |mut cursor| {
+                        to_class(
+                            black_box(&mut cursor),
+                            ParsingOption::default().parse_attribute(),
+                        )
+                        .expect("Parsing fails on benchmarking");
+                    },
+                    BatchSize::SmallInput,
+                );
+            },
+        );
+
+        g.bench_with_input(
+            BenchmarkId::from_parameter(format!("{class_name} (No attribute parsing)")),
+            &class_bytes,
+            |b, bytes| {
+                b.iter_batched(
+                    || Cursor::new(bytes),
+                    |mut cursor| {
+                        to_class(black_box(&mut cursor), ParsingOption::default())
+                            .expect("Parsing fails on benchmarking");
+                    },
+                    BatchSize::SmallInput,
+                );
             },
         );
     }

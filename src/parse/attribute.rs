@@ -1,5 +1,6 @@
-use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Cursor, Read};
+
+use byteorder::{BigEndian, ReadBytesExt};
 
 use crate::node::attribute;
 use crate::node::attribute::{
@@ -7,7 +8,7 @@ use crate::node::attribute::{
     ModulePackages, NestHost, NestMembers, PermittedSubclasses, Signature, SourceDebugExtension,
     SourceFile,
 };
-use crate::node::constant::{Constant, ConstantPool};
+use crate::node::constant::ConstantPool;
 use crate::parse::attribute::annotation::{
     annotation_default, runtime_invisible_annotations, runtime_invisible_parameter_annotations,
     runtime_invisible_type_annotations, runtime_visible_annotations,
@@ -24,6 +25,7 @@ use crate::parse::attribute::module::module;
 use crate::parse::attribute::record::record;
 use crate::parse::attribute::stack_map_table::stack_map_table;
 use crate::parse::error::{ParseError, ParseResult};
+use crate::parse::ParsingOption;
 
 mod annotation;
 mod bootstrap_methods;
@@ -40,6 +42,7 @@ mod stack_map_table;
 pub(super) fn attribute_info<'input: 'constant_pool, 'constant_pool, R: Read>(
     input: &'input mut R,
     constant_pool: &'constant_pool ConstantPool,
+    option: &ParsingOption,
 ) -> ParseResult<AttributeInfo> {
     let attribute_name_index = input.read_u16::<BigEndian>()?;
     let attribute_len = input.read_u32::<BigEndian>()?;
@@ -47,12 +50,19 @@ pub(super) fn attribute_info<'input: 'constant_pool, 'constant_pool, R: Read>(
 
     input.read_exact(&mut info)?;
 
-    let name_constant = constant_pool.get_constant(attribute_name_index);
-
-    let attribute = if let Some(Constant::Utf8(constant)) = name_constant {
-        if let Ok(attribute_name) = constant.string() {
+    let attribute = if option.parse_attribute {
+        if let Some(Ok(attribute_name)) = constant_pool
+            .get_utf8(attribute_name_index)
+            .map(|utf8| utf8.string())
+        {
             let mut info = Cursor::new(&mut info[..]);
-            let attribute = attribute(&mut info, constant_pool, attribute_len, &attribute_name)?;
+            let attribute = attribute(
+                &mut info,
+                constant_pool,
+                attribute_len,
+                &attribute_name,
+                option,
+            )?;
 
             let mut remain = vec![];
             info.read_to_end(&mut remain)?;
@@ -72,7 +82,7 @@ pub(super) fn attribute_info<'input: 'constant_pool, 'constant_pool, R: Read>(
     Ok(AttributeInfo {
         attribute_name_index,
         attribute_len,
-        info: info.to_vec(),
+        info,
         attribute,
     })
 }
@@ -82,16 +92,11 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data, R: Read>(
     constant_pool: &'constant_pool ConstantPool,
     attribute_len: u32,
     data: &'data str,
+    option: &ParsingOption,
 ) -> ParseResult<Option<Attribute>> {
     let attribute = match data {
-        attribute::CONSTANT_VALUE => {
-            let constant_value_index = input.read_u16::<BigEndian>()?;
-
-            Some(Attribute::ConstantValue(ConstantValue {
-                constant_value_index,
-            }))
-        }
-        attribute::CODE => code(input, constant_pool)?,
+        attribute::CONSTANT_VALUE => constant_value(input)?,
+        attribute::CODE => code(input, constant_pool, option)?,
         attribute::STACK_MAP_TABLE => stack_map_table(input)?,
         attribute::EXCEPTIONS => exceptions(input)?,
         attribute::INNER_CLASSES => inner_classes(input)?,
@@ -122,12 +127,21 @@ fn attribute<'input: 'constant_pool, 'constant_pool: 'data, 'data, R: Read>(
         attribute::MODULE_MAIN_CLASS => module_main_class(input)?,
         attribute::NEST_HOST => nest_host(input)?,
         attribute::NEST_MEMBERS => nest_members(input)?,
-        attribute::RECORD => record(input, constant_pool)?,
+        attribute::RECORD => record(input, constant_pool, option)?,
         attribute::PERMITTED_SUBCLASSES => permitted_subclasses(input)?,
         _ => None,
     };
 
     Ok(attribute)
+}
+
+#[inline]
+fn constant_value<R: Read>(input: &mut R) -> ParseResult<Option<Attribute>> {
+    let constant_value_index = input.read_u16::<BigEndian>()?;
+
+    Ok(Some(Attribute::ConstantValue(ConstantValue {
+        constant_value_index,
+    })))
 }
 
 #[inline]

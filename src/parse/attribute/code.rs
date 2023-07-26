@@ -14,10 +14,12 @@ use crate::node::opcode::instruction::{
 use crate::node::opcode::{ArrayType, Instruction, Opcode};
 use crate::parse::attribute::attribute_info;
 use crate::parse::error::{ParseError, ParseResult};
+use crate::parse::ParsingOption;
 
 pub(super) fn code<'input: 'constant_pool, 'constant_pool, R: Read>(
     input: &'input mut R,
     constant_pool: &'constant_pool ConstantPool,
+    option: &ParsingOption,
 ) -> ParseResult<Option<Attribute>> {
     let max_stack = input.read_u16::<BigEndian>()?;
     let max_locals = input.read_u16::<BigEndian>()?;
@@ -37,7 +39,7 @@ pub(super) fn code<'input: 'constant_pool, 'constant_pool, R: Read>(
     let mut attributes = Vec::with_capacity(attributes_length as usize);
 
     for _ in 0..attributes_length {
-        attributes.push(attribute_info(input, constant_pool)?);
+        attributes.push(attribute_info(input, constant_pool, option)?);
     }
 
     let instructions = instructions(Cursor::new(&mut code.clone()), code_length)?;
