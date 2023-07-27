@@ -1,9 +1,0 @@
-flowchart
-    A0[(Entry Point)]
-    B["< Self as ClassSignatureVisitor as FormalTypeParameterVisitor>::visit_formal_types"]
-    C["< Self as FieldSignatureVisitor>::visit_field_type"]
-    D["< Self as MethodSignatureVisitor as FormalTypeParameterVisitor>::visit_formal_types"]
-    
-    A0 -->|Signature::Class| B
-    A0 -->|Signature::Field| C
-    A0 -->|Signature::Method| D
