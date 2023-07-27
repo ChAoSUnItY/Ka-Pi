@@ -87,579 +87,578 @@ fn instruction<R: Read + Seek>(input: &mut R, pc: &mut u32) -> ParseResult<Instr
 
     *pc += 1;
 
-    if let Ok(opcode) = Opcode::try_from(opcode) {
-        let instruction = match opcode {
-            Opcode::NOP => Instruction::NOP,
-            Opcode::ACONST_NULL => Instruction::ACONST_NULL,
-            Opcode::ICONST_M1 => Instruction::ICONST_M1,
-            Opcode::ICONST_0 => Instruction::ICONST_0,
-            Opcode::ICONST_1 => Instruction::ICONST_1,
-            Opcode::ICONST_2 => Instruction::ICONST_2,
-            Opcode::ICONST_3 => Instruction::ICONST_3,
-            Opcode::ICONST_4 => Instruction::ICONST_4,
-            Opcode::ICONST_5 => Instruction::ICONST_5,
-            Opcode::LCONST_0 => Instruction::LCONST_0,
-            Opcode::LCONST_1 => Instruction::LCONST_1,
-            Opcode::FCONST_0 => Instruction::FCONST_0,
-            Opcode::FCONST_1 => Instruction::FCONST_1,
-            Opcode::FCONST_2 => Instruction::FCONST_2,
-            Opcode::DCONST_0 => Instruction::DCONST_0,
-            Opcode::DCONST_1 => Instruction::DCONST_1,
-            Opcode::BIPUSH => {
-                let byte = input.read_i8()?;
+    let instruction = match opcode {
+        0x00 => Instruction::NOP,
+        0x01 => Instruction::ACONST_NULL,
+        0x02 => Instruction::ICONST_M1,
+        0x03 => Instruction::ICONST_0,
+        0x04 => Instruction::ICONST_1,
+        0x05 => Instruction::ICONST_2,
+        0x06 => Instruction::ICONST_3,
+        0x07 => Instruction::ICONST_4,
+        0x08 => Instruction::ICONST_5,
+        0x09 => Instruction::LCONST_0,
+        0x0A => Instruction::LCONST_1,
+        0x0B => Instruction::FCONST_0,
+        0x0C => Instruction::FCONST_1,
+        0x0D => Instruction::FCONST_2,
+        0x0E => Instruction::DCONST_0,
+        0x0F => Instruction::DCONST_1,
+        0x10 => {
+            let byte = input.read_i8()?;
 
-                *pc += 1;
+            *pc += 1;
 
-                Instruction::BIPUSH(byte)
+            Instruction::BIPUSH(byte)
+        }
+        0x11 => {
+            let byte = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::SIPUSH(byte)
+        }
+        0x12 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::LDC(Ldc { index })
+        }
+        0x13 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::LDC_W(Ldc_W { index })
+        }
+        0x14 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::LDC2_W(Ldc2_W { index })
+        }
+        0x15 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::ILOAD(index)
+        }
+        0x16 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::LLOAD(index)
+        }
+        0x17 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::FLOAD(index)
+        }
+        0x18 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::DLOAD(index)
+        }
+        0x19 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::ALOAD(index)
+        }
+        0x1A => Instruction::ILOAD_0,
+        0x1B => Instruction::ILOAD_1,
+        0x1C => Instruction::ILOAD_2,
+        0x1D => Instruction::ILOAD_3,
+        0x1E => Instruction::LLOAD_0,
+        0x1F => Instruction::LLOAD_1,
+        0x20 => Instruction::LLOAD_2,
+        0x21 => Instruction::LLOAD_3,
+        0x22 => Instruction::FLOAD_0,
+        0x23 => Instruction::FLOAD_1,
+        0x24 => Instruction::FLOAD_2,
+        0x25 => Instruction::FLOAD_3,
+        0x26 => Instruction::DLOAD_0,
+        0x27 => Instruction::DLOAD_1,
+        0x28 => Instruction::DLOAD_2,
+        0x29 => Instruction::DLOAD_3,
+        0x2A => Instruction::ALOAD_0,
+        0x2B => Instruction::ALOAD_1,
+        0x2C => Instruction::ALOAD_2,
+        0x2D => Instruction::ALOAD_3,
+        0x2E => Instruction::IALOAD,
+        0x2F => Instruction::LALOAD,
+        0x30 => Instruction::FALOAD,
+        0x31 => Instruction::DALOAD,
+        0x32 => Instruction::AALOAD,
+        0x33 => Instruction::BALOAD,
+        0x34 => Instruction::CALOAD,
+        0x35 => Instruction::SALOAD,
+        0x36 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::ISTORE(index)
+        }
+        0x37 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::LSTORE(index)
+        }
+        0x38 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::FSTORE(index)
+        }
+        0x39 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::DSTORE(index)
+        }
+        0x3A => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::ASTORE(index)
+        }
+        0x3B => Instruction::ISTORE_0,
+        0x3C => Instruction::ISTORE_1,
+        0x3D => Instruction::ISTORE_2,
+        0x3E => Instruction::ISTORE_3,
+        0x3F => Instruction::LSTORE_0,
+        0x40 => Instruction::LSTORE_1,
+        0x41 => Instruction::LSTORE_2,
+        0x42 => Instruction::LSTORE_3,
+        0x43 => Instruction::FSTORE_0,
+        0x44 => Instruction::FSTORE_1,
+        0x45 => Instruction::FSTORE_2,
+        0x46 => Instruction::FSTORE_3,
+        0x47 => Instruction::DSTORE_0,
+        0x48 => Instruction::DSTORE_1,
+        0x49 => Instruction::DSTORE_2,
+        0x4A => Instruction::DSTORE_3,
+        0x4B => Instruction::ASTORE_0,
+        0x4C => Instruction::ASTORE_1,
+        0x4D => Instruction::ASTORE_2,
+        0x4E => Instruction::ASTORE_3,
+        0x4F => Instruction::IASTORE,
+        0x50 => Instruction::LASTORE,
+        0x51 => Instruction::FASTORE,
+        0x52 => Instruction::DASTORE,
+        0x53 => Instruction::AASTORE,
+        0x54 => Instruction::BASTORE,
+        0x55 => Instruction::CASTORE,
+        0x56 => Instruction::SASTORE,
+        0x57 => Instruction::POP,
+        0x58 => Instruction::POP2,
+        0x59 => Instruction::DUP,
+        0x5A => Instruction::DUP_X1,
+        0x5B => Instruction::DUP_X2,
+        0x5C => Instruction::DUP2,
+        0x5D => Instruction::DUP_X1,
+        0x5E => Instruction::DUP2_X2,
+        0x5F => Instruction::SWAP,
+        0x60 => Instruction::IADD,
+        0x61 => Instruction::LADD,
+        0x62 => Instruction::FADD,
+        0x63 => Instruction::DADD,
+        0x64 => Instruction::ISUB,
+        0x65 => Instruction::LSUB,
+        0x66 => Instruction::FSUB,
+        0x67 => Instruction::DSUB,
+        0x68 => Instruction::IMUL,
+        0x69 => Instruction::LMUL,
+        0x6A => Instruction::FMUL,
+        0x6B => Instruction::DMUL,
+        0x6C => Instruction::IDIV,
+        0x6D => Instruction::LDIV,
+        0x6E => Instruction::FDIV,
+        0x6F => Instruction::DDIV,
+        0x70 => Instruction::IREM,
+        0x71 => Instruction::LREM,
+        0x72 => Instruction::FREM,
+        0x73 => Instruction::DREM,
+        0x74 => Instruction::INEG,
+        0x75 => Instruction::LNEG,
+        0x76 => Instruction::FNEG,
+        0x77 => Instruction::DNEG,
+        0x78 => Instruction::ISHL,
+        0x79 => Instruction::LSHL,
+        0x7A => Instruction::ISHR,
+        0x7B => Instruction::LSHR,
+        0x7C => Instruction::IUSHR,
+        0x7D => Instruction::LUSHR,
+        0x7E => Instruction::IAND,
+        0x7F => Instruction::LAND,
+        0x80 => Instruction::IOR,
+        0x81 => Instruction::LOR,
+        0x82 => Instruction::IXOR,
+        0x83 => Instruction::LXOR,
+        0x84 => {
+            let index = input.read_u8()?;
+            let value = input.read_i8()?;
+
+            *pc += 2;
+
+            Instruction::IINC { index, value }
+        }
+        0x85 => Instruction::I2L,
+        0x86 => Instruction::I2F,
+        0x87 => Instruction::I2D,
+        0x88 => Instruction::L2I,
+        0x89 => Instruction::L2F,
+        0x8A => Instruction::L2D,
+        0x8B => Instruction::F2I,
+        0x8C => Instruction::F2L,
+        0x8D => Instruction::F2D,
+        0x8E => Instruction::D2I,
+        0x8F => Instruction::D2L,
+        0x90 => Instruction::D2L,
+        0x91 => Instruction::I2B,
+        0x92 => Instruction::I2C,
+        0x93 => Instruction::I2S,
+        0x94 => Instruction::LCMP,
+        0x95 => Instruction::FCMPL,
+        0x96 => Instruction::DCMPG,
+        0x97 => Instruction::DCMPL,
+        0x98 => Instruction::DCMPG,
+        0x99 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IFEQ(offset)
+        }
+        0x9A => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IFNE(offset)
+        }
+        0x9B => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IFLT(offset)
+        }
+        0x9C => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IFGE(offset)
+        }
+        0x9D => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IFGT(offset)
+        }
+        0x9E => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IFLE(offset)
+        }
+        0x9F => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IF_ICMPEQ(offset)
+        }
+        0xA0 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IF_ICMPNE(offset)
+        }
+        0xA1 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IF_ICMPLT(offset)
+        }
+        0xA2 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IF_ICMPGE(offset)
+        }
+        0xA3 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IF_ICMPGT(offset)
+        }
+        0xA4 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IF_ICMPLE(offset)
+        }
+        0xA5 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IF_ACMPEQ(offset)
+        }
+        0xA6 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IF_ACMPNE(offset)
+        }
+        0xA7 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::GOTO(offset)
+        }
+        0xA8 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::JSR(offset)
+        }
+        0xA9 => {
+            let index = input.read_u8()?;
+
+            *pc += 1;
+
+            Instruction::RET(index)
+        }
+        0xAA => {
+            let pad = align(input, *pc)?;
+            let default = input.read_i32::<BigEndian>()?;
+            let low = input.read_i32::<BigEndian>()?;
+            let high = input.read_i32::<BigEndian>()?;
+            let offsets_length = (high - low + 1) as usize;
+            let mut offsets = vec![0; offsets_length];
+
+            for i in 0..offsets_length {
+                offsets[i] = input.read_i32::<BigEndian>()?;
             }
-            Opcode::SIPUSH => {
-                let byte = input.read_i16::<BigEndian>()?;
 
-                *pc += 2;
+            *pc += pad + 12 + (high - low + 1) as u32;
 
-                Instruction::SIPUSH(byte)
+            Instruction::TABLESWITCH {
+                default,
+                low,
+                high,
+                offsets,
             }
-            Opcode::LDC => {
-                let index = input.read_u8()?;
+        }
+        0xAB => {
+            let pad = align(input, *pc)?;
+            let default = input.read_i32::<BigEndian>()?;
+            let npairs = input.read_u32::<BigEndian>()?;
+            let mut pairs = Vec::with_capacity(npairs as usize);
 
-                *pc += 1;
-
-                Instruction::LDC(Ldc { index })
+            for _ in 0..npairs {
+                pairs.push(lookup_table_pair(input)?);
             }
-            Opcode::LDC_W => {
-                let index = input.read_u16::<BigEndian>()?;
 
-                *pc += 2;
+            *pc += pad + 8 + npairs * 8;
 
-                Instruction::LDC_W(Ldc_W { index })
+            Instruction::LOOKUPSWITCH {
+                default,
+                npairs,
+                pairs,
             }
-            Opcode::LDC2_W => {
-                let index = input.read_u16::<BigEndian>()?;
+        }
+        0xAC => Instruction::IRETURN,
+        0xAD => Instruction::LRETURN,
+        0xAE => Instruction::FRETURN,
+        0xAF => Instruction::DRETURN,
+        0xB0 => Instruction::ARETURN,
+        0xB1 => Instruction::RETURN,
+        0xB2 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                *pc += 2;
+            *pc += 2;
 
-                Instruction::LDC2_W(Ldc2_W { index })
+            Instruction::GETSTATIC(GetStatic { index })
+        }
+        0xB3 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::PUTSTATIC(PutStatic { index })
+        }
+        0xB4 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::GETFIELD(GetField { index })
+        }
+        0xB5 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::PUTFIELD(PutField { index })
+        }
+        0xB6 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::INVOKEVIRTUAL(InvokeVirtual { index })
+        }
+        0xB7 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::INVOKESPECIAL(InvokeSpecial { index })
+        }
+        0xB8 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::INVOKESTATIC(InvokeStatic { index })
+        }
+        0xB9 => {
+            let index = input.read_u16::<BigEndian>()?;
+            let count = input.read_u8()?;
+
+            *pc += 3;
+
+            Instruction::INVOKEINTERFACE(InvokeInterface { index, count })
+        }
+        0xBA => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::INVOKEDYNAMIC(InvokeDynamic { index })
+        }
+        0xBB => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::NEW(New { index })
+        }
+        0xBC => {
+            let array_type = input.read_u8()?;
+
+            if let Ok(array_type) = ArrayType::try_from(array_type) {
+                Instruction::NEWARRAY(array_type)
+            } else {
+                return Err(ParseError::MatchOutOfBoundUsize(
+                    "array type",
+                    vec!["4..=11"],
+                    array_type as usize,
+                ));
             }
-            Opcode::ILOAD => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::ILOAD(index)
-            }
-            Opcode::LLOAD => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::LLOAD(index)
-            }
-            Opcode::FLOAD => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::FLOAD(index)
-            }
-            Opcode::DLOAD => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::DLOAD(index)
-            }
-            Opcode::ALOAD => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::ALOAD(index)
-            }
-            Opcode::ILOAD_0 => Instruction::ILOAD_0,
-            Opcode::ILOAD_1 => Instruction::ILOAD_1,
-            Opcode::ILOAD_2 => Instruction::ILOAD_2,
-            Opcode::ILOAD_3 => Instruction::ILOAD_3,
-            Opcode::LLOAD_0 => Instruction::LLOAD_0,
-            Opcode::LLOAD_1 => Instruction::LLOAD_1,
-            Opcode::LLOAD_2 => Instruction::LLOAD_2,
-            Opcode::LLOAD_3 => Instruction::LLOAD_3,
-            Opcode::FLOAD_0 => Instruction::FLOAD_0,
-            Opcode::FLOAD_1 => Instruction::FLOAD_1,
-            Opcode::FLOAD_2 => Instruction::FLOAD_2,
-            Opcode::FLOAD_3 => Instruction::FLOAD_3,
-            Opcode::DLOAD_0 => Instruction::DLOAD_0,
-            Opcode::DLOAD_1 => Instruction::DLOAD_1,
-            Opcode::DLOAD_2 => Instruction::DLOAD_2,
-            Opcode::DLOAD_3 => Instruction::DLOAD_3,
-            Opcode::ALOAD_0 => Instruction::ALOAD_0,
-            Opcode::ALOAD_1 => Instruction::ALOAD_1,
-            Opcode::ALOAD_2 => Instruction::ALOAD_2,
-            Opcode::ALOAD_3 => Instruction::ALOAD_3,
-            Opcode::IALOAD => Instruction::IALOAD,
-            Opcode::LALOAD => Instruction::LALOAD,
-            Opcode::FALOAD => Instruction::FALOAD,
-            Opcode::DALOAD => Instruction::DALOAD,
-            Opcode::AALOAD => Instruction::AALOAD,
-            Opcode::BALOAD => Instruction::BALOAD,
-            Opcode::CALOAD => Instruction::CALOAD,
-            Opcode::SALOAD => Instruction::SALOAD,
-            Opcode::ISTORE => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::ISTORE(index)
-            }
-            Opcode::LSTORE => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::LSTORE(index)
-            }
-            Opcode::FSTORE => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::FSTORE(index)
-            }
-            Opcode::DSTORE => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::DSTORE(index)
-            }
-            Opcode::ASTORE => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::ASTORE(index)
-            }
-            Opcode::ISTORE_0 => Instruction::ISTORE_0,
-            Opcode::ISTORE_1 => Instruction::ISTORE_1,
-            Opcode::ISTORE_2 => Instruction::ISTORE_2,
-            Opcode::ISTORE_3 => Instruction::ISTORE_3,
-            Opcode::LSTORE_0 => Instruction::LSTORE_0,
-            Opcode::LSTORE_1 => Instruction::LSTORE_1,
-            Opcode::LSTORE_2 => Instruction::LSTORE_2,
-            Opcode::LSTORE_3 => Instruction::LSTORE_3,
-            Opcode::FSTORE_0 => Instruction::FSTORE_0,
-            Opcode::FSTORE_1 => Instruction::FSTORE_1,
-            Opcode::FSTORE_2 => Instruction::FSTORE_2,
-            Opcode::FSTORE_3 => Instruction::FSTORE_3,
-            Opcode::DSTORE_0 => Instruction::DSTORE_0,
-            Opcode::DSTORE_1 => Instruction::DSTORE_1,
-            Opcode::DSTORE_2 => Instruction::DSTORE_2,
-            Opcode::DSTORE_3 => Instruction::DSTORE_3,
-            Opcode::ASTORE_0 => Instruction::ASTORE_0,
-            Opcode::ASTORE_1 => Instruction::ASTORE_1,
-            Opcode::ASTORE_2 => Instruction::ASTORE_2,
-            Opcode::ASTORE_3 => Instruction::ASTORE_3,
-            Opcode::IASTORE => Instruction::IASTORE,
-            Opcode::LASTORE => Instruction::LASTORE,
-            Opcode::FASTORE => Instruction::FASTORE,
-            Opcode::DASTORE => Instruction::DASTORE,
-            Opcode::AASTORE => Instruction::AASTORE,
-            Opcode::BASTORE => Instruction::BASTORE,
-            Opcode::CASTORE => Instruction::CASTORE,
-            Opcode::SASTORE => Instruction::SASTORE,
-            Opcode::POP => Instruction::POP,
-            Opcode::POP2 => Instruction::POP2,
-            Opcode::DUP => Instruction::DUP,
-            Opcode::DUP_X1 => Instruction::DUP_X1,
-            Opcode::DUP_X2 => Instruction::DUP_X2,
-            Opcode::DUP2 => Instruction::DUP2,
-            Opcode::DUP2_X1 => Instruction::DUP_X1,
-            Opcode::DUP2_X2 => Instruction::DUP2_X2,
-            Opcode::SWAP => Instruction::SWAP,
-            Opcode::IADD => Instruction::IADD,
-            Opcode::LADD => Instruction::LADD,
-            Opcode::FADD => Instruction::FADD,
-            Opcode::DADD => Instruction::DADD,
-            Opcode::ISUB => Instruction::ISUB,
-            Opcode::LSUB => Instruction::LSUB,
-            Opcode::FSUB => Instruction::FSUB,
-            Opcode::DSUB => Instruction::DSUB,
-            Opcode::IMUL => Instruction::IMUL,
-            Opcode::LMUL => Instruction::LMUL,
-            Opcode::FMUL => Instruction::FMUL,
-            Opcode::DMUL => Instruction::DMUL,
-            Opcode::IDIV => Instruction::IDIV,
-            Opcode::LDIV => Instruction::LDIV,
-            Opcode::FDIV => Instruction::FDIV,
-            Opcode::DDIV => Instruction::DDIV,
-            Opcode::IREM => Instruction::IREM,
-            Opcode::LREM => Instruction::LREM,
-            Opcode::FREM => Instruction::FREM,
-            Opcode::DREM => Instruction::DREM,
-            Opcode::INEG => Instruction::INEG,
-            Opcode::LNEG => Instruction::LNEG,
-            Opcode::FNEG => Instruction::FNEG,
-            Opcode::DNEG => Instruction::DNEG,
-            Opcode::ISHL => Instruction::ISHL,
-            Opcode::LSHL => Instruction::LSHL,
-            Opcode::ISHR => Instruction::ISHR,
-            Opcode::LSHR => Instruction::LSHR,
-            Opcode::IUSHR => Instruction::IUSHR,
-            Opcode::LUSHR => Instruction::LUSHR,
-            Opcode::IAND => Instruction::IAND,
-            Opcode::LAND => Instruction::LAND,
-            Opcode::IOR => Instruction::IOR,
-            Opcode::LOR => Instruction::LOR,
-            Opcode::IXOR => Instruction::IXOR,
-            Opcode::LXOR => Instruction::LXOR,
-            Opcode::IINC => {
-                let index = input.read_u8()?;
-                let value = input.read_i8()?;
-
-                *pc += 2;
-
-                Instruction::IINC { index, value }
-            }
-            Opcode::I2L => Instruction::I2L,
-            Opcode::I2F => Instruction::I2F,
-            Opcode::I2D => Instruction::I2D,
-            Opcode::L2I => Instruction::L2I,
-            Opcode::L2F => Instruction::L2F,
-            Opcode::L2D => Instruction::L2D,
-            Opcode::F2I => Instruction::F2I,
-            Opcode::F2L => Instruction::F2L,
-            Opcode::F2D => Instruction::F2D,
-            Opcode::D2I => Instruction::D2I,
-            Opcode::D2L => Instruction::D2L,
-            Opcode::D2F => Instruction::D2L,
-            Opcode::I2B => Instruction::I2B,
-            Opcode::I2C => Instruction::I2C,
-            Opcode::I2S => Instruction::I2S,
-            Opcode::LCMP => Instruction::LCMP,
-            Opcode::FCMPL => Instruction::FCMPL,
-            Opcode::FCMPG => Instruction::DCMPG,
-            Opcode::DCMPL => Instruction::DCMPL,
-            Opcode::DCMPG => Instruction::DCMPG,
-            Opcode::IFEQ => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IFEQ(offset)
-            }
-            Opcode::IFNE => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IFNE(offset)
-            }
-            Opcode::IFLT => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IFLT(offset)
-            }
-            Opcode::IFGE => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IFGE(offset)
-            }
-            Opcode::IFGT => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IFGT(offset)
-            }
-            Opcode::IFLE => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IFLE(offset)
-            }
-            Opcode::IF_ICMPEQ => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IF_ICMPEQ(offset)
-            }
-            Opcode::IF_ICMPNE => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IF_ICMPNE(offset)
-            }
-            Opcode::IF_ICMPLT => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IF_ICMPLT(offset)
-            }
-            Opcode::IF_ICMPGE => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IF_ICMPGE(offset)
-            }
-            Opcode::IF_ICMPGT => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IF_ICMPGT(offset)
-            }
-            Opcode::IF_ICMPLE => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IF_ICMPLE(offset)
-            }
-            Opcode::IF_ACMPEQ => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IF_ACMPEQ(offset)
-            }
-            Opcode::IF_ACMPNE => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IF_ACMPNE(offset)
-            }
-            Opcode::GOTO => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::GOTO(offset)
-            }
-            Opcode::JSR => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::JSR(offset)
-            }
-            Opcode::RET => {
-                let index = input.read_u8()?;
-
-                *pc += 1;
-
-                Instruction::RET(index)
-            }
-            Opcode::TABLESWITCH => {
-                let pad = align(input, *pc)?;
-                let default = input.read_i32::<BigEndian>()?;
-                let low = input.read_i32::<BigEndian>()?;
-                let high = input.read_i32::<BigEndian>()?;
-                let offsets_length = (high - low + 1) as usize;
-                let mut offsets = vec![0; offsets_length];
-
-                for i in 0..offsets_length {
-                    offsets[i] = input.read_i32::<BigEndian>()?;
-                }
-
-                *pc += pad + 12 + (high - low + 1) as u32;
-
-                Instruction::TABLESWITCH {
-                    default,
-                    low,
-                    high,
-                    offsets,
-                }
-            }
-            Opcode::LOOKUPSWITCH => {
-                let pad = align(input, *pc)?;
-                let default = input.read_i32::<BigEndian>()?;
-                let npairs = input.read_u32::<BigEndian>()?;
-                let mut pairs = Vec::with_capacity(npairs as usize);
-
-                for _ in 0..npairs {
-                    pairs.push(lookup_table_pair(input)?);
-                }
-
-                *pc += pad + 8 + npairs * 8;
-
-                Instruction::LOOKUPSWITCH {
-                    default,
-                    npairs,
-                    pairs,
-                }
-            }
-            Opcode::IRETURN => Instruction::IRETURN,
-            Opcode::LRETURN => Instruction::LRETURN,
-            Opcode::FRETURN => Instruction::FRETURN,
-            Opcode::DRETURN => Instruction::DRETURN,
-            Opcode::ARETURN => Instruction::ARETURN,
-            Opcode::RETURN => Instruction::RETURN,
-            Opcode::GETSTATIC => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::GETSTATIC(GetStatic { index })
-            }
-            Opcode::PUTSTATIC => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::PUTSTATIC(PutStatic { index })
-            }
-            Opcode::GETFIELD => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::GETFIELD(GetField { index })
-            }
-            Opcode::PUTFIELD => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::PUTFIELD(PutField { index })
-            }
-            Opcode::INVOKEVIRTUAL => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::INVOKEVIRTUAL(InvokeVirtual { index })
-            }
-            Opcode::INVOKESPECIAL => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::INVOKESPECIAL(InvokeSpecial { index })
-            }
-            Opcode::INVOKESTATIC => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::INVOKESTATIC(InvokeStatic { index })
-            }
-            Opcode::INVOKEINTERFACE => {
-                let index = input.read_u16::<BigEndian>()?;
-                let count = input.read_u8()?;
-
-                *pc += 3;
-
-                Instruction::INVOKEINTERFACE(InvokeInterface { index, count })
-            }
-            Opcode::INVOKEDYNAMIC => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::INVOKEDYNAMIC(InvokeDynamic { index })
-            }
-            Opcode::NEW => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::NEW(New { index })
-            }
-            Opcode::NEWARRAY => {
-                let array_type = input.read_u8()?;
-
-                if let Ok(array_type) = ArrayType::try_from(array_type) {
-                    Instruction::NEWARRAY(array_type)
-                } else {
-                    return Err(ParseError::MatchOutOfBoundUsize(
-                        "array type",
-                        vec!["4..=11"],
-                        array_type as usize,
-                    ));
-                }
-            }
-            Opcode::ANEWARRAY => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::ANEWARRAY(ANewArray { index })
-            }
-            Opcode::ARRAYLENGTH => Instruction::ARRAYLENGTH,
-            Opcode::ATHROW => Instruction::ATHROW,
-            Opcode::CHECKCAST => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::CHECKCAST(CheckCast { index })
-            }
-            Opcode::INSTANCEOF => {
-                let index = input.read_u16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::INSTANCEOF(InstanceOf { index })
-            }
-            Opcode::MONITORENTER => Instruction::MONITORENTER,
-            Opcode::MONITOREXIT => Instruction::MONITOREXIT,
-            Opcode::WIDE => {
-                let wide = wide(input, pc)?;
-
-                Instruction::WIDE(wide)
-            }
-            Opcode::MULTIANEWARRAY => {
-                let index = input.read_u16::<BigEndian>()?;
-                let dimensions = input.read_u8()?;
-
-                *pc += 3;
-
-                Instruction::MULTIANEWARRAY(MultiANewArray { index, dimensions })
-            }
-            Opcode::IFNULL => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IFNULL(offset)
-            }
-            Opcode::IFNONNULL => {
-                let offset = input.read_i16::<BigEndian>()?;
-
-                *pc += 2;
-
-                Instruction::IFNONNULL(offset)
-            }
-            Opcode::GOTO_W => {
-                let offset = input.read_i64::<BigEndian>()?;
-
-                *pc += 4;
-
-                Instruction::GOTO_W(offset)
-            }
-            Opcode::JSR_W => {
-                let offset = input.read_i64::<BigEndian>()?;
-
-                *pc += 4;
-
-                Instruction::JSR_W(offset)
-            }
-        };
-
-        Ok(instruction)
-    } else {
-        // None of listed opcode described by Java SE 20 Specification
-        Err(ParseError::MatchOutOfBoundOpcode(opcode))
-    }
+        }
+        0xBD => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::ANEWARRAY(ANewArray { index })
+        }
+        0xBE => Instruction::ARRAYLENGTH,
+        0xBF => Instruction::ATHROW,
+        0xC0 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::CHECKCAST(CheckCast { index })
+        }
+        0xC1 => {
+            let index = input.read_u16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::INSTANCEOF(InstanceOf { index })
+        }
+        0xC2 => Instruction::MONITORENTER,
+        0xC3 => Instruction::MONITOREXIT,
+        0xC4 => {
+            let wide = wide(input, pc)?;
+
+            Instruction::WIDE(wide)
+        }
+        0xC5 => {
+            let index = input.read_u16::<BigEndian>()?;
+            let dimensions = input.read_u8()?;
+
+            *pc += 3;
+
+            Instruction::MULTIANEWARRAY(MultiANewArray { index, dimensions })
+        }
+        0xC6 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IFNULL(offset)
+        }
+        0xC7 => {
+            let offset = input.read_i16::<BigEndian>()?;
+
+            *pc += 2;
+
+            Instruction::IFNONNULL(offset)
+        }
+        0xC8 => {
+            let offset = input.read_i64::<BigEndian>()?;
+
+            *pc += 4;
+
+            Instruction::GOTO_W(offset)
+        }
+        0xC9 => {
+            let offset = input.read_i64::<BigEndian>()?;
+
+            *pc += 4;
+
+            Instruction::JSR_W(offset)
+        }
+        _ => {
+            // None of listed opcode described by Java SE 20 Specification
+            return Err(ParseError::MatchOutOfBoundOpcode(opcode));
+        }
+    };
+
+    Ok(instruction)
 }
 
 #[inline]
@@ -673,116 +672,96 @@ fn lookup_table_pair<R: Read>(input: &mut R) -> ParseResult<(i32, i32)> {
 fn wide<R: Read>(input: &mut R, pc: &mut u32) -> ParseResult<Wide> {
     let widened_opcode = input.read_u8()?;
 
-    return if let Ok(widened_opcode) = Opcode::try_from(widened_opcode) {
-        let wide = match widened_opcode {
-            Opcode::ILOAD => {
-                let index = input.read_u16::<BigEndian>()?;
+    let wide = match widened_opcode {
+        0x15 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::ILOAD(index)
-            }
-            Opcode::FLOAD => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::ILOAD(index)
+        }
+        0x17 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::FLOAD(index)
-            }
-            Opcode::ALOAD => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::FLOAD(index)
+        }
+        0x19 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::ALOAD(index)
-            }
-            Opcode::LLOAD => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::ALOAD(index)
+        }
+        0x16 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::LLOAD(index)
-            }
-            Opcode::DLOAD => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::LLOAD(index)
+        }
+        0x18 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::DLOAD(index)
-            }
-            Opcode::ISTORE => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::DLOAD(index)
+        }
+        0x36 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::ISTORE(index)
-            }
-            Opcode::FSTORE => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::ISTORE(index)
+        }
+        0x38 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::FSTORE(index)
-            }
-            Opcode::ASTORE => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::FSTORE(index)
+        }
+        0x3A => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::ASTORE(index)
-            }
-            Opcode::LSTORE => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::ASTORE(index)
+        }
+        0x37 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::LSTORE(index)
-            }
-            Opcode::DSTORE => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::LSTORE(index)
+        }
+        0x39 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::DSTORE(index)
-            }
-            Opcode::RET => {
-                let index = input.read_u16::<BigEndian>()?;
+            Wide::DSTORE(index)
+        }
+        0xA9 => {
+            let index = input.read_u16::<BigEndian>()?;
 
-                Wide::RET(index)
-            }
-            Opcode::IINC => {
-                let index = input.read_u16::<BigEndian>()?;
-                let value = input.read_i16::<BigEndian>()?;
+            Wide::RET(index)
+        }
+        0x84 => {
+            let index = input.read_u16::<BigEndian>()?;
+            let value = input.read_i16::<BigEndian>()?;
 
-                Wide::IINC(index, value)
-            }
-            _ => {
-                return Err(ParseError::MatchOutOfBoundWideOpcode(
-                    widened_opcode as u8,
-                    vec![
-                        Opcode::ILOAD,
-                        Opcode::FLOAD,
-                        Opcode::ALOAD,
-                        Opcode::LLOAD,
-                        Opcode::DLOAD,
-                        Opcode::ISTORE,
-                        Opcode::FSTORE,
-                        Opcode::ASTORE,
-                        Opcode::LSTORE,
-                        Opcode::DSTORE,
-                        Opcode::RET,
-                        Opcode::IINC,
-                    ],
-                ))
-            }
-        };
-
-        *pc += if matches!(wide, Wide::IINC(_, _)) {
-            9
-        } else {
-            7
-        };
-
-        Ok(wide)
-    } else {
-        Err(ParseError::MatchOutOfBoundWideOpcode(
-            widened_opcode,
-            vec![
-                Opcode::ILOAD,
-                Opcode::FLOAD,
-                Opcode::ALOAD,
-                Opcode::LLOAD,
-                Opcode::DLOAD,
-                Opcode::ISTORE,
-                Opcode::FSTORE,
-                Opcode::ASTORE,
-                Opcode::LSTORE,
-                Opcode::DSTORE,
-                Opcode::RET,
-                Opcode::IINC,
-            ],
-        ))
+            Wide::IINC(index, value)
+        }
+        _ => {
+            return Err(ParseError::MatchOutOfBoundWideOpcode(
+                widened_opcode,
+                vec![
+                    Opcode::ILOAD,
+                    Opcode::FLOAD,
+                    Opcode::ALOAD,
+                    Opcode::LLOAD,
+                    Opcode::DLOAD,
+                    Opcode::ISTORE,
+                    Opcode::FSTORE,
+                    Opcode::ASTORE,
+                    Opcode::LSTORE,
+                    Opcode::DSTORE,
+                    Opcode::RET,
+                    Opcode::IINC,
+                ],
+            ))
+        }
     };
+
+    *pc += if matches!(wide, Wide::IINC(_, _)) {
+        9
+    } else {
+        7
+    };
+
+    Ok(wide)
 }
 
 #[inline]
