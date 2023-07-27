@@ -28,16 +28,15 @@ ka_pi = { version = "...", features = ["classfile_parser"] }
 Then, you'll be able to use class file parser in your own project:
 
 ```rust
-use std::fs::File;
-use classfile_parser::parse::{to_class, ParsingOption};
+# use std::fs::File;
+# use classfile_parser::parse::{to_class, ParsingOption};
 
-fn main() {
+# fn main() {
   let mut file = File::open("Main.class").unwrap();
   let class = to_class(&mut file, ParsingOption::default().parse_attribute()).unwrap();
   
   println!("{:?}", class);
-}
-
+# }
 ```
 
 ### See also
