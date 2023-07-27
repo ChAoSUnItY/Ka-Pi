@@ -8,8 +8,6 @@ use strum::IntoStaticStr;
 
 use crate::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods};
 use crate::node::error::{NodeResError, NodeResResult};
-use crate::visitor::constant::ConstantVisitor;
-use crate::visitor::Visitable;
 
 macro_rules! const_getter {
     ($(#[$attr:meta])* => $variant_name: ident, $variant: ty) => {
@@ -255,35 +253,6 @@ impl Constant {
     }
 }
 
-impl<CV> Visitable<CV> for Constant
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        match self {
-            Constant::Utf8(utf8) => utf8.visit(visitor),
-            Constant::Integer(integer) => integer.visit(visitor),
-            Constant::Float(float) => float.visit(visitor),
-            Constant::Long(long) => long.visit(visitor),
-            Constant::Double(double) => double.visit(visitor),
-            Constant::Class(class) => class.visit(visitor),
-            Constant::String(string) => string.visit(visitor),
-            Constant::FieldRef(field_ref) => field_ref.visit(visitor),
-            Constant::MethodRef(method_ref) => method_ref.visit(visitor),
-            Constant::InterfaceMethodRef(interface_method_ref) => {
-                interface_method_ref.visit(visitor)
-            }
-            Constant::NameAndType(name_and_type) => name_and_type.visit(visitor),
-            Constant::MethodHandle(method_handle) => method_handle.visit(visitor),
-            Constant::MethodType(method_type) => method_type.visit(visitor),
-            Constant::Dynamic(dynamic) => dynamic.visit(visitor),
-            Constant::InvokeDynamic(invoke_dynamic) => invoke_dynamic.visit(visitor),
-            Constant::Module(module) => module.visit(visitor),
-            Constant::Package(package) => package.visit(visitor),
-        }
-    }
-}
-
 /// Represents constant UTF8.
 ///
 /// See [4.4.7 The CONSTANT_Utf8_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=102).
@@ -302,15 +271,6 @@ impl Utf8 {
     }
 }
 
-impl<CV> Visitable<CV> for Utf8
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_utf8(self);
-    }
-}
-
 /// Represents constant Integer.
 ///
 /// See [4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=98).
@@ -326,15 +286,6 @@ impl Integer {
     }
 }
 
-impl<CV> Visitable<CV> for Integer
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_integer(self);
-    }
-}
-
 /// Represents constant Float.
 ///
 /// See [4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=98).
@@ -347,15 +298,6 @@ impl Float {
     /// Converts bytes into f32.
     pub fn as_f32(&self) -> f32 {
         f32::from_be_bytes(self.bytes)
-    }
-}
-
-impl<CV> Visitable<CV> for Float
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_float(self);
     }
 }
 
@@ -379,15 +321,6 @@ impl Long {
     }
 }
 
-impl<CV> Visitable<CV> for Long
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_long(self);
-    }
-}
-
 /// Represents constant Double.
 ///
 /// See [4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=100).
@@ -405,15 +338,6 @@ impl Double {
         bytes[4..].copy_from_slice(&self.low_bytes);
 
         f64::from_be_bytes(bytes)
-    }
-}
-
-impl<CV> Visitable<CV> for Double
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_double(self);
     }
 }
 
@@ -436,15 +360,6 @@ impl Class {
     }
 }
 
-impl<CV> Visitable<CV> for Class
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_class(self);
-    }
-}
-
 /// Represents constant String.
 ///
 /// See [4.4.3 The CONSTANT_String_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=98).
@@ -460,15 +375,6 @@ impl String {
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
         constant_pool.get_utf8(self.string_index)
-    }
-}
-
-impl<CV> Visitable<CV> for String
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_string(self);
     }
 }
 
@@ -500,15 +406,6 @@ impl FieldRef {
     }
 }
 
-impl<CV> Visitable<CV> for FieldRef
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_field_ref(self);
-    }
-}
-
 /// Represents constant MethodRef.
 ///
 /// See [4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=97).
@@ -534,15 +431,6 @@ impl MethodRef {
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool NameAndType> {
         constant_pool.get_name_and_type(self.name_and_type_index)
-    }
-}
-
-impl<CV> Visitable<CV> for MethodRef
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_method_ref(self);
     }
 }
 
@@ -574,15 +462,6 @@ impl InterfaceMethodRef {
     }
 }
 
-impl<CV> Visitable<CV> for InterfaceMethodRef
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_interface_method_ref(self);
-    }
-}
-
 /// Represents constant NameAndType.
 ///
 /// See [4.4.6 The CONSTANT_NameAndType_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=101).
@@ -608,15 +487,6 @@ impl NameAndType {
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
         constant_pool.get_utf8(self.type_index)
-    }
-}
-
-impl<CV> Visitable<CV> for NameAndType
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_name_and_type(self);
     }
 }
 
@@ -702,15 +572,6 @@ impl MethodHandle {
     }
 }
 
-impl<CV> Visitable<CV> for MethodHandle
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_method_handle(self);
-    }
-}
-
 /// Represents constant MethodType.
 ///
 /// See [4.4.9 The CONSTANT_MethodType_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=106).
@@ -726,15 +587,6 @@ impl MethodType {
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
         constant_pool.get_utf8(self.descriptor_index)
-    }
-}
-
-impl<CV> Visitable<CV> for MethodType
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_method_type(self);
     }
 }
 
@@ -783,15 +635,6 @@ impl Dynamic {
     }
 }
 
-impl<CV> Visitable<CV> for Dynamic
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_dynamic(self);
-    }
-}
-
 /// Represents constant InvokeDynamic.
 ///
 /// See [4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=106).
@@ -837,15 +680,6 @@ impl InvokeDynamic {
     }
 }
 
-impl<CV> Visitable<CV> for InvokeDynamic
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_invoke_dynamic(self);
-    }
-}
-
 /// Represents constant Module.
 ///
 /// See [4.4.11 The CONSTANT_Module_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=107).
@@ -865,15 +699,6 @@ impl Module {
     }
 }
 
-impl<CV> Visitable<CV> for Module
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_module(self);
-    }
-}
-
 /// Represents constant Package.
 ///
 /// See [4.4.12 The CONSTANT_Package_info Structure](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=108).
@@ -890,15 +715,6 @@ impl Package {
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
         constant_pool.get_utf8(self.name_index)
-    }
-}
-
-impl<CV> Visitable<CV> for Package
-where
-    CV: ConstantVisitor,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_package(self);
     }
 }
 

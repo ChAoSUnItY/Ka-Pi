@@ -1,9 +1,6 @@
 use crate::node::error::{NodeResError, NodeResResult};
 use serde::{Deserialize, Serialize};
 
-use crate::visitor::signature::{FormalTypeParameterVisitor, SignatureVisitor, TypeVisitor};
-use crate::visitor::Visitable;
-
 /// Data representation of signatures, including [`Class`](Signature::Class), [`Field`](Signature::Field),
 /// and [`Method`](Signature::Method).
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -25,125 +22,12 @@ pub enum Signature {
     },
 }
 
-impl<SCTV, ITV, FTV, PTV, RTV, ETV, FTPV, SV> Visitable<SV> for Signature
-where
-    SCTV: TypeVisitor,
-    ITV: TypeVisitor,
-    FTV: TypeVisitor,
-    PTV: TypeVisitor,
-    RTV: TypeVisitor,
-    ETV: TypeVisitor,
-    FTPV: FormalTypeParameterVisitor,
-    SV: SignatureVisitor<
-        SCTV = SCTV,
-        ITV = ITV,
-        FTV = FTV,
-        PTV = PTV,
-        RTV = RTV,
-        ETV = ETV,
-        FTPV = FTPV,
-    >,
-{
-    fn visit(&self, visitor: &mut SV) {
-        match self {
-            Signature::Class {
-                formal_type_parameters,
-                super_class,
-                interfaces,
-            } => {
-                visitor.visit_formal_type_parameters(formal_type_parameters);
-
-                for formal_type_parameter in formal_type_parameters {
-                    let mut formal_type_parameter_visitor =
-                        visitor.visit_formal_type_parameter(formal_type_parameter);
-
-                    formal_type_parameter.visit(&mut formal_type_parameter_visitor);
-                }
-
-                let mut super_class_visitor = visitor.visit_super_class(super_class);
-
-                super_class.visit(&mut super_class_visitor);
-
-                visitor.visit_interfaces(interfaces);
-
-                for interface in interfaces {
-                    let mut interface_type_visitor = visitor.visit_interface(interface);
-
-                    interface.visit(&mut interface_type_visitor);
-                }
-            }
-            Signature::Field { field_type } => {
-                let mut field_type_visitor = visitor.visit_field_type(field_type);
-
-                field_type.visit(&mut field_type_visitor);
-            }
-            Signature::Method {
-                formal_type_parameters,
-                parameter_types,
-                return_type,
-                exception_types,
-            } => {
-                visitor.visit_formal_type_parameters(formal_type_parameters);
-
-                for formal_type_parameter in formal_type_parameters {
-                    let mut formal_type_parameter_visitor =
-                        visitor.visit_formal_type_parameter(formal_type_parameter);
-
-                    formal_type_parameter.visit(&mut formal_type_parameter_visitor);
-                }
-
-                visitor.visit_parameter_types(parameter_types);
-
-                for parameter_type in parameter_types {
-                    let mut parameter_type_visitor = visitor.visit_parameter_type(parameter_type);
-
-                    parameter_type.visit(&mut parameter_type_visitor);
-                }
-
-                let mut return_type_visitor = visitor.visit_return_type(return_type);
-
-                return_type.visit(&mut return_type_visitor);
-
-                visitor.visit_exception_types(exception_types);
-
-                for exception_type in exception_types {
-                    let mut exception_type_visitor = visitor.visit_exception_type(exception_type);
-
-                    exception_type.visit(&mut exception_type_visitor);
-                }
-            }
-        }
-    }
-}
 /// Data representation of formal type parameter in signatures.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FormalTypeParameter {
     pub parameter_name: String,
     pub class_bound: Option<ClassType>,
     pub interface_bounds: Vec<ClassType>,
-}
-
-impl<CBTV, IBTV, FTPV> Visitable<FTPV> for FormalTypeParameter
-where
-    CBTV: TypeVisitor,
-    IBTV: TypeVisitor,
-    FTPV: FormalTypeParameterVisitor<CBTV = CBTV, IBTV = IBTV>,
-{
-    fn visit(&self, visitor: &mut FTPV) {
-        if let Some(class_bound) = &self.class_bound {
-            let mut class_bound_type_visitor = visitor.visit_class_bound(class_bound);
-
-            class_bound.visit(&mut class_bound_type_visitor);
-        }
-
-        visitor.visit_interface_bounds(&self.interface_bounds);
-
-        for interface_bound in &self.interface_bounds {
-            let mut interface_bound_type_visitor = visitor.visit_interface_bound(interface_bound);
-
-            interface_bound.visit(&mut interface_bound_type_visitor);
-        }
-    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -153,29 +37,6 @@ pub enum TypeArgument {
         bounded_type: ReferenceType,
     },
     Wildcard,
-}
-
-impl<TV> Visitable<TV> for TypeArgument
-where
-    TV: TypeVisitor,
-{
-    fn visit(&self, visitor: &mut TV) {
-        visitor.visit_type_argument(self);
-
-        match self {
-            TypeArgument::Bounded {
-                wildcard_indicator,
-                bounded_type,
-            } => {
-                visitor.visit_type_argument_bounded(wildcard_indicator, bounded_type);
-
-                bounded_type.visit(visitor);
-            }
-            TypeArgument::Wildcard => {
-                visitor.visit_type_argument_wildcard();
-            }
-        }
-    }
 }
 
 const EXTENDS: char = '+';
@@ -242,40 +103,10 @@ pub enum SignatureType {
     ReferenceType(ReferenceType),
 }
 
-impl<TV> Visitable<TV> for SignatureType
-where
-    TV: TypeVisitor,
-{
-    fn visit(&self, visitor: &mut TV) {
-        match self {
-            SignatureType::BaseType(base_type) => visitor.visit_base_type(base_type),
-            SignatureType::ReferenceType(reference_type) => {
-                reference_type.visit(visitor);
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ThrowsType {
     Class(ClassType),
     TypeVariable(TypeVariable),
-}
-
-impl<TV> Visitable<TV> for ThrowsType
-where
-    TV: TypeVisitor,
-{
-    fn visit(&self, visitor: &mut TV) {
-        match self {
-            ThrowsType::Class(class_type) => {
-                class_type.visit(visitor);
-            }
-            ThrowsType::TypeVariable(type_variable) => {
-                type_variable.visit(visitor);
-            }
-        }
-    }
 }
 
 /// Data representation of Type in signatures.
@@ -286,44 +117,8 @@ pub enum ReferenceType {
     TypeVariable(TypeVariable),
 }
 
-impl<TV> Visitable<TV> for ReferenceType
-where
-    TV: TypeVisitor,
-{
-    fn visit(&self, visitor: &mut TV) {
-        match self {
-            ReferenceType::Array(inner_type) => {
-                visitor.visit_array_type(inner_type);
-
-                let mut inner_type = inner_type.0.as_ref();
-
-                while let SignatureType::ReferenceType(ReferenceType::Array(typ)) = inner_type {
-                    inner_type = typ.0.as_ref();
-                }
-
-                inner_type.visit(visitor);
-            }
-            ReferenceType::Class(class_type) => {
-                class_type.visit(visitor);
-            }
-            ReferenceType::TypeVariable(type_variable) => {
-                type_variable.visit(visitor);
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ArrayType(pub Box<SignatureType>);
-
-impl<TV> Visitable<TV> for ArrayType
-where
-    TV: TypeVisitor,
-{
-    fn visit(&self, visitor: &mut TV) {
-        self.0.visit(visitor)
-    }
-}
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ClassType {
@@ -333,40 +128,8 @@ pub struct ClassType {
     pub inner_classes: Vec<(String, Vec<TypeArgument>)>,
 }
 
-impl<TV> Visitable<TV> for ClassType
-where
-    TV: TypeVisitor,
-{
-    fn visit(&self, visitor: &mut TV) {
-        visitor.visit_class_type(self);
-
-        for type_argument in &self.type_arguments {
-            type_argument.visit(visitor);
-        }
-
-        visitor.visit_inner_class_types(&self.inner_classes);
-
-        for (inner_class_name, type_arguments) in &self.inner_classes {
-            visitor.visit_inner_class_type(inner_class_name);
-
-            for type_argument in type_arguments {
-                type_argument.visit(visitor);
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct TypeVariable(pub String);
-
-impl<TV> Visitable<TV> for TypeVariable
-where
-    TV: TypeVisitor,
-{
-    fn visit(&self, visitor: &mut TV) {
-        visitor.visit_type_variable(&self.0);
-    }
-}
 
 /// Data representation of base type in descriptor.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -380,15 +143,6 @@ pub enum BaseType {
     Float = b'F',
     Double = b'D',
     Void = b'V',
-}
-
-impl<TV> Visitable<TV> for BaseType
-where
-    TV: TypeVisitor,
-{
-    fn visit(&self, visitor: &mut TV) {
-        visitor.visit_base_type(self);
-    }
 }
 
 impl TryFrom<char> for BaseType {

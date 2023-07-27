@@ -5,11 +5,6 @@ use crate::node::attribute::AttributeInfo;
 use crate::node::constant::ConstantPool;
 use crate::node::field::Field;
 use crate::node::method::Method;
-use crate::visitor::class::ClassVisitor;
-use crate::visitor::constant::ConstantVisitor;
-use crate::visitor::field::FieldVisitor;
-use crate::visitor::method::MethodVisitor;
-use crate::visitor::Visitable;
 
 /// Represents a class file.
 ///
@@ -48,86 +43,6 @@ impl Class {
         self.interfaces
             .get(index as usize)
             .and_then(|interface_index| self.constant_pool.get_class(*interface_index))
-    }
-}
-
-impl<CPV, TCCV, SCCV, ICV, MV, FV, CV> Visitable<CV> for Class
-where
-    CPV: ConstantVisitor,
-    TCCV: ConstantVisitor,
-    SCCV: ConstantVisitor,
-    ICV: ConstantVisitor,
-    MV: MethodVisitor,
-    FV: FieldVisitor,
-    CV: ClassVisitor<CPV = CPV, TCCV = TCCV, SCCV = SCCV, ICV = ICV, MV = MV, FV = FV>,
-{
-    fn visit(&self, visitor: &mut CV) {
-        visitor.visit_version(&self.java_version);
-
-        visitor.visit_constant_pool(&self.constant_pool);
-
-        for (index, constant) in self.constant_pool.iter() {
-            visitor.visit_constant(index, constant);
-        }
-
-        visitor.visit_access_flag(&self.access_flag);
-
-        let mut this_class_visitor = visitor.visit_this_class();
-
-        if let Some(this_class) = self.this_class() {
-            this_class.visit(&mut this_class_visitor)
-        }
-
-        let mut super_class_visitor = visitor.visit_super_class();
-
-        if let Some(super_class) = self.super_class() {
-            super_class.visit(&mut super_class_visitor);
-        }
-
-        visitor.visit_interfaces(&self.interfaces);
-
-        for index in 0..self.interfaces.len() {
-            let mut interface_visitor = visitor.visit_interface();
-
-            if let Some(interface_constant) = self.interface(index as u16) {
-                interface_constant.visit(&mut interface_visitor);
-            }
-        }
-
-        visitor.visit_fields(&self.fields);
-
-        for field in &*self.fields {
-            let name: Option<String> = field
-                .name(&self.constant_pool)
-                .and_then(|utf8| utf8.string().ok());
-            let descriptor: Option<String> = field
-                .descriptor(&self.constant_pool)
-                .and_then(|utf8| utf8.string().ok());
-
-            if let (Some(name), Some(descriptor)) = (name, descriptor) {
-                let mut field_visitor = visitor.visit_field(&field.access_flag, &name, &descriptor);
-
-                field.visit(&mut field_visitor);
-            }
-        }
-
-        visitor.visit_methods(&self.methods);
-
-        for method in &self.methods {
-            let name: Option<String> = method
-                .name(&self.constant_pool)
-                .and_then(|utf8| utf8.string().ok());
-            let descriptor: Option<String> = method
-                .descriptor(&self.constant_pool)
-                .and_then(|utf8| utf8.string().ok());
-
-            if let (Some(name), Some(descriptor)) = (name, descriptor) {
-                let mut method_visitor =
-                    visitor.visit_method(&method.access_flag, &name, &descriptor);
-
-                method.visit(&mut method_visitor);
-            }
-        }
     }
 }
 

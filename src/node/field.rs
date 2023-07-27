@@ -3,8 +3,6 @@ use serde::{Deserialize, Serialize};
 use crate::node::access_flag::FieldAccessFlag;
 use crate::node::attribute::{Attribute, AttributeInfo};
 use crate::node::constant::{ConstantPool, Utf8};
-use crate::visitor::field::FieldVisitor;
-use crate::visitor::Visitable;
 
 /// Represents a class field.
 ///
@@ -34,22 +32,5 @@ impl Field {
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
         constant_pool.get_utf8(self.descriptor_index)
-    }
-}
-
-impl<FV> Visitable<FV> for Field
-where
-    FV: FieldVisitor,
-{
-    fn visit(&self, visitor: &mut FV) {
-        for attribute_info in &self.attribute_infos {
-            if let AttributeInfo {
-                attribute: Some(Attribute::ConstantValue(constant_value)),
-                ..
-            } = attribute_info
-            {
-                visitor.visit_constant(constant_value);
-            }
-        }
     }
 }

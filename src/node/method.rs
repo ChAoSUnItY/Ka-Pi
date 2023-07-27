@@ -3,8 +3,6 @@ use serde::{Deserialize, Serialize};
 use crate::node::access_flag::MethodAccessFlag;
 use crate::node::attribute::AttributeInfo;
 use crate::node::constant::{ConstantPool, Utf8};
-use crate::visitor::method::MethodVisitor;
-use crate::visitor::Visitable;
 
 /// Represents a class method.
 ///
@@ -34,14 +32,5 @@ impl Method {
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
         constant_pool.get_utf8(self.descriptor_index)
-    }
-}
-
-impl<MV> Visitable<MV> for Method
-where
-    MV: MethodVisitor,
-{
-    fn visit(&self, visitor: &mut MV) {
-        // TODO: Implement with MethodVisitor here
     }
 }
