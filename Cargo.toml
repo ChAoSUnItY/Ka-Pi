@@ -16,7 +16,7 @@ name = "ka_pi"
 path = "src/lib.rs"
 
 [dependencies]
-classfile_parser = { path = "classfile_parser" }
+classfile_parser = { path = "classfile_parser", optional = true }
 
 [dev-dependencies]
 insta = { version = "1.28.0", features = ["yaml"] }
@@ -24,6 +24,7 @@ criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [features]
 default = []
+classfile_parser = ["dep:classfile_parser"]
 
 [workspace]
 members = [
