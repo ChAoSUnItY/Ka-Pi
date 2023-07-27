@@ -1,4 +1,5 @@
 use crate::node::access_flag::FieldAccessFlag;
+#[allow(unused_imports)]
 use bitflags::Flags;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::Read;

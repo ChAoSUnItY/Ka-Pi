@@ -1,8 +1,6 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
-use itertools::Itertools;
-
 use crate::node::signature::{
     ArrayType, BaseType, ClassType, FormalTypeParameter, ReferenceType, Signature, SignatureType,
     ThrowsType, TypeArgument, TypeVariable, WildcardIndicator,
@@ -26,7 +24,7 @@ pub fn class_signature(input: &str) -> ParseResult<Signature> {
     }
 
     if input.peek().is_some() {
-        let remain = input.collect_vec();
+        let remain = input.collect::<Vec<_>>();
 
         Err(ParseError::Remains(remain.len()))
     } else {
@@ -43,7 +41,7 @@ pub fn field_signature(input: &str) -> ParseResult<Signature> {
     let field_type = reference_type(&mut input)?;
 
     if input.peek().is_some() {
-        let remain = input.collect_vec();
+        let remain = input.collect::<Vec<_>>();
 
         Err(ParseError::Remains(remain.len()))
     } else {
@@ -81,7 +79,7 @@ pub fn method_signature(input: &str) -> ParseResult<Signature> {
     }
 
     if input.peek().is_some() {
-        let remain = input.collect_vec();
+        let remain = input.collect::<Vec<_>>();
 
         Err(ParseError::Remains(remain.len()))
     } else {
@@ -365,23 +363,6 @@ fn assert_char(char: Option<char>, expected: char) -> ParseResult<char> {
                 Ok(char)
             } else {
                 Err(ParseError::MismatchedCharacter(char, vec![expected]))
-            }
-        }
-        None => Err(ParseError::OutOfBound("signature")),
-    }
-}
-
-#[inline]
-fn assert_char_alt(char: Option<char>, pat: &str) -> ParseResult<char> {
-    match char {
-        Some(char) => {
-            if pat.contains(char) {
-                Ok(char)
-            } else {
-                Err(ParseError::MismatchedCharacter(
-                    char,
-                    pat.chars().collect_vec(),
-                ))
             }
         }
         None => Err(ParseError::OutOfBound("signature")),

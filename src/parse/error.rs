@@ -16,8 +16,10 @@ pub enum ParseError {
     MatchOutOfBoundUsize(&'static str, Vec<&'static str>, usize),
     #[error("attempt to match {0} in {1:?} but got '{2}'")]
     MatchOutOfBoundChar(&'static str, Vec<char>, char),
-    #[error("attempt to match {0} in {1:?} but got opcode {2}{}", if let Some(opcode) = .3 { format!(" (Which is {:?})", opcode)} else { String::new() })]
-    MatchOutOfBoundOpcode(&'static str, Vec<Opcode>, u8, Option<Opcode>),
+    #[error("attempt to match opcode but got opcode value {0}")]
+    MatchOutOfBoundOpcode(u8),
+    #[error("attempt to match sub opcode in wide opcode but got {0}, while {1:?} is allowed as sub opcode of wide opcode")]
+    MatchOutOfBoundWideOpcode(u8, Vec<Opcode>),
     #[error("the parse for segment is finished but still remains {0} bytes")]
     Remains(usize),
     #[error("expected {1:?} but got '{0}'")]

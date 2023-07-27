@@ -17,9 +17,7 @@ path = "src/lib.rs"
 
 [dependencies]
 serde = { version = "1.0.152", features = ["derive"] }
-num_enum = "0.6.0"
 cesu8 = "1.1.0"
-strum = { version = "0.25.0", features = ["derive"] }
 paste = "1.0.13"
 bitflags = { version = "2.3.3", features = ["serde"] }
 thiserror = "1.0.43"

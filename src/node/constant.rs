@@ -1,13 +1,12 @@
 use std::collections::BTreeMap;
 use std::ops::Deref;
 
-use num_enum::TryFromPrimitive;
 use paste::paste;
 use serde::{Deserialize, Serialize};
-use strum::IntoStaticStr;
 
 use crate::node::attribute::{Attribute, AttributeInfo, BootstrapMethod, BootstrapMethods};
 use crate::node::error::{NodeResError, NodeResResult};
+use crate::parse::ParseError;
 
 macro_rules! const_getter {
     ($(#[$attr:meta])* => $variant_name: ident, $variant: ty) => {
@@ -163,20 +162,7 @@ impl Deref for ConstantPool {
 ///
 /// See [Table 4.4-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=94).
 #[repr(u8)]
-#[derive(
-    Debug,
-    Copy,
-    Clone,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    Hash,
-    Serialize,
-    Deserialize,
-    TryFromPrimitive,
-    IntoStaticStr,
-)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum ConstantTag {
     Utf8 = 1,
     Integer = 3,
@@ -197,10 +183,71 @@ pub enum ConstantTag {
     Package = 20,
 }
 
+impl TryFrom<u8> for ConstantTag {
+    type Error = ParseError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        use ConstantTag::*;
+
+        let tag = match value {
+            1 => Utf8,
+            3 => Integer,
+            4 => Float,
+            5 => Long,
+            6 => Double,
+            7 => Class,
+            8 => String,
+            9 => FieldRef,
+            10 => MethodRef,
+            11 => InterfaceMethodRef,
+            12 => NameAndType,
+            15 => MethodHandle,
+            16 => MethodType,
+            17 => Dynamic,
+            18 => InvokeDynamic,
+            19 => Module,
+            20 => Package,
+            _ => {
+                return Err(ParseError::MatchOutOfBoundUsize(
+                    "constant tag",
+                    vec!["1", "3..=12", "15..=20"],
+                    value as usize,
+                ))
+            }
+        };
+
+        Ok(tag)
+    }
+}
+
+impl Into<&'static str> for ConstantTag {
+    fn into(self) -> &'static str {
+        match self {
+            ConstantTag::Utf8 => "Utf8",
+            ConstantTag::Integer => "Integer",
+            ConstantTag::Float => "Float",
+            ConstantTag::Long => "Long",
+            ConstantTag::Double => "Double",
+            ConstantTag::Class => "Class",
+            ConstantTag::String => "String",
+            ConstantTag::FieldRef => "FieldRef",
+            ConstantTag::MethodRef => "MethodRef",
+            ConstantTag::InterfaceMethodRef => "InterfaceMethodRef",
+            ConstantTag::NameAndType => "NameAndType",
+            ConstantTag::MethodHandle => "MethodHandle",
+            ConstantTag::MethodType => "MethodType",
+            ConstantTag::Dynamic => "Dynamic",
+            ConstantTag::InvokeDynamic => "InvokeDynamic",
+            ConstantTag::Module => "Module",
+            ConstantTag::Package => "Package",
+        }
+    }
+}
+
 /// Represents JVM constants.
 ///
 /// See [4.4 The Constant Pool](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=93).
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, IntoStaticStr)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Constant {
     Utf8(Utf8),
     Integer(Integer),
@@ -250,6 +297,10 @@ impl Constant {
             Constant::Long(_) | Constant::Double(_) => true,
             _ => false,
         }
+    }
+
+    pub fn name(&self) -> &'static str {
+        self.tag().into()
     }
 }
 
@@ -525,7 +576,7 @@ impl MethodHandle {
                         Err(NodeResError::MismatchReferenceConstant(
                             "FieldRef",
                             self.reference_index,
-                            Into::<&'static str>::into(constant),
+                            constant.name(),
                         ))
                     }
                 }
@@ -536,7 +587,7 @@ impl MethodHandle {
                         Err(NodeResError::MismatchReferenceConstant(
                             "MethodRef",
                             self.reference_index,
-                            Into::<&'static str>::into(constant),
+                            constant.name(),
                         ))
                     }
                 }
@@ -550,7 +601,7 @@ impl MethodHandle {
                         Err(NodeResError::MismatchReferenceConstant(
                             "MethodRef or constant InterfaceMethodRef",
                             self.reference_index,
-                            Into::<&'static str>::into(constant),
+                            constant.name(),
                         ))
                     }
                 }
@@ -561,7 +612,7 @@ impl MethodHandle {
                         Err(NodeResError::MismatchReferenceConstant(
                             "InterfaceMethodRef",
                             self.reference_index,
-                            Into::<&'static str>::into(constant),
+                            constant.name(),
                         ))
                     }
                 }
@@ -722,19 +773,7 @@ impl Package {
 ///
 /// See [Table 5.4.3.5-A](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf#page=396)
 #[repr(u8)]
-#[derive(
-    Debug,
-    Copy,
-    Clone,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    Hash,
-    Serialize,
-    Deserialize,
-    TryFromPrimitive,
-)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum RefKind {
     GetField = 1,
     GetStatic = 2,
@@ -745,4 +784,33 @@ pub enum RefKind {
     InvokeSpecial = 7,
     NewInvokeSpecial = 8,
     InvokeInterface = 9,
+}
+
+impl TryFrom<u8> for RefKind {
+    type Error = ParseError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        use RefKind::*;
+
+        let ref_kind = match value {
+            1 => GetField,
+            2 => GetStatic,
+            3 => PutField,
+            4 => PutStatic,
+            5 => InvokeVirtual,
+            6 => InvokeStatic,
+            7 => InvokeSpecial,
+            8 => NewInvokeSpecial,
+            9 => InvokeInterface,
+            _ => {
+                return Err(ParseError::MatchOutOfBoundUsize(
+                    "reference kind",
+                    vec!["1..=9"],
+                    value as usize,
+                ))
+            }
+        };
+
+        Ok(ref_kind)
+    }
 }

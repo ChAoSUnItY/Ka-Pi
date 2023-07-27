@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use bitflags::Flags;
 use std::io::Read;
 

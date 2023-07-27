@@ -1,8 +1,6 @@
 use std::io::{Cursor, Read, Seek, SeekFrom};
 
 use byteorder::{BigEndian, ReadBytesExt};
-use itertools::Itertools;
-use strum::IntoEnumIterator;
 
 use crate::node::attribute::{Attribute, Code, Exception};
 use crate::node::constant::ConstantPool;
@@ -660,12 +658,7 @@ fn instruction<R: Read + Seek>(input: &mut R, pc: &mut u32) -> ParseResult<Instr
         Ok(instruction)
     } else {
         // None of listed opcode described by Java SE 20 Specification
-        Err(ParseError::MatchOutOfBoundOpcode(
-            "opcode",
-            Opcode::iter().collect_vec(),
-            opcode,
-            None,
-        ))
+        Err(ParseError::MatchOutOfBoundOpcode(opcode))
     }
 }
 
@@ -744,8 +737,8 @@ fn wide<R: Read>(input: &mut R, pc: &mut u32) -> ParseResult<Wide> {
                 Wide::IINC(index, value)
             }
             _ => {
-                return Err(ParseError::MatchOutOfBoundOpcode(
-                    "wide opcode",
+                return Err(ParseError::MatchOutOfBoundWideOpcode(
+                    widened_opcode as u8,
                     vec![
                         Opcode::ILOAD,
                         Opcode::FLOAD,
@@ -760,8 +753,6 @@ fn wide<R: Read>(input: &mut R, pc: &mut u32) -> ParseResult<Wide> {
                         Opcode::RET,
                         Opcode::IINC,
                     ],
-                    widened_opcode as u8,
-                    Some(widened_opcode),
                 ))
             }
         };
@@ -774,8 +765,8 @@ fn wide<R: Read>(input: &mut R, pc: &mut u32) -> ParseResult<Wide> {
 
         Ok(wide)
     } else {
-        Err(ParseError::MatchOutOfBoundOpcode(
-            "wide opcode",
+        Err(ParseError::MatchOutOfBoundWideOpcode(
+            widened_opcode,
             vec![
                 Opcode::ILOAD,
                 Opcode::FLOAD,
@@ -790,8 +781,6 @@ fn wide<R: Read>(input: &mut R, pc: &mut u32) -> ParseResult<Wide> {
                 Opcode::RET,
                 Opcode::IINC,
             ],
-            widened_opcode,
-            None,
         ))
     };
 }
@@ -809,8 +798,6 @@ fn align<R: Read + Seek>(input: &mut R, pc: u32) -> ParseResult<u32> {
 #[cfg(test)]
 mod test {
     use std::io::Cursor;
-
-    use itertools::Itertools;
 
     use crate::node::opcode::instruction::Wide;
     use crate::node::opcode::{Instruction, Opcode};
@@ -865,7 +852,7 @@ mod test {
 
     #[test]
     fn test_invalid_opcode() {
-        let test_cases = (0xCAu8..0xFFu8).map(|opcode| [opcode]).collect_vec();
+        let test_cases = (0xCAu8..0xFFu8).map(|opcode| [opcode]).collect::<Vec<_>>();
 
         for test_case in test_cases {
             let mut pc = 0;
