@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use crate::node::constant;
 use crate::node::constant::{
     Class, Constant, ConstantPool, ConstantTag, Double, Dynamic, FieldRef, Float, Integer,
@@ -48,7 +49,7 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
 
             input.read_exact(&mut bytes)?;
 
-            Constant::Utf8(Utf8 { length, bytes })
+            Constant::Utf8(Utf8 { length, bytes, string: RefCell::new(None) })
         }
         ConstantTag::Integer => {
             let mut bytes = [0; 4];

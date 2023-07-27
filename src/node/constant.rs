@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::ops::Deref;
 
@@ -311,14 +312,22 @@ impl Constant {
 pub struct Utf8 {
     pub length: u16,
     pub bytes: Vec<u8>,
+    #[serde(skip)]
+    pub string: RefCell<Option<std::string::String>>,
 }
 
 impl Utf8 {
     /// Converts bytes into string.
     pub fn string(&self) -> NodeResResult<std::string::String> {
-        cesu8::from_java_cesu8(&self.bytes[..])
-            .map_err(|_| NodeResError::StringParseFail(self.bytes.clone().into_boxed_slice()))
-            .map(|string| string.to_string())
+        let string_ref = self.string.borrow_mut();
+        
+        if let Some(string) = string_ref.as_ref() {
+            Ok(string.clone())
+        } else {
+            cesu8::from_java_cesu8(&self.bytes[..])
+                .map_err(|_| NodeResError::StringParseFail(self.bytes.clone().into_boxed_slice()))
+                .map(|string| string.to_string())
+        }
     }
 }
 
