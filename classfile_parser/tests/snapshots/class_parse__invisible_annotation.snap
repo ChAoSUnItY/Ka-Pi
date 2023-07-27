@@ -1,5 +1,5 @@
 ---
-source: structural_parser/tests/class_parse.rs
+source: classfile_parser/tests/class_parse.rs
 expression: "to_class(&mut cursor, ParsingOption::default().parse_attribute())?"
 ---
 java_version: V17
@@ -7,11 +7,9 @@ constant_pool_count: 43
 constant_pool:
   len: 43
   entries:
-    1:
-      Class:
+    - Class:
         name_index: 2
-    2:
-      Utf8:
+    - Utf8:
         length: 19
         bytes:
           - 73
@@ -33,11 +31,9 @@ constant_pool:
           - 105
           - 111
           - 110
-    3:
-      Class:
+    - Class:
         name_index: 4
-    4:
-      Utf8:
+    - Utf8:
         length: 16
         bytes:
           - 106
@@ -56,11 +52,9 @@ constant_pool:
           - 101
           - 99
           - 116
-    5:
-      Class:
+    - Class:
         name_index: 6
-    6:
-      Utf8:
+    - Utf8:
         length: 31
         bytes:
           - 106
@@ -94,20 +88,17 @@ constant_pool:
           - 105
           - 111
           - 110
-    7:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 98
-    8:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 66
-    9:
-      Utf8:
+    - Utf8:
         length: 17
         bytes:
           - 65
@@ -127,70 +118,59 @@ constant_pool:
           - 117
           - 108
           - 116
-    10:
-      Integer:
+    - Integer:
         bytes:
           - 0
           - 0
           - 0
           - 1
-    11:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 115
-    12:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 83
-    13:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 105
-    14:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 73
-    15:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 102
-    16:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 70
-    17:
-      Float:
+    - Float:
         bytes:
           - 63
           - 128
           - 0
           - 0
-    18:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 106
-    19:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 74
-    20:
-      Long:
+    - Long:
         high_bytes:
           - 0
           - 0
@@ -201,20 +181,18 @@ constant_pool:
           - 0
           - 0
           - 1
-    22:
-      Utf8:
+    - ~
+    - Utf8:
         length: 1
         bytes:
           - 100
-    23:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 68
-    24:
-      Double:
+    - Double:
         high_bytes:
           - 63
           - 240
@@ -225,8 +203,8 @@ constant_pool:
           - 0
           - 0
           - 0
-    26:
-      Utf8:
+    - ~
+    - Utf8:
         length: 6
         bytes:
           - 115
@@ -235,8 +213,7 @@ constant_pool:
           - 105
           - 110
           - 103
-    27:
-      Utf8:
+    - Utf8:
         length: 20
         bytes:
           - 40
@@ -259,20 +236,17 @@ constant_pool:
           - 110
           - 103
           - 59
-    28:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 75
           - 69
           - 75
-    29:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 101
-    30:
-      Utf8:
+    - Utf8:
         length: 8
         bytes:
           - 40
@@ -283,8 +257,7 @@ constant_pool:
           - 117
           - 109
           - 59
-    31:
-      Utf8:
+    - Utf8:
         length: 6
         bytes:
           - 76
@@ -293,16 +266,14 @@ constant_pool:
           - 117
           - 109
           - 59
-    32:
-      Utf8:
+    - Utf8:
         length: 4
         bytes:
           - 75
           - 65
           - 80
           - 73
-    33:
-      Utf8:
+    - Utf8:
         length: 10
         bytes:
           - 83
@@ -315,8 +286,7 @@ constant_pool:
           - 105
           - 108
           - 101
-    34:
-      Utf8:
+    - Utf8:
         length: 24
         bytes:
           - 73
@@ -343,8 +313,7 @@ constant_pool:
           - 97
           - 118
           - 97
-    35:
-      Utf8:
+    - Utf8:
         length: 25
         bytes:
           - 82
@@ -372,8 +341,7 @@ constant_pool:
           - 111
           - 110
           - 115
-    36:
-      Utf8:
+    - Utf8:
         length: 29
         bytes:
           - 76
@@ -405,8 +373,7 @@ constant_pool:
           - 101
           - 116
           - 59
-    37:
-      Utf8:
+    - Utf8:
         length: 5
         bytes:
           - 118
@@ -414,8 +381,7 @@ constant_pool:
           - 108
           - 117
           - 101
-    38:
-      Utf8:
+    - Utf8:
         length: 34
         bytes:
           - 76
@@ -452,16 +418,14 @@ constant_pool:
           - 112
           - 101
           - 59
-    39:
-      Utf8:
+    - Utf8:
         length: 4
         bytes:
           - 84
           - 89
           - 80
           - 69
-    40:
-      Utf8:
+    - Utf8:
         length: 32
         bytes:
           - 76
@@ -496,8 +460,7 @@ constant_pool:
           - 111
           - 110
           - 59
-    41:
-      Utf8:
+    - Utf8:
         length: 38
         bytes:
           - 76
@@ -538,8 +501,7 @@ constant_pool:
           - 99
           - 121
           - 59
-    42:
-      Utf8:
+    - Utf8:
         length: 5
         bytes:
           - 67

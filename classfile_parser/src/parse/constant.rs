@@ -1,17 +1,18 @@
-use crate::node::constant;
-use crate::node::constant::{
-    Class, Constant, ConstantPool, ConstantTag, Double, Dynamic, FieldRef, Float, Integer,
-    InterfaceMethodRef, InvokeDynamic, Long, MethodHandle, MethodRef, MethodType, Module,
-    NameAndType, Package, Utf8,
-};
-use crate::parse::error::{ParseError, ParseResult};
-use byteorder::{BigEndian, ReadBytesExt};
 use std::cell::RefCell;
 use std::io::Read;
 
+use byteorder::{BigEndian, ReadBytesExt};
+
+use crate::node::constant;
+use crate::node::constant::{
+    Class, Constant, ConstantPool, Double, Dynamic, FieldRef, Float, Integer, InterfaceMethodRef,
+    InvokeDynamic, Long, MethodHandle, MethodRef, MethodType, Module, NameAndType, Package, Utf8,
+};
+use crate::parse::error::{ParseError, ParseResult};
+
 pub(super) fn constant_pool<R: Read>(input: &mut R) -> ParseResult<(u16, ConstantPool)> {
     let len = input.read_u16::<BigEndian>()?;
-    let mut constant_pool = ConstantPool::default();
+    let mut constant_pool = ConstantPool::with_capacity(len);
     let mut constant_counter = 0;
 
     while constant_counter < len - 1 {
@@ -30,20 +31,10 @@ pub(super) fn constant_pool<R: Read>(input: &mut R) -> ParseResult<(u16, Constan
 }
 
 fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
-    let raw_tag = input.read_u8()?;
-    let tag = match ConstantTag::try_from(raw_tag) {
-        Ok(tag) => tag,
-        Err(_) => {
-            return Err(ParseError::MatchOutOfBoundUsize(
-                "constant tag",
-                vec!["1..=20"],
-                raw_tag as usize,
-            ))
-        }
-    };
+    let tag = input.read_u8()?;
 
     let constant = match tag {
-        ConstantTag::Utf8 => {
+        1 => {
             let length = input.read_u16::<BigEndian>()?;
             let mut bytes = vec![0; length as usize];
 
@@ -55,21 +46,21 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 string: RefCell::new(None),
             })
         }
-        ConstantTag::Integer => {
+        3 => {
             let mut bytes = [0; 4];
 
             input.read_exact(&mut bytes)?;
 
             Constant::Integer(Integer { bytes })
         }
-        ConstantTag::Float => {
+        4 => {
             let mut bytes = [0; 4];
 
             input.read_exact(&mut bytes)?;
 
             Constant::Float(Float { bytes })
         }
-        ConstantTag::Long => {
+        5 => {
             let mut high_bytes = [0; 4];
             let mut low_bytes = [0; 4];
 
@@ -81,7 +72,7 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 low_bytes,
             })
         }
-        ConstantTag::Double => {
+        6 => {
             let mut high_bytes = [0; 4];
             let mut low_bytes = [0; 4];
 
@@ -93,17 +84,17 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 low_bytes,
             })
         }
-        ConstantTag::Class => {
+        7 => {
             let name_index = input.read_u16::<BigEndian>()?;
 
             Constant::Class(Class { name_index })
         }
-        ConstantTag::String => {
+        8 => {
             let string_index = input.read_u16::<BigEndian>()?;
 
             Constant::String(constant::String { string_index })
         }
-        ConstantTag::FieldRef => {
+        9 => {
             let class_index = input.read_u16::<BigEndian>()?;
             let name_and_type_index = input.read_u16::<BigEndian>()?;
 
@@ -112,7 +103,7 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 name_and_type_index,
             })
         }
-        ConstantTag::MethodRef => {
+        10 => {
             let class_index = input.read_u16::<BigEndian>()?;
             let name_and_type_index = input.read_u16::<BigEndian>()?;
 
@@ -121,7 +112,7 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 name_and_type_index,
             })
         }
-        ConstantTag::InterfaceMethodRef => {
+        11 => {
             let class_index = input.read_u16::<BigEndian>()?;
             let name_and_type_index = input.read_u16::<BigEndian>()?;
 
@@ -130,7 +121,7 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 name_and_type_index,
             })
         }
-        ConstantTag::NameAndType => {
+        12 => {
             let name_index = input.read_u16::<BigEndian>()?;
             let type_index = input.read_u16::<BigEndian>()?;
 
@@ -139,7 +130,7 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 type_index,
             })
         }
-        ConstantTag::MethodHandle => {
+        15 => {
             let reference_kind = input.read_u8()?;
             let reference_index = input.read_u16::<BigEndian>()?;
 
@@ -148,12 +139,12 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 reference_index,
             })
         }
-        ConstantTag::MethodType => {
+        16 => {
             let descriptor_index = input.read_u16::<BigEndian>()?;
 
             Constant::MethodType(MethodType { descriptor_index })
         }
-        ConstantTag::Dynamic => {
+        17 => {
             let bootstrap_method_attr_index = input.read_u16::<BigEndian>()?;
             let name_and_type_index = input.read_u16::<BigEndian>()?;
 
@@ -162,7 +153,7 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 name_and_type_index,
             })
         }
-        ConstantTag::InvokeDynamic => {
+        18 => {
             let bootstrap_method_attr_index = input.read_u16::<BigEndian>()?;
             let name_and_type_index = input.read_u16::<BigEndian>()?;
 
@@ -171,15 +162,22 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
                 name_and_type_index,
             })
         }
-        ConstantTag::Module => {
+        19 => {
             let name_index = input.read_u16::<BigEndian>()?;
 
             Constant::Module(Module { name_index })
         }
-        ConstantTag::Package => {
+        20 => {
             let name_index = input.read_u16::<BigEndian>()?;
 
             Constant::Package(Package { name_index })
+        }
+        _ => {
+            return Err(ParseError::MatchOutOfBoundUsize(
+                "constant tag",
+                vec!["1..=20"],
+                tag as usize,
+            ))
         }
     };
 

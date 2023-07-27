@@ -1,5 +1,5 @@
 ---
-source: structural_parser/tests/class_parse.rs
+source: classfile_parser/tests/class_parse.rs
 expression: "to_class(&mut cursor, ParsingOption::default().parse_attribute())?"
 ---
 java_version: V17
@@ -7,19 +7,15 @@ constant_pool_count: 19
 constant_pool:
   len: 19
   entries:
-    1:
-      MethodRef:
+    - MethodRef:
         class_index: 2
         name_and_type_index: 3
-    2:
-      Class:
+    - Class:
         name_index: 4
-    3:
-      NameAndType:
+    - NameAndType:
         name_index: 5
         type_index: 6
-    4:
-      Utf8:
+    - Utf8:
         length: 16
         bytes:
           - 106
@@ -38,8 +34,7 @@ constant_pool:
           - 101
           - 99
           - 116
-    5:
-      Utf8:
+    - Utf8:
         length: 6
         bytes:
           - 60
@@ -48,18 +43,15 @@ constant_pool:
           - 105
           - 116
           - 62
-    6:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 86
-    7:
-      Class:
+    - Class:
         name_index: 8
-    8:
-      Utf8:
+    - Utf8:
         length: 16
         bytes:
           - 65
@@ -78,16 +70,14 @@ constant_pool:
           - 103
           - 101
           - 116
-    9:
-      Utf8:
+    - Utf8:
         length: 4
         bytes:
           - 67
           - 111
           - 100
           - 101
-    10:
-      Utf8:
+    - Utf8:
         length: 15
         bytes:
           - 76
@@ -105,8 +95,7 @@ constant_pool:
           - 98
           - 108
           - 101
-    11:
-      Utf8:
+    - Utf8:
         length: 18
         bytes:
           - 76
@@ -127,16 +116,14 @@ constant_pool:
           - 98
           - 108
           - 101
-    12:
-      Utf8:
+    - Utf8:
         length: 4
         bytes:
           - 116
           - 104
           - 105
           - 115
-    13:
-      Utf8:
+    - Utf8:
         length: 18
         bytes:
           - 76
@@ -157,8 +144,7 @@ constant_pool:
           - 101
           - 116
           - 59
-    14:
-      Utf8:
+    - Utf8:
         length: 10
         bytes:
           - 83
@@ -171,8 +157,7 @@ constant_pool:
           - 105
           - 108
           - 101
-    15:
-      Utf8:
+    - Utf8:
         length: 21
         bytes:
           - 65
@@ -196,8 +181,7 @@ constant_pool:
           - 97
           - 118
           - 97
-    16:
-      Utf8:
+    - Utf8:
         length: 27
         bytes:
           - 82
@@ -227,8 +211,7 @@ constant_pool:
           - 111
           - 110
           - 115
-    17:
-      Utf8:
+    - Utf8:
         length: 19
         bytes:
           - 76
@@ -250,8 +233,7 @@ constant_pool:
           - 111
           - 110
           - 59
-    18:
-      Utf8:
+    - Utf8:
         length: 21
         bytes:
           - 76

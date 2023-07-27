@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::collections::BTreeMap;
 use std::ops::Deref;
 
 use paste::paste;
@@ -14,7 +13,7 @@ macro_rules! const_getter {
         paste! {
             $(#[$attr])*
             pub fn [< get_ $variant_name >] (&self, index: u16) -> Option<&$variant> {
-                if let Some(Constant::$variant(constant)) = self.get(&index)
+                if let Some(Some(Constant::$variant(constant))) = self.get(index as usize - 1)
                 {
                     Some(constant)
                 } else {
@@ -31,10 +30,17 @@ macro_rules! const_getter {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ConstantPool {
     len: u16,
-    entries: BTreeMap<u16, Constant>,
+    entries: Vec<Option<Constant>>,
 }
 
 impl ConstantPool {
+    pub(crate) fn with_capacity(capacity: u16) -> Self {
+        Self {
+            len: 1,
+            entries: Vec::with_capacity(capacity as usize),
+        }
+    }
+
     pub fn len(&self) -> u16 {
         self.len
     }
@@ -42,17 +48,19 @@ impl ConstantPool {
     pub(crate) fn add(&mut self, constant: Constant) {
         let occupies_2_slots = constant.occupies_2_slots();
 
-        self.entries.insert(self.len, constant);
+        self.entries.push(Some(constant));
 
         if occupies_2_slots {
             self.len += 2;
+
+            self.entries.push(None);
         } else {
             self.len += 1;
         }
     }
 
     pub fn get_constant(&self, index: u16) -> Option<&Constant> {
-        self.get(&index)
+        self.get(index as usize - 1).map(Option::as_ref).flatten()
     }
 
     const_getter!(
@@ -142,17 +150,8 @@ impl ConstantPool {
     );
 }
 
-impl Default for ConstantPool {
-    fn default() -> Self {
-        Self {
-            len: 1,
-            entries: BTreeMap::default(),
-        }
-    }
-}
-
 impl Deref for ConstantPool {
-    type Target = BTreeMap<u16, Constant>;
+    type Target = Vec<Option<Constant>>;
 
     fn deref(&self) -> &Self::Target {
         &self.entries

@@ -8,7 +8,7 @@ fn parsing_classes(c: &mut Criterion) {
     let mut g = c.benchmark_group("parse class");
 
     let compiled_source_folder =
-        fs::read_dir("compiled_source/out/production/compiled_source").unwrap();
+        fs::read_dir("../compiled_source/out/production/compiled_source").unwrap();
 
     for entry in compiled_source_folder {
         let entry = entry.as_ref().unwrap().path();

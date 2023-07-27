@@ -1,5 +1,5 @@
 ---
-source: structural_parser/tests/class_parse.rs
+source: classfile_parser/tests/class_parse.rs
 expression: "to_class(&mut cursor, ParsingOption::default().parse_attribute())?"
 ---
 java_version: V17
@@ -7,19 +7,15 @@ constant_pool_count: 97
 constant_pool:
   len: 97
   entries:
-    1:
-      MethodRef:
+    - MethodRef:
         class_index: 2
         name_and_type_index: 3
-    2:
-      Class:
+    - Class:
         name_index: 4
-    3:
-      NameAndType:
+    - NameAndType:
         name_index: 5
         type_index: 6
-    4:
-      Utf8:
+    - Utf8:
         length: 16
         bytes:
           - 106
@@ -38,8 +34,7 @@ constant_pool:
           - 111
           - 114
           - 100
-    5:
-      Utf8:
+    - Utf8:
         length: 6
         bytes:
           - 60
@@ -48,26 +43,21 @@ constant_pool:
           - 105
           - 116
           - 62
-    6:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 86
-    7:
-      FieldRef:
+    - FieldRef:
         class_index: 8
         name_and_type_index: 9
-    8:
-      Class:
+    - Class:
         name_index: 10
-    9:
-      NameAndType:
+    - NameAndType:
         name_index: 11
         type_index: 12
-    10:
-      Utf8:
+    - Utf8:
         length: 6
         bytes:
           - 82
@@ -76,142 +66,112 @@ constant_pool:
           - 111
           - 114
           - 100
-    11:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 98
-    12:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 66
-    13:
-      FieldRef:
+    - FieldRef:
         class_index: 8
         name_and_type_index: 14
-    14:
-      NameAndType:
+    - NameAndType:
         name_index: 15
         type_index: 16
-    15:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 115
-    16:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 83
-    17:
-      FieldRef:
+    - FieldRef:
         class_index: 8
         name_and_type_index: 18
-    18:
-      NameAndType:
+    - NameAndType:
         name_index: 19
         type_index: 20
-    19:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 105
-    20:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 73
-    21:
-      FieldRef:
+    - FieldRef:
         class_index: 8
         name_and_type_index: 22
-    22:
-      NameAndType:
+    - NameAndType:
         name_index: 23
         type_index: 24
-    23:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 102
-    24:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 70
-    25:
-      FieldRef:
+    - FieldRef:
         class_index: 8
         name_and_type_index: 26
-    26:
-      NameAndType:
+    - NameAndType:
         name_index: 27
         type_index: 28
-    27:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 106
-    28:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 74
-    29:
-      FieldRef:
+    - FieldRef:
         class_index: 8
         name_and_type_index: 30
-    30:
-      NameAndType:
+    - NameAndType:
         name_index: 31
         type_index: 32
-    31:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 100
-    32:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 68
-    33:
-      FieldRef:
+    - FieldRef:
         class_index: 8
         name_and_type_index: 34
-    34:
-      NameAndType:
+    - NameAndType:
         name_index: 35
         type_index: 36
-    35:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 122
-    36:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 90
-    37:
-      FieldRef:
+    - FieldRef:
         class_index: 8
         name_and_type_index: 38
-    38:
-      NameAndType:
+    - NameAndType:
         name_index: 39
         type_index: 40
-    39:
-      Utf8:
+    - Utf8:
         length: 4
         bytes:
           - 115
           - 101
           - 108
           - 102
-    40:
-      Utf8:
+    - Utf8:
         length: 8
         bytes:
           - 76
@@ -222,16 +182,13 @@ constant_pool:
           - 114
           - 100
           - 59
-    41:
-      InvokeDynamic:
+    - InvokeDynamic:
         bootstrap_method_attr_index: 0
         name_and_type_index: 42
-    42:
-      NameAndType:
+    - NameAndType:
         name_index: 43
         type_index: 44
-    43:
-      Utf8:
+    - Utf8:
         length: 8
         bytes:
           - 116
@@ -242,8 +199,7 @@ constant_pool:
           - 105
           - 110
           - 103
-    44:
-      Utf8:
+    - Utf8:
         length: 28
         bytes:
           - 40
@@ -274,16 +230,13 @@ constant_pool:
           - 110
           - 103
           - 59
-    45:
-      InvokeDynamic:
+    - InvokeDynamic:
         bootstrap_method_attr_index: 0
         name_and_type_index: 46
-    46:
-      NameAndType:
+    - NameAndType:
         name_index: 47
         type_index: 48
-    47:
-      Utf8:
+    - Utf8:
         length: 8
         bytes:
           - 104
@@ -294,8 +247,7 @@ constant_pool:
           - 111
           - 100
           - 101
-    48:
-      Utf8:
+    - Utf8:
         length: 11
         bytes:
           - 40
@@ -309,16 +261,13 @@ constant_pool:
           - 59
           - 41
           - 73
-    49:
-      InvokeDynamic:
+    - InvokeDynamic:
         bootstrap_method_attr_index: 0
         name_and_type_index: 50
-    50:
-      NameAndType:
+    - NameAndType:
         name_index: 51
         type_index: 52
-    51:
-      Utf8:
+    - Utf8:
         length: 6
         bytes:
           - 101
@@ -327,8 +276,7 @@ constant_pool:
           - 97
           - 108
           - 115
-    52:
-      Utf8:
+    - Utf8:
         length: 29
         bytes:
           - 40
@@ -360,8 +308,7 @@ constant_pool:
           - 59
           - 41
           - 90
-    53:
-      Utf8:
+    - Utf8:
         length: 18
         bytes:
           - 40
@@ -382,16 +329,14 @@ constant_pool:
           - 59
           - 41
           - 86
-    54:
-      Utf8:
+    - Utf8:
         length: 4
         bytes:
           - 67
           - 111
           - 100
           - 101
-    55:
-      Utf8:
+    - Utf8:
         length: 15
         bytes:
           - 76
@@ -409,8 +354,7 @@ constant_pool:
           - 98
           - 108
           - 101
-    56:
-      Utf8:
+    - Utf8:
         length: 18
         bytes:
           - 76
@@ -431,16 +375,14 @@ constant_pool:
           - 98
           - 108
           - 101
-    57:
-      Utf8:
+    - Utf8:
         length: 4
         bytes:
           - 116
           - 104
           - 105
           - 115
-    58:
-      Utf8:
+    - Utf8:
         length: 16
         bytes:
           - 77
@@ -459,8 +401,7 @@ constant_pool:
           - 101
           - 114
           - 115
-    59:
-      Utf8:
+    - Utf8:
         length: 20
         bytes:
           - 40
@@ -483,15 +424,13 @@ constant_pool:
           - 110
           - 103
           - 59
-    60:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 73
-    61:
-      Utf8:
+    - Utf8:
         length: 21
         bytes:
           - 40
@@ -515,13 +454,11 @@ constant_pool:
           - 59
           - 41
           - 90
-    62:
-      Utf8:
+    - Utf8:
         length: 1
         bytes:
           - 111
-    63:
-      Utf8:
+    - Utf8:
         length: 18
         bytes:
           - 76
@@ -542,50 +479,43 @@ constant_pool:
           - 99
           - 116
           - 59
-    64:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 66
-    65:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 83
-    66:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 70
-    67:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 74
-    68:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 68
-    69:
-      Utf8:
+    - Utf8:
         length: 3
         bytes:
           - 40
           - 41
           - 90
-    70:
-      Utf8:
+    - Utf8:
         length: 10
         bytes:
           - 40
@@ -598,8 +528,7 @@ constant_pool:
           - 114
           - 100
           - 59
-    71:
-      Utf8:
+    - Utf8:
         length: 10
         bytes:
           - 83
@@ -612,8 +541,7 @@ constant_pool:
           - 105
           - 108
           - 101
-    72:
-      Utf8:
+    - Utf8:
         length: 11
         bytes:
           - 82
@@ -627,8 +555,7 @@ constant_pool:
           - 97
           - 118
           - 97
-    73:
-      Utf8:
+    - Utf8:
         length: 16
         bytes:
           - 66
@@ -647,23 +574,18 @@ constant_pool:
           - 111
           - 100
           - 115
-    74:
-      MethodHandle:
+    - MethodHandle:
         reference_kind: 6
         reference_index: 75
-    75:
-      MethodRef:
+    - MethodRef:
         class_index: 76
         name_and_type_index: 77
-    76:
-      Class:
+    - Class:
         name_index: 78
-    77:
-      NameAndType:
+    - NameAndType:
         name_index: 79
         type_index: 80
-    78:
-      Utf8:
+    - Utf8:
         length: 31
         bytes:
           - 106
@@ -697,8 +619,7 @@ constant_pool:
           - 111
           - 100
           - 115
-    79:
-      Utf8:
+    - Utf8:
         length: 9
         bytes:
           - 98
@@ -710,8 +631,7 @@ constant_pool:
           - 114
           - 97
           - 112
-    80:
-      Utf8:
+    - Utf8:
         length: 177
         bytes:
           - 40
@@ -891,11 +811,9 @@ constant_pool:
           - 99
           - 116
           - 59
-    81:
-      String:
+    - String:
         string_index: 82
-    82:
-      Utf8:
+    - Utf8:
         length: 18
         bytes:
           - 98
@@ -916,40 +834,31 @@ constant_pool:
           - 101
           - 108
           - 102
-    83:
-      MethodHandle:
+    - MethodHandle:
         reference_kind: 1
         reference_index: 7
-    84:
-      MethodHandle:
+    - MethodHandle:
         reference_kind: 1
         reference_index: 13
-    85:
-      MethodHandle:
+    - MethodHandle:
         reference_kind: 1
         reference_index: 17
-    86:
-      MethodHandle:
+    - MethodHandle:
         reference_kind: 1
         reference_index: 21
-    87:
-      MethodHandle:
+    - MethodHandle:
         reference_kind: 1
         reference_index: 25
-    88:
-      MethodHandle:
+    - MethodHandle:
         reference_kind: 1
         reference_index: 29
-    89:
-      MethodHandle:
+    - MethodHandle:
         reference_kind: 1
         reference_index: 33
-    90:
-      MethodHandle:
+    - MethodHandle:
         reference_kind: 1
         reference_index: 37
-    91:
-      Utf8:
+    - Utf8:
         length: 12
         bytes:
           - 73
@@ -964,11 +873,9 @@ constant_pool:
           - 115
           - 101
           - 115
-    92:
-      Class:
+    - Class:
         name_index: 93
-    93:
-      Utf8:
+    - Utf8:
         length: 37
         bytes:
           - 106
@@ -1008,11 +915,9 @@ constant_pool:
           - 107
           - 117
           - 112
-    94:
-      Class:
+    - Class:
         name_index: 95
-    95:
-      Utf8:
+    - Utf8:
         length: 30
         bytes:
           - 106
@@ -1045,8 +950,7 @@ constant_pool:
           - 108
           - 101
           - 115
-    96:
-      Utf8:
+    - Utf8:
         length: 6
         bytes:
           - 76
