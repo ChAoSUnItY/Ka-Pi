@@ -22,15 +22,12 @@ Ka-Pi offers several essential modules relates to JVM ecosystem:
 #### Parse class file
 
 ```rust
-use std::fs;
-use std::io::Cursor;
+use std::fs::File;
 use ka_pi::parse::{to_class, ParseResult, ParsingOption};
 
 fn main() -> ParseResult<()> {
-  let class_path = "compiled_source/out/production/compiled_source/Main.class";
-  let bytes = fs::read(class_path)?;
-  let mut cursor = Cursor::new(&bytes);
-  let class_tree = to_class(&mut cursor, ParsingOption::default().parse_attribute())?;
+  let mut file = File::open("compiled_source/out/production/compiled_source/Main.class")?;
+  let class_tree = to_class(&mut file, ParsingOption::default().parse_attribute())?;
 
   println!("{:#?}", class_tree);
 
@@ -54,6 +51,9 @@ are implemented.
 - [x] Signature visitor
 
 #### `parse`
+
+Currently, module `parse` supports parsing class file up to **Java SE 20**.
+
 <details>
     <summary> Class structure parsing </summary>
 
