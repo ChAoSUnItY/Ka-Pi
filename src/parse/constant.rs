@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use crate::node::constant;
 use crate::node::constant::{
     Class, Constant, ConstantPool, ConstantTag, Double, Dynamic, FieldRef, Float, Integer,
@@ -7,6 +6,7 @@ use crate::node::constant::{
 };
 use crate::parse::error::{ParseError, ParseResult};
 use byteorder::{BigEndian, ReadBytesExt};
+use std::cell::RefCell;
 use std::io::Read;
 
 pub(super) fn constant_pool<R: Read>(input: &mut R) -> ParseResult<(u16, ConstantPool)> {
@@ -49,7 +49,11 @@ fn constant<R: Read>(input: &mut R) -> ParseResult<Constant> {
 
             input.read_exact(&mut bytes)?;
 
-            Constant::Utf8(Utf8 { length, bytes, string: RefCell::new(None) })
+            Constant::Utf8(Utf8 {
+                length,
+                bytes,
+                string: RefCell::new(None),
+            })
         }
         ConstantTag::Integer => {
             let mut bytes = [0; 4];

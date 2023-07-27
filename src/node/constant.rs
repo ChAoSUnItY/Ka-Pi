@@ -320,7 +320,7 @@ impl Utf8 {
     /// Converts bytes into string.
     pub fn string(&self) -> NodeResResult<std::string::String> {
         let string_ref = self.string.borrow_mut();
-        
+
         if let Some(string) = string_ref.as_ref() {
             Ok(string.clone())
         } else {
