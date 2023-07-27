@@ -1,9 +1,8 @@
+use classfile_parser::parse::{to_class, ParsingOption};
 use std::fs;
 use std::io::Cursor;
 
 use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput};
-
-use ka_pi::parse::{to_class, ParsingOption};
 
 fn parsing_classes(c: &mut Criterion) {
     let mut g = c.benchmark_group("parse class");

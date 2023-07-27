@@ -16,20 +16,16 @@ name = "ka_pi"
 path = "src/lib.rs"
 
 [dependencies]
-serde = { version = "1.0.152", features = ["derive"] }
-cesu8 = "1.1.0"
-paste = "1.0.13"
-bitflags = { version = "2.3.3", features = ["serde"] }
-thiserror = "1.0.43"
-byteorder = "1.4.3"
+classfile_parser = { path = "classfile_parser" }
 
 [dev-dependencies]
 insta = { version = "1.28.0", features = ["yaml"] }
-rstest = "0.18.1"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [features]
+default = []
 
-[[bench]]
-name = "parse"
-harness = false
+[workspace]
+members = [
+    "classfile_parser"
+]

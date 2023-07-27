@@ -1,6 +1,6 @@
 ---
-source: tests/class_parse.rs
-expression: to_class(&mut cursor)?
+source: structural_parser/tests/class_parse.rs
+expression: "to_class(&mut cursor, ParsingOption::default().parse_attribute())?"
 ---
 java_version: V17
 constant_pool_count: 43
@@ -12,9 +12,11 @@ constant_pool:
         name_index: 2
     2:
       Utf8:
-        length: 17
+        length: 19
         bytes:
-          - 86
+          - 73
+          - 110
+          - 118
           - 105
           - 115
           - 105
@@ -315,9 +317,11 @@ constant_pool:
           - 101
     34:
       Utf8:
-        length: 22
+        length: 24
         bytes:
-          - 86
+          - 73
+          - 110
+          - 118
           - 105
           - 115
           - 105

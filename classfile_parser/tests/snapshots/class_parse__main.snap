@@ -1,6 +1,6 @@
 ---
-source: tests/class_parse.rs
-expression: to_class(&mut cursor)?
+source: structural_parser/tests/class_parse.rs
+expression: "to_class(&mut cursor, ParsingOption::default().parse_attribute())?"
 ---
 java_version: V17
 constant_pool_count: 60

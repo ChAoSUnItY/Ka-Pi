@@ -1,7 +1,5 @@
+use classfile_parser::parse::{class_signature, field_signature, method_signature, ParseResult};
 use insta::assert_yaml_snapshot;
-
-use ka_pi::parse::ParseResult;
-use ka_pi::parse::{class_signature, field_signature, method_signature};
 
 #[test]
 fn test_class_signature_with_generic() -> ParseResult<()> {

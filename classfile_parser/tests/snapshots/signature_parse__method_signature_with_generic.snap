@@ -1,5 +1,5 @@
 ---
-source: tests/signature_parse.rs
+source: structural_parser/tests/signature_parse.rs
 expression: method_signature
 ---
 Method:

@@ -1,6 +1,0 @@
----
-source: tests/signature_writer.rs
-expression: writer.to_string()
----
-Ljava/lang/String;
-

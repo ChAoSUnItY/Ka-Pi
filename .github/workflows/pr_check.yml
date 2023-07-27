@@ -14,9 +14,9 @@ jobs:
           toolchain: stable
           components: rustfmt
       - name: Format check
-        run: cargo fmt --check
+        run: cargo fmt --check --all
       - name: Check build (Strict) (Skipped at this moment)
         if: ${{ false }}
-        run: cargo build --verbose --release --features "strict"
+        run: cargo build --workspace --verbose --release --features "strict"
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --workspace --verbose

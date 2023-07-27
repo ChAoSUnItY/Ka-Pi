@@ -324,8 +324,6 @@ fn type_argument(input: &mut Peekable<Chars>) -> ParseResult<TypeArgument> {
 fn type_variable(input: &mut Peekable<Chars>) -> ParseResult<TypeVariable> {
     assert_char(input.next(), 'T')?;
 
-    println!("{:?}", input.peek());
-
     let identifier = identifier(input)?;
 
     assert_char(input.next(), ';')?;
