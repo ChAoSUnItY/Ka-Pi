@@ -1,0 +1,24 @@
+---
+source: structural_parser/tests/signature_parse.rs
+expression: class_signature
+---
+Class:
+  formal_type_parameters:
+    - parameter_name: T
+      class_bound:
+        package_path: java/lang/
+        class_name: Object
+        type_arguments: []
+        inner_classes: []
+      interface_bounds: []
+  super_class:
+    package_path: java/lang/
+    class_name: Object
+    type_arguments: []
+    inner_classes: []
+  interfaces:
+    - package_path: java/lang/
+      class_name: Runnable
+      type_arguments: []
+      inner_classes: []
+

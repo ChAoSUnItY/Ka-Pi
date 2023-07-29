@@ -1,0 +1,738 @@
+---
+source: classfile_parser/tests/class_parse.rs
+expression: "to_class(&mut cursor, ParsingOption::default().parse_attribute())?"
+---
+java_version: V17
+constant_pool_count: 43
+constant_pool:
+  len: 43
+  entries:
+    - Class:
+        name_index: 2
+    - Utf8:
+        length: 19
+        bytes:
+          - 73
+          - 110
+          - 118
+          - 105
+          - 115
+          - 105
+          - 98
+          - 108
+          - 101
+          - 65
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+    - Class:
+        name_index: 4
+    - Utf8:
+        length: 16
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 79
+          - 98
+          - 106
+          - 101
+          - 99
+          - 116
+    - Class:
+        name_index: 6
+    - Utf8:
+        length: 31
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 97
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+          - 47
+          - 65
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+    - Utf8:
+        length: 1
+        bytes:
+          - 98
+    - Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 66
+    - Utf8:
+        length: 17
+        bytes:
+          - 65
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+          - 68
+          - 101
+          - 102
+          - 97
+          - 117
+          - 108
+          - 116
+    - Integer:
+        bytes:
+          - 0
+          - 0
+          - 0
+          - 1
+    - Utf8:
+        length: 1
+        bytes:
+          - 115
+    - Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 83
+    - Utf8:
+        length: 1
+        bytes:
+          - 105
+    - Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 73
+    - Utf8:
+        length: 1
+        bytes:
+          - 102
+    - Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 70
+    - Float:
+        bytes:
+          - 63
+          - 128
+          - 0
+          - 0
+    - Utf8:
+        length: 1
+        bytes:
+          - 106
+    - Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 74
+    - Long:
+        high_bytes:
+          - 0
+          - 0
+          - 0
+          - 0
+        low_bytes:
+          - 0
+          - 0
+          - 0
+          - 1
+    - ~
+    - Utf8:
+        length: 1
+        bytes:
+          - 100
+    - Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 68
+    - Double:
+        high_bytes:
+          - 63
+          - 240
+          - 0
+          - 0
+        low_bytes:
+          - 0
+          - 0
+          - 0
+          - 0
+    - ~
+    - Utf8:
+        length: 6
+        bytes:
+          - 115
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+    - Utf8:
+        length: 20
+        bytes:
+          - 40
+          - 41
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+    - Utf8:
+        length: 3
+        bytes:
+          - 75
+          - 69
+          - 75
+    - Utf8:
+        length: 1
+        bytes:
+          - 101
+    - Utf8:
+        length: 8
+        bytes:
+          - 40
+          - 41
+          - 76
+          - 69
+          - 110
+          - 117
+          - 109
+          - 59
+    - Utf8:
+        length: 6
+        bytes:
+          - 76
+          - 69
+          - 110
+          - 117
+          - 109
+          - 59
+    - Utf8:
+        length: 4
+        bytes:
+          - 75
+          - 65
+          - 80
+          - 73
+    - Utf8:
+        length: 10
+        bytes:
+          - 83
+          - 111
+          - 117
+          - 114
+          - 99
+          - 101
+          - 70
+          - 105
+          - 108
+          - 101
+    - Utf8:
+        length: 24
+        bytes:
+          - 73
+          - 110
+          - 118
+          - 105
+          - 115
+          - 105
+          - 98
+          - 108
+          - 101
+          - 65
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+          - 46
+          - 106
+          - 97
+          - 118
+          - 97
+    - Utf8:
+        length: 25
+        bytes:
+          - 82
+          - 117
+          - 110
+          - 116
+          - 105
+          - 109
+          - 101
+          - 86
+          - 105
+          - 115
+          - 105
+          - 98
+          - 108
+          - 101
+          - 65
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+          - 115
+    - Utf8:
+        length: 29
+        bytes:
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 97
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+          - 47
+          - 84
+          - 97
+          - 114
+          - 103
+          - 101
+          - 116
+          - 59
+    - Utf8:
+        length: 5
+        bytes:
+          - 118
+          - 97
+          - 108
+          - 117
+          - 101
+    - Utf8:
+        length: 34
+        bytes:
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 97
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+          - 47
+          - 69
+          - 108
+          - 101
+          - 109
+          - 101
+          - 110
+          - 116
+          - 84
+          - 121
+          - 112
+          - 101
+          - 59
+    - Utf8:
+        length: 4
+        bytes:
+          - 84
+          - 89
+          - 80
+          - 69
+    - Utf8:
+        length: 32
+        bytes:
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 97
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+          - 47
+          - 82
+          - 101
+          - 116
+          - 101
+          - 110
+          - 116
+          - 105
+          - 111
+          - 110
+          - 59
+    - Utf8:
+        length: 38
+        bytes:
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 97
+          - 110
+          - 110
+          - 111
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+          - 47
+          - 82
+          - 101
+          - 116
+          - 101
+          - 110
+          - 116
+          - 105
+          - 111
+          - 110
+          - 80
+          - 111
+          - 108
+          - 105
+          - 99
+          - 121
+          - 59
+    - Utf8:
+        length: 5
+        bytes:
+          - 67
+          - 76
+          - 65
+          - 83
+          - 83
+access_flag: Public | Interface | Abstract | Annotation
+this_class: 1
+super_class: 3
+interfaces_count: 1
+interfaces:
+  - 5
+fields_count: 0
+fields: []
+methods_count: 8
+methods:
+  - access_flag: Public | Abstract
+    name_index: 7
+    descriptor_index: 8
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 9
+        attribute_len: 3
+        info:
+          - 66
+          - 0
+          - 10
+        attribute:
+          AnnotationDefault:
+            default_value:
+              tag: 66
+              value:
+                ConstValue:
+                  const_value_index: 10
+  - access_flag: Public | Abstract
+    name_index: 11
+    descriptor_index: 12
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 9
+        attribute_len: 3
+        info:
+          - 83
+          - 0
+          - 10
+        attribute:
+          AnnotationDefault:
+            default_value:
+              tag: 83
+              value:
+                ConstValue:
+                  const_value_index: 10
+  - access_flag: Public | Abstract
+    name_index: 13
+    descriptor_index: 14
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 9
+        attribute_len: 3
+        info:
+          - 73
+          - 0
+          - 10
+        attribute:
+          AnnotationDefault:
+            default_value:
+              tag: 73
+              value:
+                ConstValue:
+                  const_value_index: 10
+  - access_flag: Public | Abstract
+    name_index: 15
+    descriptor_index: 16
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 9
+        attribute_len: 3
+        info:
+          - 70
+          - 0
+          - 17
+        attribute:
+          AnnotationDefault:
+            default_value:
+              tag: 70
+              value:
+                ConstValue:
+                  const_value_index: 17
+  - access_flag: Public | Abstract
+    name_index: 18
+    descriptor_index: 19
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 9
+        attribute_len: 3
+        info:
+          - 74
+          - 0
+          - 20
+        attribute:
+          AnnotationDefault:
+            default_value:
+              tag: 74
+              value:
+                ConstValue:
+                  const_value_index: 20
+  - access_flag: Public | Abstract
+    name_index: 22
+    descriptor_index: 23
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 9
+        attribute_len: 3
+        info:
+          - 68
+          - 0
+          - 24
+        attribute:
+          AnnotationDefault:
+            default_value:
+              tag: 68
+              value:
+                ConstValue:
+                  const_value_index: 24
+  - access_flag: Public | Abstract
+    name_index: 26
+    descriptor_index: 27
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 9
+        attribute_len: 3
+        info:
+          - 115
+          - 0
+          - 28
+        attribute:
+          AnnotationDefault:
+            default_value:
+              tag: 115
+              value:
+                ConstValue:
+                  const_value_index: 28
+  - access_flag: Public | Abstract
+    name_index: 29
+    descriptor_index: 30
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 9
+        attribute_len: 5
+        info:
+          - 101
+          - 0
+          - 31
+          - 0
+          - 32
+        attribute:
+          AnnotationDefault:
+            default_value:
+              tag: 101
+              value:
+                EnumConstValue:
+                  type_name_index: 31
+                  const_name_index: 32
+attributes_count: 2
+attributes:
+  - attribute_name_index: 33
+    attribute_len: 2
+    info:
+      - 0
+      - 34
+    attribute:
+      SourceFile:
+        source_file_index: 34
+  - attribute_name_index: 35
+    attribute_len: 27
+    info:
+      - 0
+      - 2
+      - 0
+      - 36
+      - 0
+      - 1
+      - 0
+      - 37
+      - 91
+      - 0
+      - 1
+      - 101
+      - 0
+      - 38
+      - 0
+      - 39
+      - 0
+      - 40
+      - 0
+      - 1
+      - 0
+      - 37
+      - 101
+      - 0
+      - 41
+      - 0
+      - 42
+    attribute:
+      RuntimeVisibleAnnotations:
+        num_annotations: 2
+        annotations:
+          - type_index: 36
+            num_element_value_pairs: 1
+            element_value_pairs:
+              - element_name_index: 37
+                value:
+                  tag: 91
+                  value:
+                    ArrayValue:
+                      num_values: 1
+                      values:
+                        - tag: 101
+                          value:
+                            EnumConstValue:
+                              type_name_index: 38
+                              const_name_index: 39
+          - type_index: 40
+            num_element_value_pairs: 1
+            element_value_pairs:
+              - element_name_index: 37
+                value:
+                  tag: 101
+                  value:
+                    EnumConstValue:
+                      type_name_index: 41
+                      const_name_index: 42
+

@@ -1,0 +1,1229 @@
+---
+source: classfile_parser/tests/class_parse.rs
+expression: "to_class(&mut cursor, ParsingOption::default().parse_attribute())?"
+---
+java_version: V17
+constant_pool_count: 54
+constant_pool:
+  len: 54
+  entries:
+    - Class:
+        name_index: 2
+    - Utf8:
+        length: 4
+        bytes:
+          - 69
+          - 110
+          - 117
+          - 109
+    - FieldRef:
+        class_index: 1
+        name_and_type_index: 4
+    - NameAndType:
+        name_index: 5
+        type_index: 6
+    - Utf8:
+        length: 6
+        bytes:
+          - 67
+          - 79
+          - 70
+          - 70
+          - 69
+          - 69
+    - Utf8:
+        length: 6
+        bytes:
+          - 76
+          - 69
+          - 110
+          - 117
+          - 109
+          - 59
+    - FieldRef:
+        class_index: 1
+        name_and_type_index: 8
+    - NameAndType:
+        name_index: 9
+        type_index: 6
+    - Utf8:
+        length: 4
+        bytes:
+          - 75
+          - 65
+          - 80
+          - 73
+    - FieldRef:
+        class_index: 1
+        name_and_type_index: 11
+    - NameAndType:
+        name_index: 12
+        type_index: 6
+    - Utf8:
+        length: 5
+        bytes:
+          - 76
+          - 65
+          - 84
+          - 84
+          - 69
+    - FieldRef:
+        class_index: 1
+        name_and_type_index: 14
+    - NameAndType:
+        name_index: 15
+        type_index: 16
+    - Utf8:
+        length: 7
+        bytes:
+          - 36
+          - 86
+          - 65
+          - 76
+          - 85
+          - 69
+          - 83
+    - Utf8:
+        length: 7
+        bytes:
+          - 91
+          - 76
+          - 69
+          - 110
+          - 117
+          - 109
+          - 59
+    - MethodRef:
+        class_index: 18
+        name_and_type_index: 19
+    - Class:
+        name_index: 16
+    - NameAndType:
+        name_index: 20
+        type_index: 21
+    - Utf8:
+        length: 5
+        bytes:
+          - 99
+          - 108
+          - 111
+          - 110
+          - 101
+    - Utf8:
+        length: 20
+        bytes:
+          - 40
+          - 41
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 79
+          - 98
+          - 106
+          - 101
+          - 99
+          - 116
+          - 59
+    - MethodRef:
+        class_index: 23
+        name_and_type_index: 24
+    - Class:
+        name_index: 25
+    - NameAndType:
+        name_index: 26
+        type_index: 27
+    - Utf8:
+        length: 14
+        bytes:
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 69
+          - 110
+          - 117
+          - 109
+    - Utf8:
+        length: 7
+        bytes:
+          - 118
+          - 97
+          - 108
+          - 117
+          - 101
+          - 79
+          - 102
+    - Utf8:
+        length: 53
+        bytes:
+          - 40
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 67
+          - 108
+          - 97
+          - 115
+          - 115
+          - 59
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+          - 41
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 69
+          - 110
+          - 117
+          - 109
+          - 59
+    - MethodRef:
+        class_index: 23
+        name_and_type_index: 29
+    - NameAndType:
+        name_index: 30
+        type_index: 31
+    - Utf8:
+        length: 6
+        bytes:
+          - 60
+          - 105
+          - 110
+          - 105
+          - 116
+          - 62
+    - Utf8:
+        length: 22
+        bytes:
+          - 40
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+          - 73
+          - 41
+          - 86
+    - String:
+        string_index: 5
+    - MethodRef:
+        class_index: 1
+        name_and_type_index: 29
+    - String:
+        string_index: 9
+    - String:
+        string_index: 12
+    - MethodRef:
+        class_index: 1
+        name_and_type_index: 37
+    - NameAndType:
+        name_index: 38
+        type_index: 39
+    - Utf8:
+        length: 7
+        bytes:
+          - 36
+          - 118
+          - 97
+          - 108
+          - 117
+          - 101
+          - 115
+    - Utf8:
+        length: 9
+        bytes:
+          - 40
+          - 41
+          - 91
+          - 76
+          - 69
+          - 110
+          - 117
+          - 109
+          - 59
+    - Utf8:
+        length: 6
+        bytes:
+          - 118
+          - 97
+          - 108
+          - 117
+          - 101
+          - 115
+    - Utf8:
+        length: 4
+        bytes:
+          - 67
+          - 111
+          - 100
+          - 101
+    - Utf8:
+        length: 15
+        bytes:
+          - 76
+          - 105
+          - 110
+          - 101
+          - 78
+          - 117
+          - 109
+          - 98
+          - 101
+          - 114
+          - 84
+          - 97
+          - 98
+          - 108
+          - 101
+    - Utf8:
+        length: 26
+        bytes:
+          - 40
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+          - 41
+          - 76
+          - 69
+          - 110
+          - 117
+          - 109
+          - 59
+    - Utf8:
+        length: 18
+        bytes:
+          - 76
+          - 111
+          - 99
+          - 97
+          - 108
+          - 86
+          - 97
+          - 114
+          - 105
+          - 97
+          - 98
+          - 108
+          - 101
+          - 84
+          - 97
+          - 98
+          - 108
+          - 101
+    - Utf8:
+        length: 4
+        bytes:
+          - 110
+          - 97
+          - 109
+          - 101
+    - Utf8:
+        length: 18
+        bytes:
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 83
+          - 116
+          - 114
+          - 105
+          - 110
+          - 103
+          - 59
+    - Utf8:
+        length: 4
+        bytes:
+          - 116
+          - 104
+          - 105
+          - 115
+    - Utf8:
+        length: 9
+        bytes:
+          - 83
+          - 105
+          - 103
+          - 110
+          - 97
+          - 116
+          - 117
+          - 114
+          - 101
+    - Utf8:
+        length: 3
+        bytes:
+          - 40
+          - 41
+          - 86
+    - Utf8:
+        length: 8
+        bytes:
+          - 60
+          - 99
+          - 108
+          - 105
+          - 110
+          - 105
+          - 116
+          - 62
+    - Utf8:
+        length: 24
+        bytes:
+          - 76
+          - 106
+          - 97
+          - 118
+          - 97
+          - 47
+          - 108
+          - 97
+          - 110
+          - 103
+          - 47
+          - 69
+          - 110
+          - 117
+          - 109
+          - 60
+          - 76
+          - 69
+          - 110
+          - 117
+          - 109
+          - 59
+          - 62
+          - 59
+    - Utf8:
+        length: 10
+        bytes:
+          - 83
+          - 111
+          - 117
+          - 114
+          - 99
+          - 101
+          - 70
+          - 105
+          - 108
+          - 101
+    - Utf8:
+        length: 9
+        bytes:
+          - 69
+          - 110
+          - 117
+          - 109
+          - 46
+          - 106
+          - 97
+          - 118
+          - 97
+access_flag: Public | Final | Super | Enum
+this_class: 1
+super_class: 23
+interfaces_count: 0
+interfaces: []
+fields_count: 4
+fields:
+  - access_flag: Public | Static | Final | Enum
+    name_index: 5
+    descriptor_index: 6
+    attribute_infos_len: 0
+    attribute_infos: []
+  - access_flag: Public | Static | Final | Enum
+    name_index: 9
+    descriptor_index: 6
+    attribute_infos_len: 0
+    attribute_infos: []
+  - access_flag: Public | Static | Final | Enum
+    name_index: 12
+    descriptor_index: 6
+    attribute_infos_len: 0
+    attribute_infos: []
+  - access_flag: Private | Static | Final | Synthetic
+    name_index: 15
+    descriptor_index: 16
+    attribute_infos_len: 0
+    attribute_infos: []
+methods_count: 5
+methods:
+  - access_flag: Public | Static
+    name_index: 40
+    descriptor_index: 39
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 41
+        attribute_len: 34
+        info:
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 10
+          - 178
+          - 0
+          - 13
+          - 182
+          - 0
+          - 17
+          - 192
+          - 0
+          - 18
+          - 176
+          - 0
+          - 0
+          - 0
+          - 1
+          - 0
+          - 42
+          - 0
+          - 0
+          - 0
+          - 6
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 1
+        attribute:
+          Code:
+            max_stack: 1
+            max_locals: 0
+            code_length: 10
+            code:
+              - 178
+              - 0
+              - 13
+              - 182
+              - 0
+              - 17
+              - 192
+              - 0
+              - 18
+              - 176
+            instructions:
+              - GETSTATIC:
+                  index: 13
+              - INVOKEVIRTUAL:
+                  index: 17
+              - CHECKCAST:
+                  index: 18
+              - ARETURN
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 1
+            attributes:
+              - attribute_name_index: 42
+                attribute_len: 6
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 1
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 1
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 1
+  - access_flag: Public | Static
+    name_index: 26
+    descriptor_index: 43
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 41
+        attribute_len: 52
+        info:
+          - 0
+          - 2
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 10
+          - 18
+          - 1
+          - 42
+          - 184
+          - 0
+          - 22
+          - 192
+          - 0
+          - 1
+          - 176
+          - 0
+          - 0
+          - 0
+          - 2
+          - 0
+          - 42
+          - 0
+          - 0
+          - 0
+          - 6
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 1
+          - 0
+          - 44
+          - 0
+          - 0
+          - 0
+          - 12
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 10
+          - 0
+          - 45
+          - 0
+          - 46
+          - 0
+          - 0
+        attribute:
+          Code:
+            max_stack: 2
+            max_locals: 1
+            code_length: 10
+            code:
+              - 18
+              - 1
+              - 42
+              - 184
+              - 0
+              - 22
+              - 192
+              - 0
+              - 1
+              - 176
+            instructions:
+              - LDC:
+                  index: 1
+              - ALOAD_0
+              - INVOKESTATIC:
+                  index: 22
+              - CHECKCAST:
+                  index: 1
+              - ARETURN
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 2
+            attributes:
+              - attribute_name_index: 42
+                attribute_len: 6
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 1
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 1
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 1
+              - attribute_name_index: 44
+                attribute_len: 12
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 10
+                  - 0
+                  - 45
+                  - 0
+                  - 46
+                  - 0
+                  - 0
+                attribute:
+                  LocalVariableTable:
+                    local_variable_table_length: 1
+                    local_variable_table:
+                      - start_pc: 0
+                        length: 10
+                        name_index: 45
+                        descriptor_index: 46
+                        index: 0
+  - access_flag: Private
+    name_index: 30
+    descriptor_index: 31
+    attribute_infos_len: 2
+    attribute_infos:
+      - attribute_name_index: 41
+        attribute_len: 49
+        info:
+          - 0
+          - 3
+          - 0
+          - 3
+          - 0
+          - 0
+          - 0
+          - 7
+          - 42
+          - 43
+          - 28
+          - 183
+          - 0
+          - 28
+          - 177
+          - 0
+          - 0
+          - 0
+          - 2
+          - 0
+          - 42
+          - 0
+          - 0
+          - 0
+          - 6
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 1
+          - 0
+          - 44
+          - 0
+          - 0
+          - 0
+          - 12
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 7
+          - 0
+          - 47
+          - 0
+          - 6
+          - 0
+          - 0
+        attribute:
+          Code:
+            max_stack: 3
+            max_locals: 3
+            code_length: 7
+            code:
+              - 42
+              - 43
+              - 28
+              - 183
+              - 0
+              - 28
+              - 177
+            instructions:
+              - ALOAD_0
+              - ALOAD_1
+              - ILOAD_2
+              - INVOKESPECIAL:
+                  index: 28
+              - RETURN
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 2
+            attributes:
+              - attribute_name_index: 42
+                attribute_len: 6
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 1
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 1
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 1
+              - attribute_name_index: 44
+                attribute_len: 12
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 7
+                  - 0
+                  - 47
+                  - 0
+                  - 6
+                  - 0
+                  - 0
+                attribute:
+                  LocalVariableTable:
+                    local_variable_table_length: 1
+                    local_variable_table:
+                      - start_pc: 0
+                        length: 7
+                        name_index: 47
+                        descriptor_index: 6
+                        index: 0
+      - attribute_name_index: 48
+        attribute_len: 2
+        info:
+          - 0
+          - 49
+        attribute:
+          Signature:
+            signature_index: 49
+  - access_flag: Private | Static | Synthetic
+    name_index: 38
+    descriptor_index: 39
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 41
+        attribute_len: 47
+        info:
+          - 0
+          - 4
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 23
+          - 6
+          - 189
+          - 0
+          - 1
+          - 89
+          - 3
+          - 178
+          - 0
+          - 3
+          - 83
+          - 89
+          - 4
+          - 178
+          - 0
+          - 7
+          - 83
+          - 89
+          - 5
+          - 178
+          - 0
+          - 10
+          - 83
+          - 176
+          - 0
+          - 0
+          - 0
+          - 1
+          - 0
+          - 42
+          - 0
+          - 0
+          - 0
+          - 6
+          - 0
+          - 1
+          - 0
+          - 0
+          - 0
+          - 1
+        attribute:
+          Code:
+            max_stack: 4
+            max_locals: 0
+            code_length: 23
+            code:
+              - 6
+              - 189
+              - 0
+              - 1
+              - 89
+              - 3
+              - 178
+              - 0
+              - 3
+              - 83
+              - 89
+              - 4
+              - 178
+              - 0
+              - 7
+              - 83
+              - 89
+              - 5
+              - 178
+              - 0
+              - 10
+              - 83
+              - 176
+            instructions:
+              - ICONST_3
+              - ANEWARRAY:
+                  index: 1
+              - DUP
+              - ICONST_0
+              - GETSTATIC:
+                  index: 3
+              - AASTORE
+              - DUP
+              - ICONST_1
+              - GETSTATIC:
+                  index: 7
+              - AASTORE
+              - DUP
+              - ICONST_2
+              - GETSTATIC:
+                  index: 10
+              - AASTORE
+              - ARETURN
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 1
+            attributes:
+              - attribute_name_index: 42
+                attribute_len: 6
+                info:
+                  - 0
+                  - 1
+                  - 0
+                  - 0
+                  - 0
+                  - 1
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 1
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 1
+  - access_flag: Static
+    name_index: 50
+    descriptor_index: 49
+    attribute_infos_len: 1
+    attribute_infos:
+      - attribute_name_index: 41
+        attribute_len: 82
+        info:
+          - 0
+          - 4
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 46
+          - 187
+          - 0
+          - 1
+          - 89
+          - 18
+          - 32
+          - 3
+          - 183
+          - 0
+          - 33
+          - 179
+          - 0
+          - 3
+          - 187
+          - 0
+          - 1
+          - 89
+          - 18
+          - 34
+          - 4
+          - 183
+          - 0
+          - 33
+          - 179
+          - 0
+          - 7
+          - 187
+          - 0
+          - 1
+          - 89
+          - 18
+          - 35
+          - 5
+          - 183
+          - 0
+          - 33
+          - 179
+          - 0
+          - 10
+          - 184
+          - 0
+          - 36
+          - 179
+          - 0
+          - 13
+          - 177
+          - 0
+          - 0
+          - 0
+          - 1
+          - 0
+          - 42
+          - 0
+          - 0
+          - 0
+          - 18
+          - 0
+          - 4
+          - 0
+          - 0
+          - 0
+          - 2
+          - 0
+          - 13
+          - 0
+          - 3
+          - 0
+          - 26
+          - 0
+          - 4
+          - 0
+          - 39
+          - 0
+          - 1
+        attribute:
+          Code:
+            max_stack: 4
+            max_locals: 0
+            code_length: 46
+            code:
+              - 187
+              - 0
+              - 1
+              - 89
+              - 18
+              - 32
+              - 3
+              - 183
+              - 0
+              - 33
+              - 179
+              - 0
+              - 3
+              - 187
+              - 0
+              - 1
+              - 89
+              - 18
+              - 34
+              - 4
+              - 183
+              - 0
+              - 33
+              - 179
+              - 0
+              - 7
+              - 187
+              - 0
+              - 1
+              - 89
+              - 18
+              - 35
+              - 5
+              - 183
+              - 0
+              - 33
+              - 179
+              - 0
+              - 10
+              - 184
+              - 0
+              - 36
+              - 179
+              - 0
+              - 13
+              - 177
+            instructions:
+              - NEW:
+                  index: 1
+              - DUP
+              - LDC:
+                  index: 32
+              - ICONST_0
+              - INVOKESPECIAL:
+                  index: 33
+              - PUTSTATIC:
+                  index: 3
+              - NEW:
+                  index: 1
+              - DUP
+              - LDC:
+                  index: 34
+              - ICONST_1
+              - INVOKESPECIAL:
+                  index: 33
+              - PUTSTATIC:
+                  index: 7
+              - NEW:
+                  index: 1
+              - DUP
+              - LDC:
+                  index: 35
+              - ICONST_2
+              - INVOKESPECIAL:
+                  index: 33
+              - PUTSTATIC:
+                  index: 10
+              - INVOKESTATIC:
+                  index: 36
+              - PUTSTATIC:
+                  index: 13
+              - RETURN
+            exception_table_length: 0
+            exception_table: []
+            attributes_length: 1
+            attributes:
+              - attribute_name_index: 42
+                attribute_len: 18
+                info:
+                  - 0
+                  - 4
+                  - 0
+                  - 0
+                  - 0
+                  - 2
+                  - 0
+                  - 13
+                  - 0
+                  - 3
+                  - 0
+                  - 26
+                  - 0
+                  - 4
+                  - 0
+                  - 39
+                  - 0
+                  - 1
+                attribute:
+                  LineNumberTable:
+                    line_number_table_length: 4
+                    line_number_table:
+                      - start_pc: 0
+                        line_number: 2
+                      - start_pc: 13
+                        line_number: 3
+                      - start_pc: 26
+                        line_number: 4
+                      - start_pc: 39
+                        line_number: 1
+attributes_count: 2
+attributes:
+  - attribute_name_index: 48
+    attribute_len: 2
+    info:
+      - 0
+      - 51
+    attribute:
+      Signature:
+        signature_index: 51
+  - attribute_name_index: 52
+    attribute_len: 2
+    info:
+      - 0
+      - 53
+    attribute:
+      SourceFile:
+        source_file_index: 53
+

@@ -1,0 +1,12 @@
+---
+source: structural_parser/tests/signature_parse.rs
+expression: field_signature
+---
+Field:
+  field_type:
+    Class:
+      package_path: java/lang/
+      class_name: Object
+      type_arguments: []
+      inner_classes: []
+

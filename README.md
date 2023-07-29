@@ -12,133 +12,32 @@ place in not only modern society, but also [computer science](https://en.wikiped
 
 Ka-Pi offers several essential modules relates to JVM ecosystem:
 
-- `node` - Bytecode structure definition module, used by most of other modules.
-- `visitor` (WIP) - Builtin implementation of visitor pattern based on `node` module.
-- `parse` - Bytecode parsing module used to resolve bytecode (or classfile) into structs.
-- `generate` (WIP) - Bytecode generation module used to generate bytecode.
+- `cfsp` - A general purpose class file parser that transform class file into nodes described in 
+[The Java® Virtual Machine Specification Java SE 20 Edition][spec]
 
 ### Basic usages
 
-#### Parse class file
+#### Parse class file into structural nodes
 
-```rust
-use std::fs::File;
-use ka_pi::parse::{to_class, ParseResult, ParsingOption};
+To parse a class file using `cfsp`, you'll need to enable feature `cfsp` first:
 
-fn main() -> ParseResult<()> {
-  let mut file = File::open("compiled_source/out/production/compiled_source/Main.class")?;
-  let class_tree = to_class(&mut file, ParsingOption::default().parse_attribute())?;
-
-  println!("{:#?}", class_tree);
-
-  Ok(())
-}
+```toml
+ka_pi = { version = "...", features = ["cfsp"] }
 ```
 
-### Implementation Status
+Then, you'll be able to use class file parser in your own project:
 
-#### `node` 
-All nodes described in [The Java® Virtual Machine Specification Java SE 20 Edition](https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf)
-are implemented.
+```no_run
+# use std::fs::File;
+# use cfsp::parse::{to_class, ParsingOption};
 
-#### `visitor`
-- [ ] Class visitor
-- [ ] Field visitor
-- [ ] Method visitor
-- [ ] Module visitor
-- [ ] Annotation visitor
-- [ ] Record visitor
-- [x] Signature visitor
-
-#### `parse`
-
-Currently, module `parse` supports parsing class file up to **Java SE 20**.
-
-<details>
-    <summary> Class structure parsing </summary>
-
-- [x] Magic Number (0xCAFEBABE)
-- [x] Constant Pool
-  - [x] Utf8
-  - [x] Integer
-  - [x] Float
-  - [x] Long
-  - [x] Double
-  - [x] Class
-  - [x] String
-  - [x] Fieldref
-  - [x] Methodref
-  - [x] InterfaceMethodref
-  - [x] NameAndType
-  - [x] MethodHandle
-  - [x] MethodType
-  - [x] InvokeDynamic
-- [x] Access Flags (Class)
-- [x] This Class
-- [x] Super Class
-- [x] Interfaces
-- [x] Field
-  - [x] Access Flags (Field)
-  - [x] Name Index
-  - [x] Descriptor Index
-  - [x] Attributes (See Class#Attributes)
-- [x] Method
-  - [x] Access Flags (Method)
-  - [x] Name Index
-  - [x] Descriptor Index
-  - [x] Attributes (See Class#Attributes)
-- [x] Attributes
-  - [x] Attribute Info
-    - [x] Critical for JVM
-      - [x] ConstantValue
-      - [x] Code
-      - [x] StackMapTable
-      - [x] BootstrapMethods
-      - [x] NestHost
-      - [x] NestMembers
-      - [x] PermittedSubclasses
-    - [x] Critical for Java SE
-      - [x] Exceptions
-      - [x] InnerClasses
-      - [x] EnclosingMethod
-      - [x] Synthetic
-      - [x] Signature
-      - [x] Record
-      - [x] SourceFile
-      - [x] LineNumberTable
-      - [x] LocalVariableTable
-      - [x] LocalVariableTypeTable
-    - [x] Not critical
-      - [x] SourceDebugExtension
-      - [x] Deprecated
-      - [x] RuntimeVisibleAnnotations
-      - [x] RuntimeInvisibleAnnotations
-      - [x] RuntimeVisibleParameterAnnotations
-      - [x] RuntimeInvisibleParameterAnnotations
-      - [x] RuntimeVisibleTypeAnnotations
-      - [x] RuntimeInvisibleTypeAnnotations
-      - [x] AnnotationDefault
-      - [x] MethodParameters
-      - [x] Module
-      - [x] ModulePackages
-      - [x] ModuleMainClass
-    - [x] Custom Attribute (Not described in specification)
-</details>
-
-#### `generate`
-
-- [x] Basic symbol generation
-  - [x] Class
-  - [x] Field
-  - [x] Method
-- [ ] Class
-  - [ ] Class hierarchy analysis
-  - [ ] Accessibility check
-- [x] Field
-- [ ] Method
-  - [ ] Method descriptor type check
-  - [ ] Method stack frame analysis
-  - [ ] `crate::generate::Instruction` based opcode generate functions
+# fn main() {
+  let mut file = File::open("Main.class").unwrap();
+  let class = to_class(&mut file, ParsingOption::default().parse_attribute()).unwrap();
+  
+  println!("{:?}", class);
+# }
+```
 
 ### See also
 
@@ -158,3 +57,5 @@ There are other related jvm projects developed by me may help the production of 
 
 Copyright © 2023, [Kyle Lin (ChAoS-UnItY)](https://github.com/ChAoSUnItY).
 Released under the [MIT License](LICENSE).
+
+[spec]: https://docs.oracle.com/javase/specs/jvms/se20/jvms20.pdf

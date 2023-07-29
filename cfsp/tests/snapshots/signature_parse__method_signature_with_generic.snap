@@ -1,0 +1,36 @@
+---
+source: structural_parser/tests/signature_parse.rs
+expression: method_signature
+---
+Method:
+  formal_type_parameters:
+    - parameter_name: T
+      class_bound:
+        package_path: java/lang/
+        class_name: Object
+        type_arguments: []
+        inner_classes: []
+      interface_bounds: []
+  parameter_types:
+    - BaseType: Boolean
+    - ReferenceType:
+        Array:
+          ReferenceType:
+            Array:
+              BaseType: Boolean
+    - ReferenceType:
+        TypeVariable: T
+  return_type:
+    ReferenceType:
+      Class:
+        package_path: java/lang/
+        class_name: Object
+        type_arguments: []
+        inner_classes: []
+  exception_types:
+    - Class:
+        package_path: java/lang/
+        class_name: Exception
+        type_arguments: []
+        inner_classes: []
+
