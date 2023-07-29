@@ -32,7 +32,7 @@ Then, you'll be able to use class file parser in your own project:
 # use classfile_parser::parse::{to_class, ParsingOption};
 
 # fn main() {
-  let mut file = File::open("Main.class").unwrap();
+  let mut file = File::open("../compiled_source/out/production/compiled_source/Main.class").unwrap();
   let class = to_class(&mut file, ParsingOption::default().parse_attribute()).unwrap();
   
   println!("{:?}", class);
