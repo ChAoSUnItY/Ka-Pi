@@ -8,7 +8,7 @@ pub type ParseResult<T> = Result<T, ParseError>;
 
 #[derive(Debug, Error)]
 pub enum ParseError {
-    #[error("internal io error")]
+    #[error(transparent)]
     Io(#[from] io::Error),
     #[error("expected [0xCA, 0xFE, 0xBA, 0xBE] at the header of class file but got {0:?}")]
     MismatchedMagicNumber([u8; 4]),

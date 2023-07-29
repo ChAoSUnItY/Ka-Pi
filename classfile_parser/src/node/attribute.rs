@@ -1,12 +1,15 @@
 use serde::{Deserialize, Serialize};
 
+use crate::node;
 use crate::node::access_flag::{ModuleAccessFlag, NestedClassAccessFlag, ParameterAccessFlag};
 use crate::node::attribute::annotation::{
     Annotation, ElementValue, ParameterAnnotation, TypeAnnotation,
 };
 use crate::node::attribute::module::{Exports, Opens, Provides, Requires};
 use crate::node::constant::{Class, Constant, ConstantPool, MethodHandle, NameAndType, Utf8};
+use crate::node::error::{NodeResError, NodeResResult};
 use crate::node::opcode::Instruction;
+use crate::parse::{class_signature, field_signature, method_signature};
 
 pub mod annotation;
 pub mod module;
@@ -210,6 +213,45 @@ impl Signature {
         constant_pool: &'constant_pool ConstantPool,
     ) -> Option<&'constant_pool Utf8> {
         constant_pool.get_utf8(self.signature_index)
+    }
+
+    /// Parses current signature attribute's string into class signature. Returns [Err] on either
+    /// invalid constant reference or signature format.
+    pub fn as_class_signature<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> NodeResResult<node::signature::Signature> {
+        let signature_str = self
+            .signature(constant_pool)
+            .ok_or(NodeResError::UnknownConstantReference(self.signature_index))?;
+
+        class_signature(&signature_str.string()?).map_err(|err| NodeResError::ParseFail(err))
+    }
+
+    /// Parses current signature attribute's string into field signature. Returns [Err] on either
+    /// invalid constant reference or signature format.
+    pub fn as_field_signature<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> NodeResResult<node::signature::Signature> {
+        let signature_str = self
+            .signature(constant_pool)
+            .ok_or(NodeResError::UnknownConstantReference(self.signature_index))?;
+
+        field_signature(&signature_str.string()?).map_err(|err| NodeResError::ParseFail(err))
+    }
+
+    /// Parses current signature attribute's string into method signature. Returns [Err] on either
+    /// invalid constant reference or signature format.
+    pub fn as_method_signature<'attribute, 'constant_pool: 'attribute>(
+        &'attribute self,
+        constant_pool: &'constant_pool ConstantPool,
+    ) -> NodeResResult<node::signature::Signature> {
+        let signature_str = self
+            .signature(constant_pool)
+            .ok_or(NodeResError::UnknownConstantReference(self.signature_index))?;
+
+        method_signature(&signature_str.string()?).map_err(|err| NodeResError::ParseFail(err))
     }
 }
 
