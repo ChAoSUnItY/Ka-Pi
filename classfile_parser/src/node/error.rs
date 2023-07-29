@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crate::parse::ParseError;
+use thiserror::Error;
 
 pub type NodeResResult<T> = Result<T, NodeResError>;
 
