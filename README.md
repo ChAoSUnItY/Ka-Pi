@@ -28,15 +28,15 @@ ka_pi = { version = "...", features = ["cfsp"] }
 Then, you'll be able to use class file parser in your own project:
 
 ```no_run
-# use std::fs::File;
-# use cfsp::parse::{to_class, ParsingOption};
+use std::fs::File;
+use cfsp::parse::{to_class, ParsingOption};
 
-# fn main() {
+fn main() {
   let mut file = File::open("Main.class").unwrap();
   let class = to_class(&mut file, ParsingOption::default().parse_attribute()).unwrap();
   
   println!("{:?}", class);
-# }
+}
 ```
 
 ### See also
