@@ -2,5 +2,5 @@
 
 // no_std placeholder here
 
-#[cfg(feature = "classfile_parser")]
-pub use classfile_parser;
+#[cfg(feature = "cfsp")]
+pub use cfsp;

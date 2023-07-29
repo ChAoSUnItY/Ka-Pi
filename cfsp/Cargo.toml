@@ -1,5 +1,5 @@
 [package]
-name = "classfile_parser"
+name = "cfsp"
 version = "1.0.0"
 edition = "2021"
 

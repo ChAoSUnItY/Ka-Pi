@@ -1,4 +1,4 @@
-use classfile_parser::parse::{to_class, ParsingOption};
+use cfsp::parse::{to_class, ParsingOption};
 use std::fs;
 use std::io::Cursor;
 

@@ -1,4 +1,4 @@
-use classfile_parser::parse::{to_class, ParseResult, ParsingOption};
+use cfsp::parse::{to_class, ParseResult, ParsingOption};
 use insta::assert_yaml_snapshot;
 use std::io::Cursor;
 

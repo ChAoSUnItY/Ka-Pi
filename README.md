@@ -12,24 +12,24 @@ place in not only modern society, but also [computer science](https://en.wikiped
 
 Ka-Pi offers several essential modules relates to JVM ecosystem:
 
-- `classfile_parser` - A general purpose class file parser that transform class file into nodes described in 
+- `cfsp` - A general purpose class file parser that transform class file into nodes described in 
 [The Java® Virtual Machine Specification Java SE 20 Edition][spec]
 
 ### Basic usages
 
 #### Parse class file into structural nodes
 
-To parse a class file using `classfile_parser`, you'll need to enable feature `classfile_parser` first:
+To parse a class file using `cfsp`, you'll need to enable feature `cfsp` first:
 
 ```toml
-ka_pi = { version = "...", features = ["classfile_parser"] }
+ka_pi = { version = "...", features = ["cfsp"] }
 ```
 
 Then, you'll be able to use class file parser in your own project:
 
 ```no_run
 # use std::fs::File;
-# use classfile_parser::parse::{to_class, ParsingOption};
+# use cfsp::parse::{to_class, ParsingOption};
 
 # fn main() {
   let mut file = File::open("Main.class").unwrap();

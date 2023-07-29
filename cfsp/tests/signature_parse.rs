@@ -1,4 +1,4 @@
-use classfile_parser::parse::{class_signature, field_signature, method_signature, ParseResult};
+use cfsp::parse::{class_signature, field_signature, method_signature, ParseResult};
 use insta::assert_yaml_snapshot;
 
 #[test]

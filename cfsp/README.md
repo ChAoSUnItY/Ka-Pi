@@ -1,4 +1,4 @@
-# classfile_parser
+# ClassFile Structural Parser (CFSP)
 
 A general usage parser used to parse class file into structural nodes.
 

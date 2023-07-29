@@ -19,4 +19,4 @@ jobs:
         if: ${{ false }}
         run: cargo build --workspace --verbose --release --features "strict"
       - name: Run tests
-        run: cargo test --workspace --verbose --features=classfile_parser
+        run: cargo test --workspace --verbose --features=cfsp
