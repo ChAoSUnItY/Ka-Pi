@@ -9,8 +9,6 @@ repository = "https://github.com/ChAoSUnItY/Ka-Pi/"
 readme = "README.md"
 keywords = ["jvm", "jvm-bytecode", "bytecode"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
 name = "ka_pi"
 path = "src/lib.rs"

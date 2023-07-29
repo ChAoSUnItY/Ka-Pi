@@ -2,8 +2,12 @@
 name = "cfsp"
 version = "1.0.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["ChAoS-UnItY"]
+description = "A JVM Bytecode Manipulation Framework inspired by ASM."
+license = "MIT"
+repository = "https://github.com/ChAoSUnItY/Ka-Pi/cfsp"
+readme = "README.md"
+keywords = ["jvm", "jvm-bytecode", "bytecode"]
 
 [dependencies]
 serde = { version = "1.0.152", features = ["derive"] }
