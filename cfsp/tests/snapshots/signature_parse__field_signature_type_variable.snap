@@ -1,8 +1,0 @@
----
-source: structural_parser/tests/signature_parse.rs
-expression: field_signature
----
-Field:
-  field_type:
-    TypeVariable: T
-

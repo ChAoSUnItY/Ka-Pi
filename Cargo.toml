@@ -15,6 +15,7 @@ path = "src/lib.rs"
 
 [dependencies]
 cfsp = { path = "cfsp", version = "1.0.0", optional = true }
+blynd = { path = "blynd", version = "0.1.0" }
 
 [dev-dependencies]
 insta = { version = "1.28.0", features = ["yaml"] }
@@ -26,5 +27,6 @@ cfsp = ["dep:cfsp"]
 
 [workspace]
 members = [
-    "cfsp"
+    "cfsp",
+    "blynd"
 ]
