@@ -1,0 +1,3 @@
+[submodule "cfsp"]
+	path = cfsp
+	url = https://github.com/ChAoSUnItY/cfsp.git
