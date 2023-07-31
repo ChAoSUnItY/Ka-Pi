@@ -39,6 +39,12 @@ fn main() {
 }
 ```
 
+### About Ka-Pi's Coordinate
+
+Currently, Ka-Pi is served as an incubator crate (or repository) to track my current most focused on JVM related library
+work, once it's either stabilized or finished, it will be moved to an individual module, and Ka-Pi will still allow using
+by enable certain feature.
+
 ### See also
 
 There are other related jvm projects developed by me may help the production of JVM projects along with Ka-Pi:
