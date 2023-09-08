@@ -10,40 +10,11 @@ place in not only modern society, but also [computer science](https://en.wikiped
 
 ### Features
 
-Ka-Pi offers several essential modules relates to JVM ecosystem:
-
-- `cfsp` - A general purpose class file parser that transform class file into nodes described in 
-[The Java® Virtual Machine Specification Java SE 20 Edition][spec]
+*Currently under rework, WIP.*
 
 ### Basic usages
 
-#### Parse class file into structural nodes
-
-To parse a class file using `cfsp`, you'll need to enable feature `cfsp` first:
-
-```toml
-ka_pi = { version = "...", features = ["cfsp"] }
-```
-
-Then, you'll be able to use class file parser in your own project:
-
-```no_run
-use std::fs::File;
-use cfsp::parse::{to_class, ParsingOption};
-
-fn main() {
-  let mut file = File::open("Main.class").unwrap();
-  let class = to_class(&mut file, ParsingOption::default().parse_attribute()).unwrap();
-  
-  println!("{:?}", class);
-}
-```
-
-### About Ka-Pi's Coordinate
-
-Currently, Ka-Pi is served as an incubator crate (or repository) to track my current most focused on JVM related library
-work, once it's either stabilized or finished, it will be moved to an individual module, and Ka-Pi will still allow using
-by enable certain feature.
+*Currently under rework, WIP.*
 
 ### See also
 
@@ -51,6 +22,8 @@ There are other related jvm projects developed by me may help the production of 
 - [frape](https://github.com/ChAoSUnItY/frape) - A direct interop bridge between Rust and Java reflection library in low 
   communication cost. (No releases yet.)
 - [jars](https://github.com/ChAoSUnItY/jars) - A simple jar extraction library.
+- [cfsp](https://github.com/ChAoSUnItY/cfsp) - A general purpose class file parser that transform class file into nodes described in
+  [The Java® Virtual Machine Specification Java SE 20 Edition][spec].
 
 ### Author
 
