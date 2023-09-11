@@ -118,3 +118,9 @@ bitflags! {
         const Mandated = 0x8000;
     }
 }
+
+impl Default for ClassAccessFlag {
+    fn default() -> Self {
+        Self::empty()
+    }
+}

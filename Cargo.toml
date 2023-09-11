@@ -18,4 +18,5 @@ default = []
 
 [dependencies]
 bitflags = "2.4.0"
+cesu8 = "1.1.0"
 indexmap = "2.0.0"

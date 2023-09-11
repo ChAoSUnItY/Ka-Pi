@@ -1,10 +1,11 @@
 use crate::{
     access_flag::ClassAccessFlag,
-    byte_vec::{ByteVec, ToBytes},
-    symbol::ConstantPool,
+    byte_vec::{ByteVec, ToBytes, SizeComputable},
+    symbol::ConstantPool, attrs,
 };
 
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 pub enum JavaVersion {
     V1_1,
     V1_2,
@@ -64,6 +65,12 @@ impl JavaVersion {
     }
 }
 
+impl Default for JavaVersion {
+    fn default() -> Self {
+        Self::V17
+    }
+}
+
 pub trait ClassVisitor {
     fn inner(&mut self) -> Option<&mut dyn ClassVisitor> {
         None
@@ -83,64 +90,49 @@ pub trait ClassVisitor {
         }
     }
 
-    fn visit_source(&mut self, source: &str, debug: &str) {
+    fn visit_source(&mut self, source_file: &str) {
         if let Some(inner) = self.inner() {
-            inner.visit_source(source, debug);
+            inner.visit_source(source_file);
+        }
+    }
+
+    fn visit_debug_extension(&mut self, debug_extension: &str) {
+        if let Some(inner) = self.inner() {
+            inner.visit_debug_extension(debug_extension);
         }
     }
 
     fn visit_end(&mut self) {}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ClassWriter {
     version: JavaVersion,
     access: ClassAccessFlag,
     constant_pool: ConstantPool,
-    this_class: u16,
+    this_class: Option<u16>,
     signature: Option<u16>,
-    super_class: u16,
+    super_class: Option<u16>,
     interfaces: Vec<u16>,
+    // Attribute SourceFile
+    source: Option<u16>,
+    debug_extension: Option<Vec<u8>>,
 }
 
 impl ClassWriter {
     pub fn new() -> Self {
-        Self {
-            version: JavaVersion::V17,
-            access: ClassAccessFlag::empty(),
-            constant_pool: ConstantPool::default(),
-            this_class: 0,
-            signature: None,
-            super_class: 0,
-            interfaces: Vec::new(),
-        }
+        Self::default()
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut output = ByteVec::with_capacity(64);
+        let size = self.compute_size();
+        // We avoid additional reallocation by precomputing the
+        // class file size based on spec
+        let mut vec = ByteVec::with_capacity(size);
 
-        output.push_u32(0xCAFEBABE);
-        output.push_u32(self.version.version());
+        self.put_bytes(&mut vec);
 
-        self.constant_pool.put_bytes(&mut output);
-
-        output.push_u16(self.access.bits());
-        output.push_u16(self.this_class);
-        output.push_u16(self.super_class);
-        output.push_u16(self.interfaces.len() as u16);
-
-        for interface in &self.interfaces {
-            output.push_u16(*interface);
-        }
-
-        // TODO: Field
-        output.push_u16(0);
-        // TODO: Method
-        output.push_u16(0);
-        // TODO: Attribute
-        output.push_u16(0);
-
-        output.as_vec()
+        vec.as_vec()
     }
 }
 
@@ -156,13 +148,108 @@ impl ClassVisitor for ClassWriter {
     ) {
         self.version = version;
         self.access = access;
-        self.this_class = self.constant_pool.put_class(name);
-        self.signature = signature.map(|signature| self.constant_pool.put_class(signature));
-        self.super_class = self.constant_pool.put_class(super_name);
+        self.this_class = Some(self.constant_pool.put_class(name));
+
+        if let Some(signature) = signature {
+            self.constant_pool.put_utf8(attrs::SIGNATURE);
+            self.signature = Some(self.constant_pool.put_class(signature));
+        }
+
+        self.super_class = Some(self.constant_pool.put_class(super_name));
         self.interfaces = interfaces
             .into_iter()
             .map(|interface| self.constant_pool.put_class(interface))
             .collect()
+    }
+
+    fn visit_source(&mut self, source_file: &str) {
+        self.constant_pool.put_utf8(attrs::SOURCE_FILE);
+        self.source = Some(self.constant_pool.put_utf8(source_file));
+    }
+
+    fn visit_debug_extension(&mut self, debug_extension: &str) {
+        self.constant_pool.put_utf8(attrs::SOURCE_DEBUG_EXTENSION);
+        self.debug_extension = Some(cesu8::to_java_cesu8(debug_extension).to_vec());
+    }
+}
+
+impl ToBytes for ClassWriter {
+    fn put_bytes(&self, vec: &mut ByteVec) {
+        vec.push_u32(0xCAFEBABE)
+            .push_u32(self.version.version());
+
+        self.constant_pool.put_bytes(vec);
+
+        vec.push_u16(self.access.bits())
+            .push_u16(self.this_class.expect("This class is unset, probably missing `visit` call?"))
+            .push_u16(self.super_class.expect("Super class is unset, probably missing `visit` call?"))
+            .push_u16(self.interfaces.len() as u16);
+
+        for interface in &self.interfaces {
+            vec.push_u16(*interface);
+        }
+
+        // TODO: Field
+        vec.push_u16(0);
+        // TODO: Method
+        vec.push_u16(0);
+        // TODO: Attribute
+        vec.push_u16(self.attributes_count() as u16);
+
+        if let Some(signature) = self.signature {
+            vec.push_u16(self.constant_pool.get_utf8(attrs::SIGNATURE).unwrap())
+                .push_u32(2)
+                .push_u16(signature);
+        }
+
+        if let Some(source) = self.source {
+            vec.push_u16(self.constant_pool.get_utf8(attrs::SOURCE_FILE).unwrap())
+                .push_u32(2)
+                .push_u16(source);
+        }
+
+        if let Some(debug_extension) = &self.debug_extension {            
+            vec.push_u16(self.constant_pool.get_utf8(attrs::SOURCE_DEBUG_EXTENSION).unwrap())
+                .push_u32(debug_extension.len() as u32)
+                .push_u8s(&debug_extension);
+        }
+    }
+}
+
+impl SizeComputable for ClassWriter {
+    fn compute_size(&self) -> usize {
+        let mut size = 24 + 2 * self.interfaces.len();
+        // TODO: Fields
+        // TODO: Methods
+        // TODO: Attributes
+        if self.signature.is_some() {
+            size += 8;
+        }
+        if self.source.is_some() {
+            size += 8;
+        }
+        if let Some(debug_extension) = &self.debug_extension {
+            size += 6 + debug_extension.len();
+        }
+        size
+    }
+
+    fn attributes_count(&self) -> usize {
+        let mut count = 0;
+        
+        if self.signature.is_some() {
+            count += 1;
+        }
+
+        if self.source.is_some() {
+            count += 1;
+        }
+
+        if self.debug_extension.is_some() {
+            count += 1;
+        }
+
+        count
     }
 }
 
@@ -186,6 +273,9 @@ mod test {
             "java/lang/Object",
             &[],
         );
+
+        writer.visit_source("Main.java");
+        writer.visit_debug_extension("Debug Message");
 
         writer.visit_end();
 

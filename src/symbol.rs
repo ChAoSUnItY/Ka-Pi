@@ -1,8 +1,7 @@
-use std::{collections::{HashSet, hash_map::DefaultHasher, HashMap}, hash::{Hasher, Hash}};
 
 use indexmap::IndexMap;
 
-use crate::byte_vec::{ToBytes, ByteVec};
+use crate::byte_vec::{ByteVec, ToBytes};
 
 #[repr(u8)]
 #[derive(Debug)]
@@ -28,7 +27,7 @@ pub(crate) enum ConstantTag {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Constant {
-    Utf8(Vec<u8>),
+    Utf8(String),
     Integer(i32),
     Float([u8; 4]),
     Long(i64),
@@ -81,23 +80,25 @@ impl Constant {
 impl ToBytes for Constant {
     fn put_bytes(&self, vec: &mut ByteVec) {
         vec.push(self.tag() as u8);
-        
+
         match self {
-            Constant::Utf8(bytes) => {
+            Constant::Utf8(string) => {
+                let bytes = cesu8::to_java_cesu8(string);
+
                 vec.push_u16(bytes.len() as u16);
-                vec.push_bytes(bytes);
+                vec.push_u8s(&bytes);
             }
             Constant::Integer(val) => {
-                vec.push_bytes(&val.to_be_bytes());
+                vec.push_u8s(&val.to_be_bytes());
             }
             Constant::Float(val) => {
-                vec.push_bytes(val);
+                vec.push_u8s(val);
             }
             Constant::Long(val) => {
-                vec.push_bytes(&val.to_be_bytes());
+                vec.push_u8s(&val.to_be_bytes());
             }
             Constant::Double(val) => {
-                vec.push_bytes(val);
+                vec.push_u8s(val);
             }
             Constant::Class(index) => {
                 vec.push_u16(*index);
@@ -105,7 +106,7 @@ impl ToBytes for Constant {
             Constant::String(index) => {
                 vec.push_u16(*index);
             }
-            _ => todo!()
+            _ => todo!(),
         }
     }
 }
@@ -128,8 +129,11 @@ impl ConstantPool {
         }
     }
 
-    pub(crate) fn put_utf8(&mut self, utf8: Vec<u8>) -> u16 {
-        self.put(Constant::Utf8(utf8))
+    pub(crate) fn put_utf8<T>(&mut self, utf8: T) -> u16
+    where
+        T: Into<String>,
+    {
+        self.put(Constant::Utf8(utf8.into()))
     }
 
     pub(crate) fn put_integer(&mut self, integer: i32) -> u16 {
@@ -149,21 +153,33 @@ impl ConstantPool {
     }
 
     pub(crate) fn put_class(&mut self, class_name: &str) -> u16 {
-        let utf8 = self.put_utf8(class_name.bytes().collect());
+        let utf8 = self.put_utf8(class_name);
 
         self.put(Constant::Class(utf8))
     }
 
     pub(crate) fn put_string(&mut self, string: &str) -> u16 {
-        let utf8 = self.put_utf8(string.bytes().collect());
+        let utf8 = self.put_utf8(string);
 
         self.put(Constant::String(utf8))
+    }
+
+    pub(crate) fn get_utf8<T>(&self, utf8: T) -> Option<u16>
+    where
+        T: Into<String>,
+    {
+        let str = utf8.into();
+
+        self.pool.get(&Constant::Utf8(str)).copied()
     }
 }
 
 impl Default for ConstantPool {
     fn default() -> Self {
-        Self { pool: Default::default(), index: 1 }
+        Self {
+            pool: Default::default(),
+            index: 1,
+        }
     }
 }
 

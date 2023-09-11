@@ -5,3 +5,4 @@ mod byte_vec;
 mod class;
 mod access_flag;
 mod symbol;
+mod attrs;
