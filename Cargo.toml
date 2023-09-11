@@ -18,3 +18,4 @@ default = []
 
 [dependencies]
 bitflags = "2.4.0"
+indexmap = "2.0.0"
