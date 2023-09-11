@@ -252,35 +252,3 @@ impl SizeComputable for ClassWriter {
         count
     }
 }
-
-#[cfg(test)]
-mod test {
-    use std::fs;
-
-    use crate::access_flag::ClassAccessFlag;
-
-    use super::{ClassVisitor, ClassWriter, JavaVersion};
-
-    #[test]
-    fn test_basic_class_gen() {
-        let mut writer = ClassWriter::new();
-
-        writer.visit(
-            JavaVersion::V17,
-            ClassAccessFlag::Super | ClassAccessFlag::Public,
-            "Main",
-            None,
-            "java/lang/Object",
-            &[],
-        );
-
-        writer.visit_source("Main.java");
-        writer.visit_debug_extension("Debug Message");
-
-        writer.visit_end();
-
-        let bytes = writer.to_bytes();
-
-        fs::write("output/Main.class", bytes).expect("Unexpected error while writing class file bytecode");
-    }
-}

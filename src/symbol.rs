@@ -79,7 +79,7 @@ impl Constant {
 
 impl ToBytes for Constant {
     fn put_bytes(&self, vec: &mut ByteVec) {
-        vec.push(self.tag() as u8);
+        vec.push_u8(self.tag() as u8);
 
         match self {
             Constant::Utf8(string) => {
