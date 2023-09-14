@@ -1,3 +1,4 @@
+use bitflags::Flags;
 use crate::{
     access_flag::ClassAccessFlag,
     byte_vec::{ByteVec, ToBytes, SizeComputable},
@@ -90,6 +91,12 @@ pub trait ClassVisitor {
         }
     }
 
+    fn visit_deprecated(&mut self) {
+        if let Some(inner) = self.inner() {
+            inner.visit_deprecated();
+        }
+    }
+
     fn visit_source(&mut self, source_file: &str) {
         if let Some(inner) = self.inner() {
             inner.visit_source(source_file);
@@ -99,6 +106,24 @@ pub trait ClassVisitor {
     fn visit_debug_extension(&mut self, debug_extension: &str) {
         if let Some(inner) = self.inner() {
             inner.visit_debug_extension(debug_extension);
+        }
+    }
+
+    fn visit_nest_host(&mut self, nest_host: &str) {
+        if let Some(inner) = self.inner() {
+            inner.visit_nest_host(nest_host);
+        }
+    }
+
+    fn visit_outer_class(&mut self, class: &str, name: Option<&str>, descriptor: Option<&str>) {
+        if let Some(inner) = self.inner() {
+            inner.visit_outer_class(class, name, descriptor);
+        }
+    }
+
+    fn visit_nest_member(&mut self, nest_member: &str) {
+        if let Some(inner) = self.inner() {
+            inner.visit_nest_member(nest_member);
         }
     }
 
@@ -116,7 +141,17 @@ pub struct ClassWriter {
     interfaces: Vec<u16>,
     // Attribute SourceFile
     source: Option<u16>,
+    // Attribute SourceDebugExtension
     debug_extension: Option<Vec<u8>>,
+    // Attribute NestHost
+    nest_host: Option<u16>,
+    // Ka-Pi Specified
+    deprecated: bool,
+    // Attribute EnclosingMethod
+    enclosing_class: Option<u16>,
+    enclosing_method: Option<u16>,
+    // Attribute NestMember
+    nest_members: Option<ByteVec>,
 }
 
 impl ClassWriter {
@@ -162,6 +197,11 @@ impl ClassVisitor for ClassWriter {
             .collect()
     }
 
+    fn visit_deprecated(&mut self) {
+        self.constant_pool.put_utf8(attrs::DEPRECATED);
+        self.deprecated = true;
+    }
+
     fn visit_source(&mut self, source_file: &str) {
         self.constant_pool.put_utf8(attrs::SOURCE_FILE);
         self.source = Some(self.constant_pool.put_utf8(source_file));
@@ -170,6 +210,34 @@ impl ClassVisitor for ClassWriter {
     fn visit_debug_extension(&mut self, debug_extension: &str) {
         self.constant_pool.put_utf8(attrs::SOURCE_DEBUG_EXTENSION);
         self.debug_extension = Some(cesu8::to_java_cesu8(debug_extension).to_vec());
+    }
+
+    fn visit_nest_host(&mut self, nest_host: &str) {
+        self.constant_pool.put_utf8(attrs::NEST_HOST);
+        self.nest_host = Some(self.constant_pool.put_class(nest_host));
+    }
+
+    fn visit_outer_class(&mut self, class: &str, name: Option<&str>, descriptor: Option<&str>) {
+        self.enclosing_class = Some(self.constant_pool.put_class(class));
+
+        match (name, descriptor) {
+            (Some(name), Some(descriptor)) => {
+                self.enclosing_method = Some(self.constant_pool.put_name_and_type(name, descriptor));
+            }
+            _ => {}
+        }
+    }
+
+    fn visit_nest_member(&mut self, nest_member: &str) {
+        if let Some(nest_members) = &mut self.nest_members {
+            nest_members.push_u16(self.constant_pool.put_class(nest_member));
+        } else {
+            let mut nest_members = ByteVec::with_capacity(2);
+
+            nest_members.push_u16(self.constant_pool.put_class(nest_member));
+
+            self.nest_members = Some(nest_members);
+        }
     }
 }
 
@@ -213,6 +281,17 @@ impl ToBytes for ClassWriter {
                 .push_u32(debug_extension.len() as u32)
                 .push_u8s(&debug_extension);
         }
+
+        if let Some(nest_host) = self.nest_host {
+            vec.push_u16(self.constant_pool.get_utf8(attrs::NEST_HOST).unwrap())
+                .push_u32(2)
+                .push_u16(nest_host);
+        }
+
+        if self.deprecated {
+            vec.push_u16(self.constant_pool.get_utf8(attrs::DEPRECATED).unwrap())
+                .push_u32(0);
+        }
     }
 }
 
@@ -225,12 +304,23 @@ impl SizeComputable for ClassWriter {
         if self.signature.is_some() {
             size += 8;
         }
+
         if self.source.is_some() {
             size += 8;
         }
+
         if let Some(debug_extension) = &self.debug_extension {
             size += 6 + debug_extension.len();
         }
+
+        if self.nest_host.is_some() {
+            size += 8;
+        }
+
+        if self.deprecated {
+            size += 6;
+        }
+
         size
     }
 
@@ -246,6 +336,14 @@ impl SizeComputable for ClassWriter {
         }
 
         if self.debug_extension.is_some() {
+            count += 1;
+        }
+
+        if self.nest_host.is_some() {
+            count += 1;
+        }
+
+        if self.deprecated {
             count += 1;
         }
 

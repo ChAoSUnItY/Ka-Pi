@@ -164,6 +164,34 @@ impl ConstantPool {
         self.put(Constant::String(utf8))
     }
 
+    pub(crate) fn put_field_ref(&mut self, class: &str, name: &str, descriptor: &str) -> u16 {
+        let class = self.put_utf8(class);
+        let name_and_type = self.put_name_and_type(name, descriptor);
+
+        self.put(Constant::FieldRef(class, name_and_type))
+    }
+
+    pub(crate) fn put_method_ref(&mut self, class: &str, name: &str, descriptor: &str) -> u16 {
+        let class = self.put_utf8(class);
+        let name_and_type = self.put_name_and_type(name, descriptor);
+
+        self.put(Constant::MethodRef(class, name_and_type))
+    }
+
+    pub(crate) fn put_interface_method_ref(&mut self, class: &str, name: &str, descriptor: &str) -> u16 {
+        let class = self.put_utf8(class);
+        let name_and_type = self.put_name_and_type(name, descriptor);
+
+        self.put(Constant::InterfaceMethodRef(class, name_and_type))
+    }
+
+    pub(crate) fn put_name_and_type(&mut self, name: &str, descriptor: &str) -> u16 {
+        let name = self.put_utf8(name);
+        let descriptor = self.put_utf8(descriptor);
+
+        self.put(Constant::NameAndType(name, descriptor))
+    }
+
     pub(crate) fn get_utf8<T>(&self, utf8: T) -> Option<u16>
     where
         T: Into<String>,
