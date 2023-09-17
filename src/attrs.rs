@@ -15,12 +15,12 @@ pub(crate) const DEPRECATED: &'static str = "Deprecated";
 pub(crate) const RUNTIME_VISIBLE_ANNOTATIONS: &'static str = "RuntimeVisibleAnnotations";
 pub(crate) const RUNTIME_INVISIBLE_ANNOTATIONS: &'static str = "RuntimeInvisibleAnnotations";
 pub(crate) const RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS: &'static str =
-    "RuntimeVisibleParameterAnnotations";
+  "RuntimeVisibleParameterAnnotations";
 pub(crate) const RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS: &'static str =
-    "RuntimeInvisibleParameterAnnotations";
+  "RuntimeInvisibleParameterAnnotations";
 pub(crate) const RUNTIME_VISIBLE_TYPE_ANNOTATIONS: &'static str = "RuntimeVisibleTypeAnnotations";
 pub(crate) const RUNTIME_INVISIBLE_TYPE_ANNOTATIONS: &'static str =
-    "RuntimeInvisibleTypeAnnotations";
+  "RuntimeInvisibleTypeAnnotations";
 pub(crate) const ANNOTATION_DEFAULT: &'static str = "AnnotationDefault";
 pub(crate) const BOOTSTRAP_METHODS: &'static str = "BootstrapMethods";
 pub(crate) const METHOD_PARAMETERS: &'static str = "MethodParameters";

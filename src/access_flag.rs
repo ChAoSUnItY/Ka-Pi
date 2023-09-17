@@ -120,7 +120,7 @@ bitflags! {
 }
 
 impl Default for ClassAccessFlag {
-    fn default() -> Self {
-        Self::empty()
-    }
+  fn default() -> Self {
+    Self::empty()
+  }
 }
