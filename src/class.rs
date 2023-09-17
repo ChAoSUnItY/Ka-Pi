@@ -4,6 +4,7 @@ use crate::{
     byte_vec::{ByteVec, ToBytes, SizeComputable},
     symbol::ConstantPool, attrs,
 };
+use crate::byte_vec::ByteVector;
 
 #[derive(Debug, Clone, Copy)]
 #[allow(dead_code)]
@@ -167,7 +168,7 @@ impl ClassWriter {
 
         self.put_bytes(&mut vec);
 
-        vec.as_vec()
+        vec
     }
 }
 
@@ -218,6 +219,7 @@ impl ClassVisitor for ClassWriter {
     }
 
     fn visit_outer_class(&mut self, class: &str, name: Option<&str>, descriptor: Option<&str>) {
+        self.constant_pool.put_utf8(attrs::ENCLOSING_METHOD);
         self.enclosing_class = Some(self.constant_pool.put_class(class));
 
         match (name, descriptor) {
@@ -232,6 +234,8 @@ impl ClassVisitor for ClassWriter {
         if let Some(nest_members) = &mut self.nest_members {
             nest_members.push_u16(self.constant_pool.put_class(nest_member));
         } else {
+            self.constant_pool.put_utf8(attrs::NEST_MEMBERS);
+
             let mut nest_members = ByteVec::with_capacity(2);
 
             nest_members.push_u16(self.constant_pool.put_class(nest_member));
@@ -270,6 +274,11 @@ impl ToBytes for ClassWriter {
                 .push_u16(signature);
         }
 
+        if self.deprecated {
+            vec.push_u16(self.constant_pool.get_utf8(attrs::DEPRECATED).unwrap())
+                .push_u32(0);
+        }
+
         if let Some(source) = self.source {
             vec.push_u16(self.constant_pool.get_utf8(attrs::SOURCE_FILE).unwrap())
                 .push_u32(2)
@@ -288,9 +297,19 @@ impl ToBytes for ClassWriter {
                 .push_u16(nest_host);
         }
 
-        if self.deprecated {
-            vec.push_u16(self.constant_pool.get_utf8(attrs::DEPRECATED).unwrap())
-                .push_u32(0);
+        if let Some(enclosing_class) = self.enclosing_class {
+            vec.push_u16(self.constant_pool.get_utf8(attrs::ENCLOSING_METHOD).unwrap())
+                .push_u32(4)
+                .push_u16(enclosing_class)
+                .push_u16(self.enclosing_method.unwrap_or_default());
+        }
+
+        if let Some(nest_members) = &self.nest_members {
+            vec.push_u16(self.constant_pool.get_utf8(attrs::NEST_MEMBERS).unwrap())
+                .push_u32((nest_members.len() + 2) as u32)
+                .push_u16((nest_members.len() / 2) as u16)
+                .extend(nest_members);
+
         }
     }
 }
@@ -305,6 +324,10 @@ impl SizeComputable for ClassWriter {
             size += 8;
         }
 
+        if self.deprecated {
+            size += 6;
+        }
+
         if self.source.is_some() {
             size += 8;
         }
@@ -317,8 +340,12 @@ impl SizeComputable for ClassWriter {
             size += 8;
         }
 
-        if self.deprecated {
-            size += 6;
+        if self.enclosing_class.is_some() {
+            size += 10;
+        }
+
+        if let Some(nest_members) = &self.nest_members {
+            size += 8 + nest_members.len();
         }
 
         size
@@ -328,6 +355,10 @@ impl SizeComputable for ClassWriter {
         let mut count = 0;
         
         if self.signature.is_some() {
+            count += 1;
+        }
+
+        if self.deprecated {
             count += 1;
         }
 
@@ -343,7 +374,11 @@ impl SizeComputable for ClassWriter {
             count += 1;
         }
 
-        if self.deprecated {
+        if self.enclosing_class.is_some() {
+            count += 1;
+        }
+
+        if self.nest_members.is_some() {
             count += 1;
         }
 
