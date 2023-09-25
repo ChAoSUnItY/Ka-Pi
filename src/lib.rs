@@ -5,4 +5,7 @@ pub mod access_flag;
 mod attrs;
 mod byte_vec;
 pub mod class;
+mod frame;
+pub mod label;
+pub mod method;
 mod symbol;

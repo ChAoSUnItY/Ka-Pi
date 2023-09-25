@@ -6,3 +6,4 @@ imports_granularity = "Crate"
 imports_layout = "Vertical"
 wrap_comments = true
 tab_spaces = 2
+

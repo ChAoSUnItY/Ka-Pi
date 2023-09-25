@@ -1,5 +1,10 @@
+use std::{
+  cell::RefCell,
+  rc::Rc,
+};
+
 use crate::{
-  access_flag::ClassAccessFlag,
+  access_flag::{ClassAccessFlag, MethodAccessFlag},
   attrs,
   byte_vec::{
     ByteVec,
@@ -7,9 +12,12 @@ use crate::{
     SizeComputable,
     ToBytes,
   },
-  symbol::ConstantPool,
+  method::{
+    MethodVisitor,
+    MethodWriter,
+  },
+  symbol::SymbolTable,
 };
-use bitflags::Flags;
 
 #[derive(Debug, Clone, Copy)]
 #[allow(dead_code)]
@@ -97,6 +105,17 @@ pub trait ClassVisitor {
     }
   }
 
+  fn visit_method(
+    &mut self,
+    access: MethodAccessFlag,
+    name: &str,
+    descriptor: &str,
+    signature: Option<&str>,
+    exceptions: &[&str],
+  ) -> Option<&mut dyn MethodVisitor> {
+    None
+  }
+
   fn visit_deprecated(&mut self) {
     if let Some(inner) = self.inner() {
       inner.visit_deprecated();
@@ -140,11 +159,13 @@ pub trait ClassVisitor {
 pub struct ClassWriter {
   version: JavaVersion,
   access: ClassAccessFlag,
-  constant_pool: ConstantPool,
+  constant_pool: Rc<RefCell<SymbolTable>>,
   this_class: Option<u16>,
   signature: Option<u16>,
   super_class: Option<u16>,
   interfaces: Vec<u16>,
+  // fields: Vec<_>,
+  methods: Vec<MethodWriter>,
   // Attribute SourceFile
   source: Option<u16>,
   // Attribute SourceDebugExtension
@@ -187,63 +208,84 @@ impl ClassVisitor for ClassWriter {
     super_name: &str,
     interfaces: &[&str],
   ) {
+    let mut cp = self.constant_pool.borrow_mut();
+
     self.version = version;
     self.access = access;
-    self.this_class = Some(self.constant_pool.put_class(name));
+    self.this_class = Some(cp.put_class(name));
 
     if let Some(signature) = signature {
-      self.constant_pool.put_utf8(attrs::SIGNATURE);
-      self.signature = Some(self.constant_pool.put_class(signature));
+      cp.put_utf8(attrs::SIGNATURE);
+      self.signature = Some(cp.put_class(signature));
     }
 
-    self.super_class = Some(self.constant_pool.put_class(super_name));
+    self.super_class = Some(cp.put_class(super_name));
     self.interfaces = interfaces
       .into_iter()
-      .map(|interface| self.constant_pool.put_class(interface))
+      .map(|interface| cp.put_class(interface))
       .collect()
   }
 
+  fn visit_method(&mut self, access: MethodAccessFlag, name: &str, descriptor: &str, signature: Option<&str>, exceptions: &[&str]) -> Option<&mut dyn MethodVisitor> {
+    let mw = MethodWriter::new(self.constant_pool.clone(), access, name, descriptor, signature, exceptions);
+
+    self.methods.push(mw);
+    self.methods.last_mut().map(|mw| mw as &mut dyn MethodVisitor)
+  }
+
   fn visit_deprecated(&mut self) {
-    self.constant_pool.put_utf8(attrs::DEPRECATED);
+    let mut cp = self.constant_pool.borrow_mut();
+
+    cp.put_utf8(attrs::DEPRECATED);
     self.deprecated = true;
   }
 
   fn visit_source(&mut self, source_file: &str) {
-    self.constant_pool.put_utf8(attrs::SOURCE_FILE);
-    self.source = Some(self.constant_pool.put_utf8(source_file));
+    let mut cp = self.constant_pool.borrow_mut();
+
+    cp.put_utf8(attrs::SOURCE_FILE);
+    self.source = Some(cp.put_utf8(source_file));
   }
 
   fn visit_debug_extension(&mut self, debug_extension: &str) {
-    self.constant_pool.put_utf8(attrs::SOURCE_DEBUG_EXTENSION);
+    let mut cp = self.constant_pool.borrow_mut();
+
+    cp.put_utf8(attrs::SOURCE_DEBUG_EXTENSION);
     self.debug_extension = Some(cesu8::to_java_cesu8(debug_extension).to_vec());
   }
 
   fn visit_nest_host(&mut self, nest_host: &str) {
-    self.constant_pool.put_utf8(attrs::NEST_HOST);
-    self.nest_host = Some(self.constant_pool.put_class(nest_host));
+    let mut cp = self.constant_pool.borrow_mut();
+
+    cp.put_utf8(attrs::NEST_HOST);
+    self.nest_host = Some(cp.put_class(nest_host));
   }
 
   fn visit_outer_class(&mut self, class: &str, name: Option<&str>, descriptor: Option<&str>) {
-    self.constant_pool.put_utf8(attrs::ENCLOSING_METHOD);
-    self.enclosing_class = Some(self.constant_pool.put_class(class));
+    let mut cp = self.constant_pool.borrow_mut();
+
+    cp.put_utf8(attrs::ENCLOSING_METHOD);
+    self.enclosing_class = Some(cp.put_class(class));
 
     match (name, descriptor) {
       (Some(name), Some(descriptor)) => {
-        self.enclosing_method = Some(self.constant_pool.put_name_and_type(name, descriptor));
+        self.enclosing_method = Some(cp.put_name_and_type(name, descriptor));
       }
       _ => {}
     }
   }
 
   fn visit_nest_member(&mut self, nest_member: &str) {
+    let mut cp = self.constant_pool.borrow_mut();
+
     if let Some(nest_members) = &mut self.nest_members {
-      nest_members.push_u16(self.constant_pool.put_class(nest_member));
+      nest_members.push_u16(cp.put_class(nest_member));
     } else {
-      self.constant_pool.put_utf8(attrs::NEST_MEMBERS);
+      cp.put_utf8(attrs::NEST_MEMBERS);
 
       let mut nest_members = ByteVec::with_capacity(2);
 
-      nest_members.push_u16(self.constant_pool.put_class(nest_member));
+      nest_members.push_u16(cp.put_class(nest_member));
 
       self.nest_members = Some(nest_members);
     }
@@ -252,9 +294,11 @@ impl ClassVisitor for ClassWriter {
 
 impl ToBytes for ClassWriter {
   fn put_bytes(&self, vec: &mut ByteVec) {
+    let cp = self.constant_pool.borrow();
+
     vec.push_u32(0xCAFEBABE).push_u32(self.version.version());
 
-    self.constant_pool.put_bytes(vec);
+    cp.put_bytes(vec);
 
     vec
       .push_u16(self.access.bits())
@@ -277,57 +321,52 @@ impl ToBytes for ClassWriter {
     // TODO: Field
     vec.push_u16(0);
     // TODO: Method
-    vec.push_u16(0);
+    vec.push_u16(self.methods.len() as u16);
+
+    for mw in &self.methods {
+      mw.put_bytes(vec);
+    }
+
     // TODO: Attribute
     vec.push_u16(self.attributes_count() as u16);
 
     if let Some(signature) = self.signature {
       vec
-        .push_u16(self.constant_pool.get_utf8(attrs::SIGNATURE).unwrap())
+        .push_u16(cp.get_utf8(attrs::SIGNATURE).unwrap())
         .push_u32(2)
         .push_u16(signature);
     }
 
     if self.deprecated {
       vec
-        .push_u16(self.constant_pool.get_utf8(attrs::DEPRECATED).unwrap())
+        .push_u16(cp.get_utf8(attrs::DEPRECATED).unwrap())
         .push_u32(0);
     }
 
     if let Some(source) = self.source {
       vec
-        .push_u16(self.constant_pool.get_utf8(attrs::SOURCE_FILE).unwrap())
+        .push_u16(cp.get_utf8(attrs::SOURCE_FILE).unwrap())
         .push_u32(2)
         .push_u16(source);
     }
 
     if let Some(debug_extension) = &self.debug_extension {
       vec
-        .push_u16(
-          self
-            .constant_pool
-            .get_utf8(attrs::SOURCE_DEBUG_EXTENSION)
-            .unwrap(),
-        )
+        .push_u16(cp.get_utf8(attrs::SOURCE_DEBUG_EXTENSION).unwrap())
         .push_u32(debug_extension.len() as u32)
         .push_u8s(&debug_extension);
     }
 
     if let Some(nest_host) = self.nest_host {
       vec
-        .push_u16(self.constant_pool.get_utf8(attrs::NEST_HOST).unwrap())
+        .push_u16(cp.get_utf8(attrs::NEST_HOST).unwrap())
         .push_u32(2)
         .push_u16(nest_host);
     }
 
     if let Some(enclosing_class) = self.enclosing_class {
       vec
-        .push_u16(
-          self
-            .constant_pool
-            .get_utf8(attrs::ENCLOSING_METHOD)
-            .unwrap(),
-        )
+        .push_u16(cp.get_utf8(attrs::ENCLOSING_METHOD).unwrap())
         .push_u32(4)
         .push_u16(enclosing_class)
         .push_u16(self.enclosing_method.unwrap_or_default());
@@ -335,7 +374,7 @@ impl ToBytes for ClassWriter {
 
     if let Some(nest_members) = &self.nest_members {
       vec
-        .push_u16(self.constant_pool.get_utf8(attrs::NEST_MEMBERS).unwrap())
+        .push_u16(cp.get_utf8(attrs::NEST_MEMBERS).unwrap())
         .push_u32((nest_members.len() + 2) as u32)
         .push_u16((nest_members.len() / 2) as u16)
         .extend(nest_members);

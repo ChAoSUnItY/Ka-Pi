@@ -15,8 +15,10 @@ path = "src/lib.rs"
 
 [features]
 default = []
+compute_stack_frame = ["jni/invocation"]
 
 [dependencies]
 bitflags = "2.4.0"
 cesu8 = "1.1.0"
 indexmap = "2.0.0"
+jni = "0.21.1"

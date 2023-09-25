@@ -1,8 +1,3 @@
-use std::ops::{
-  Deref,
-  DerefMut,
-};
-
 pub(crate) trait SizeComputable {
   /// Gets total size of current class, method, or field.
   fn compute_size(&self) -> usize;

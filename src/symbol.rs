@@ -2,6 +2,7 @@ use indexmap::IndexMap;
 
 use crate::byte_vec::{
   ByteVec,
+  ByteVector,
   ToBytes,
 };
 
@@ -114,12 +115,12 @@ impl ToBytes for Constant {
 }
 
 #[derive(Debug)]
-pub(crate) struct ConstantPool {
+pub(crate) struct SymbolTable {
   pool: IndexMap<Constant, u16>,
   index: u16,
 }
 
-impl ConstantPool {
+impl SymbolTable {
   fn put(&mut self, constant: Constant) -> u16 {
     if let Some(index) = self.pool.get(&constant) {
       *index
@@ -209,7 +210,7 @@ impl ConstantPool {
   }
 }
 
-impl Default for ConstantPool {
+impl Default for SymbolTable {
   fn default() -> Self {
     Self {
       pool: Default::default(),
@@ -218,7 +219,7 @@ impl Default for ConstantPool {
   }
 }
 
-impl ToBytes for ConstantPool {
+impl ToBytes for SymbolTable {
   fn put_bytes(&self, vec: &mut ByteVec) {
     vec.push_u16(self.index);
 
