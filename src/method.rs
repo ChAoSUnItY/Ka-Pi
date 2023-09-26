@@ -12,6 +12,7 @@ use crate::{
     ToBytes,
   },
   symbol::SymbolTable,
+  types::compute_method_descriptor_sizes,
 };
 
 pub trait MethodVisitor {
@@ -35,6 +36,11 @@ pub struct MethodWriter {
   signature_index: Option<u16>,
   exception_indicies: Vec<u16>,
   code: ByteVec,
+  max_locals: u8,
+  max_stacks: u8,
+  // Dynamic computing properties
+  current_locals: u8,
+  current_stacks: u8,
 }
 
 impl MethodWriter {
@@ -56,6 +62,9 @@ impl MethodWriter {
       .map(|exception| cp.put_class(exception))
       .collect();
 
+    let (max_locals, _) =
+      compute_method_descriptor_sizes(descriptor, access.contains(MethodAccessFlag::Static));
+
     Self {
       constant_pool,
       access,
@@ -64,6 +73,10 @@ impl MethodWriter {
       signature_index,
       exception_indicies,
       code: ByteVec::default(),
+      max_locals,
+      max_stacks: 0,
+      current_locals: max_locals,
+      current_stacks: 0,
     }
   }
 }

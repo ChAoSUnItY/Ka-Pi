@@ -27,13 +27,22 @@ fn main() {
   writer.visit_source("Main.java");
   writer.visit_debug_extension("Debug Message");
 
-  let mut mw = writer.visit_method(
-    MethodAccessFlag::Public | MethodAccessFlag::Static,
-    "main",
-    "([Ljava/lang/String;)V",
-    None,
-    &[],
-  );
+  let mut mw = writer
+    .visit_method(
+      MethodAccessFlag::Public | MethodAccessFlag::Static,
+      "main",
+      "([Ljava/lang/String;)V",
+      None,
+      &[],
+    )
+    .unwrap();
+  
+  mw.visit_code();
+
+  let mut mw2 = writer
+    .visit_method(MethodAccessFlag::Private, "method", "()V", None, &[])
+    .unwrap();
+
 
   writer.visit_end();
 

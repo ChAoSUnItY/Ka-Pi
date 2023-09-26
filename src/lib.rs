@@ -9,3 +9,4 @@ mod frame;
 pub mod label;
 pub mod method;
 mod symbol;
+pub mod types;

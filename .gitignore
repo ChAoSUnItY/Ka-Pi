@@ -8,5 +8,8 @@
 # JNI logs
 *.log
 
+# Vscode
+.vscode
+
 /output
 *.gz

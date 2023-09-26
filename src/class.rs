@@ -4,7 +4,10 @@ use std::{
 };
 
 use crate::{
-  access_flag::{ClassAccessFlag, MethodAccessFlag},
+  access_flag::{
+    ClassAccessFlag,
+    MethodAccessFlag,
+  },
   attrs,
   byte_vec::{
     ByteVec,
@@ -113,7 +116,11 @@ pub trait ClassVisitor {
     signature: Option<&str>,
     exceptions: &[&str],
   ) -> Option<&mut dyn MethodVisitor> {
-    None
+    if let Some(inner) = self.inner() {
+      inner.visit_method(access, name, descriptor, signature, exceptions)
+    } else {
+      None
+    }
   }
 
   fn visit_deprecated(&mut self) {
@@ -226,11 +233,28 @@ impl ClassVisitor for ClassWriter {
       .collect()
   }
 
-  fn visit_method(&mut self, access: MethodAccessFlag, name: &str, descriptor: &str, signature: Option<&str>, exceptions: &[&str]) -> Option<&mut dyn MethodVisitor> {
-    let mw = MethodWriter::new(self.constant_pool.clone(), access, name, descriptor, signature, exceptions);
+  fn visit_method(
+    &mut self,
+    access: MethodAccessFlag,
+    name: &str,
+    descriptor: &str,
+    signature: Option<&str>,
+    exceptions: &[&str],
+  ) -> Option<&mut dyn MethodVisitor> {
+    let mw = MethodWriter::new(
+      self.constant_pool.clone(),
+      access,
+      name,
+      descriptor,
+      signature,
+      exceptions,
+    );
 
     self.methods.push(mw);
-    self.methods.last_mut().map(|mw| mw as &mut dyn MethodVisitor)
+    self
+      .methods
+      .last_mut()
+      .map(|mw| mw as &mut dyn MethodVisitor)
   }
 
   fn visit_deprecated(&mut self) {
