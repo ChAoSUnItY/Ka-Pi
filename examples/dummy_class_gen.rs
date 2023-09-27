@@ -10,6 +10,8 @@ use ka_pi::{
     ClassWriter,
     JavaVersion,
   },
+  label::Label,
+  opcodes,
 };
 
 fn main() {
@@ -36,13 +38,14 @@ fn main() {
       &[],
     )
     .unwrap();
-  
+
   mw.visit_code();
 
-  let mut mw2 = writer
-    .visit_method(MethodAccessFlag::Private, "method", "()V", None, &[])
-    .unwrap();
+  let mut label = Label::default();
 
+  mw.visit_jump_inst(opcodes::GOTO, &mut label);
+  mw.visit_label(&mut label);
+  mw.visit_inst(opcodes::RETURN);
 
   writer.visit_end();
 

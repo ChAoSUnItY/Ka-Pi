@@ -1,4 +1,4 @@
-pub fn compute_method_descriptor_sizes(descriptor: &str, is_static: bool) -> (u8, u8) {
+pub fn compute_method_descriptor_sizes(descriptor: &str, is_static: bool) -> (u16, u16) {
   let mut arg_size = if is_static { 1 } else { 0 };
   let mut chars = descriptor.chars().peekable();
 

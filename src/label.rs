@@ -6,7 +6,7 @@ use crate::byte_vec::{
 };
 
 bitflags! {
-  #[derive(Debug)]
+  #[derive(Debug, Clone)]
   pub(crate) struct LabelFlag: u8 {
     const DebugOnly = 1;
     const JumpTarget = 2;
@@ -15,15 +15,10 @@ bitflags! {
   }
 }
 
-#[repr(u32)]
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum FowardRefType {
-  Wide = 0x10000000,
-  Short = 0x20000000,
-}
-
-impl FowardRefType {
-  pub(crate) const MASK: u32 = 0xF0000000;
+  Short,
+  Wide,
 }
 
 impl Default for LabelFlag {
@@ -32,12 +27,12 @@ impl Default for LabelFlag {
   }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Label {
   flags: LabelFlag,
   line_numbers: Vec<u16>,
   bytecode_offset: u32,
-  foward_reference: Vec<u32>,
+  foward_reference: Vec<(u32, FowardRefType, u32)>,
   input_stack_size: u16,
   output_stack_size: u16,
   output_stack_max: u16,
@@ -48,7 +43,7 @@ impl Label {
     Self::default()
   }
 
-  fn offset(&self) -> u32 {
+  pub(crate) fn offset(&self) -> u32 {
     if !self.flags.contains(LabelFlag::Resolved) {
       panic!("Label offset position has not been resolved yet")
     }
@@ -56,11 +51,15 @@ impl Label {
     self.bytecode_offset
   }
 
-  fn add_line_number(&mut self, line_number: u16) {
+  pub(crate) fn flags(&self) -> &LabelFlag {
+    &self.flags
+  }
+
+  pub(crate) fn add_line_number(&mut self, line_number: u16) {
     self.line_numbers.push(line_number);
   }
 
-  fn put(&mut self, code: &mut ByteVec, source_inst_bytecode_offset: u32, wide_ref: bool) {
+  pub(crate) fn put(&mut self, code: &mut ByteVec, source_inst_bytecode_offset: u32, wide_ref: bool) {
     if !self.flags.contains(LabelFlag::Resolved) {
       if wide_ref {
         self.add_foward_ref(
@@ -80,10 +79,10 @@ impl Label {
     } else {
       if wide_ref {
         code
-          .push_u32((self.bytecode_offset as u32).wrapping_sub(source_inst_bytecode_offset as u32));
+          .push_u32(self.bytecode_offset.wrapping_sub(source_inst_bytecode_offset));
       } else {
         code
-          .push_u16((self.bytecode_offset as u16).wrapping_sub(source_inst_bytecode_offset as u16));
+          .push_u16(self.bytecode_offset.wrapping_sub(source_inst_bytecode_offset) as u16);
       }
     }
   }
@@ -94,7 +93,44 @@ impl Label {
     ref_type: FowardRefType,
     ref_handle: u32,
   ) {
-    self.foward_reference.push(source_inst_bytecode_offset);
-    self.foward_reference.push(ref_type as u32 | ref_handle);
+    self.foward_reference.push((source_inst_bytecode_offset, ref_type, ref_handle));
+  }
+
+  pub(crate) fn resolve(&mut self, code: &mut ByteVec, bytecode_offset: u32) {
+    self.flags |= LabelFlag::Resolved;
+    self.bytecode_offset = bytecode_offset;
+
+    for (source_inst_bytecode_offset, ref_type, ref_handle) in &self.foward_reference {
+      let relative_offset = bytecode_offset.wrapping_sub(*source_inst_bytecode_offset);
+
+      if ((relative_offset as i32) < (i16::MIN as i32) || (relative_offset as i32 > (i16::MAX as i32))) && *ref_type == FowardRefType::Short {
+        // reserves 2 more bytes for offset to store when we previously
+        // only allocated 2 bytes
+        for _ in 0..2 {
+          code.insert(*ref_handle as usize, 0);
+        }
+
+        // TODO: This algorithm requires the remaining jump insts to check
+        // if their offset interval intersects with current foward reference,
+        // if so, intersected offset intervals must compute
+      } 
+
+      match ref_type {
+        FowardRefType::Short => {
+          let relative_offset_bytes = (relative_offset as u16).to_be_bytes();
+
+          for i in 0..2 {
+            code[*ref_handle as usize + i] = relative_offset_bytes[i]; 
+          }
+        }
+        FowardRefType::Wide => {
+          let relative_offset_bytes = (relative_offset as u32).to_be_bytes();
+
+          for i in 0..4 {
+            code[*ref_handle as usize + i] = relative_offset_bytes[i]; 
+          }
+        }
+    }
+    }
   }
 }

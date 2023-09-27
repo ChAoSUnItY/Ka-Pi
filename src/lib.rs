@@ -10,3 +10,4 @@ pub mod label;
 pub mod method;
 mod symbol;
 pub mod types;
+pub mod opcodes;
