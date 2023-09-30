@@ -19,7 +19,7 @@ use crate::{
     MethodVisitor,
     MethodWriter,
   },
-  symbol::SymbolTable,
+  constant::ConstantPool,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -166,7 +166,7 @@ pub trait ClassVisitor {
 pub struct ClassWriter {
   version: JavaVersion,
   access: ClassAccessFlag,
-  constant_pool: Rc<RefCell<SymbolTable>>,
+  constant_pool: Rc<RefCell<ConstantPool>>,
   this_class: Option<u16>,
   signature: Option<u16>,
   super_class: Option<u16>,

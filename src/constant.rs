@@ -115,12 +115,12 @@ impl ToBytes for Constant {
 }
 
 #[derive(Debug)]
-pub(crate) struct SymbolTable {
+pub(crate) struct ConstantPool {
   pool: IndexMap<Constant, u16>,
   index: u16,
 }
 
-impl SymbolTable {
+impl ConstantPool {
   fn put(&mut self, constant: Constant) -> u16 {
     if let Some(index) = self.pool.get(&constant) {
       *index
@@ -210,7 +210,7 @@ impl SymbolTable {
   }
 }
 
-impl Default for SymbolTable {
+impl Default for ConstantPool {
   fn default() -> Self {
     Self {
       pool: Default::default(),
@@ -219,7 +219,7 @@ impl Default for SymbolTable {
   }
 }
 
-impl ToBytes for SymbolTable {
+impl ToBytes for ConstantPool {
   fn put_bytes(&self, vec: &mut ByteVec) {
     vec.push_u16(self.index);
 

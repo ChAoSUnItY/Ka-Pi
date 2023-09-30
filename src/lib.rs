@@ -8,6 +8,7 @@ pub mod class;
 mod frame;
 pub mod label;
 pub mod method;
-mod symbol;
+mod constant;
 pub mod types;
 pub mod opcodes;
+mod stack_map;

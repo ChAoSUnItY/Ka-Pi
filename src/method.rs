@@ -18,7 +18,7 @@ use crate::{
     LabelFlag,
   },
   opcodes,
-  symbol::SymbolTable,
+  constant::ConstantPool,
   types::compute_method_descriptor_sizes,
 };
 
@@ -54,7 +54,7 @@ pub trait MethodVisitor {
 
 #[derive(Debug)]
 pub struct MethodWriter {
-  constant_pool: Rc<RefCell<SymbolTable>>,
+  constant_pool: Rc<RefCell<ConstantPool>>,
   access: MethodAccessFlag,
   name_index: u16,
   descriptor_index: u16,
@@ -71,7 +71,7 @@ pub struct MethodWriter {
 
 impl MethodWriter {
   pub(crate) fn new(
-    constant_pool: Rc<RefCell<SymbolTable>>,
+    constant_pool: Rc<RefCell<ConstantPool>>,
     access: MethodAccessFlag,
     name: &str,
     descriptor: &str,
