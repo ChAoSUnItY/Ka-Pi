@@ -200,6 +200,14 @@ impl ConstantPool {
     self.put(Constant::NameAndType(name, descriptor))
   }
 
+  pub(crate) fn get(&self, index: u16) -> Option<&Constant> {
+    self.pool.iter().find(|(_, &idx)| idx == index).map(|(constant, _)| constant)
+  }
+
+  pub(crate) fn get_tag(&self, index: u16) -> Option<ConstantTag> {
+    self.get(index).map(Constant::tag)
+  }
+
   pub(crate) fn get_utf8<T>(&self, utf8: T) -> Option<u16>
   where
     T: Into<String>,
