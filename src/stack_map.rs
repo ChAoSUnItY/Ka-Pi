@@ -193,6 +193,11 @@ impl OpcodeWalker {
     self.max_stack = self.max_stack.max(self.stack_types.len() as u16);
   }
 
+  fn raw_push(&mut self, typ: Type) {
+    self.stack_types.push(typ);
+    self.max_stack = self.max_stack.max(self.stack_types.len() as u16);
+  }
+
   fn pop(&mut self, size: u16) {
     for _ in 0..size {
       self.stack_types.pop();
@@ -227,6 +232,7 @@ impl OpcodeWalker {
     match opcode {
       0..=53 => self.opcode_0_53(pos, code, opcode),
       54..=95 => self.opcode_54_95(pos, code, opcode),
+      96..=147 => self.opcode_96_147(pos, code, opcode),
       _ => opcode_wlk_err!("opcode out of bound"),
     }
   }
@@ -424,7 +430,9 @@ impl OpcodeWalker {
         let Some(typ) = self.stack_types.last() else {
           opcode_wlk_err!("unable to dup last stack item, no items on stack");
         };
-        self.stack_types.insert(self.stack_types.len() - delta as usize, typ.clone());
+        self
+          .stack_types
+          .insert(self.stack_types.len() - delta as usize, typ.clone());
         1
       }
       DUP2 => {
@@ -434,8 +442,8 @@ impl OpcodeWalker {
         let Some(typ2) = self.stack_types.get(self.stack_types.len() - 2).cloned() else {
           opcode_wlk_err!("unable to dup2 last stack item, no items on stack");
         };
-        self.stack_types.push(typ2);
-        self.stack_types.push(typ1);
+        self.raw_push(typ2);
+        self.raw_push(typ1);
         1
       }
       DUP2_X1 => {
@@ -448,11 +456,11 @@ impl OpcodeWalker {
         let Some(typ3) = self.stack_types.pop() else {
           opcode_wlk_err!("unable to dup2_x1 last stack item, no items on stack");
         };
-        self.stack_types.push(typ2.clone());
-        self.stack_types.push(typ1.clone());
-        self.stack_types.push(typ3);
-        self.stack_types.push(typ2);
-        self.stack_types.push(typ1);
+        self.raw_push(typ2.clone());
+        self.raw_push(typ1.clone());
+        self.raw_push(typ3);
+        self.raw_push(typ2);
+        self.raw_push(typ1);
         1
       }
       DUP2_X2 => {
@@ -468,14 +476,14 @@ impl OpcodeWalker {
         let Some(typ4) = self.stack_types.pop() else {
           opcode_wlk_err!("unable to dup2_x2 last stack item, no items on stack");
         };
-        self.stack_types.push(typ4.clone());
-        self.stack_types.push(typ3.clone());
-        self.stack_types.push(typ2.clone());
-        self.stack_types.push(typ1.clone());
-        self.stack_types.push(typ4);
-        self.stack_types.push(typ3);
-        self.stack_types.push(typ2);
-        self.stack_types.push(typ1);
+        self.raw_push(typ4.clone());
+        self.raw_push(typ3.clone());
+        self.raw_push(typ2.clone());
+        self.raw_push(typ1.clone());
+        self.raw_push(typ4);
+        self.raw_push(typ3);
+        self.raw_push(typ2);
+        self.raw_push(typ1);
         1
       }
       SWAP => {
@@ -485,8 +493,8 @@ impl OpcodeWalker {
         let Some(typ2) = self.stack_types.pop() else {
           opcode_wlk_err!("unable to swap last stack item, no items on stack");
         };
-        self.stack_types.push(typ1);
-        self.stack_types.push(typ2);
+        self.raw_push(typ1);
+        self.raw_push(typ2);
         1
       }
       _ => unreachable!(),
@@ -524,5 +532,83 @@ impl OpcodeWalker {
     self.set_local_vars(index as u16, typ);
 
     return 2;
+  }
+
+  fn opcode_96_147(&mut self, pos: usize, code: &[u8], opcode: u8) -> usize {
+    match opcode {
+      IADD..=DREM | ISHL..=LXOR => {
+        if opcode % 2 == 0 {
+          // IXX / FXX
+          self.pop(1);
+        } else {
+          self.pop(2);
+        }
+        1
+      }
+      INEG..=DNEG => 1,
+      IINC => 3,
+      I2L => {
+        self.pop(1);
+        self.push(Type::Long);
+        1
+      }
+      I2F => {
+        self.pop(1);
+        self.push(Type::Float);
+        1
+      }
+      I2D => {
+        self.pop(1);
+        self.push(Type::Double);
+        1
+      }
+      L2I => {
+        self.pop(2);
+        self.push(Type::Integer);
+        1
+      }
+      L2F => {
+        self.pop(2);
+        self.push(Type::Float);
+        1
+      }
+      L2D => {
+        self.pop(2);
+        self.push(Type::Double);
+        1
+      }
+      F2I => {
+        self.pop(1);
+        self.push(Type::Integer);
+        1
+      }
+      F2L => {
+        self.pop(1);
+        self.push(Type::Long);
+        1
+      }
+      F2D => {
+        self.pop(1);
+        self.push(Type::Double);
+        1
+      }
+      D2I => {
+        self.pop(2);
+        self.push(Type::Integer);
+        1
+      }
+      D2L => {
+        self.pop(2);
+        self.push(Type::Long);
+        1
+      }
+      D2F => {
+        self.pop(2);
+        self.push(Type::Float);
+        1
+      }
+      I2B | I2C | I2S => 1,
+      _ => unreachable!(),
+    }
   }
 }
